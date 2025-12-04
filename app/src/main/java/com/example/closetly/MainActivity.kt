@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -24,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,12 +62,8 @@ fun MainBody(){
                     .padding(32.dp,135.dp),
 
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(30.dp)
+                verticalArrangement = Arrangement.spacedBy(25.dp)
             ){
-                Text("Moto here", style = TextStyle(
-                    fontSize = 30.sp
-                ))
-
                 Button(
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(
@@ -75,10 +72,11 @@ fun MainBody(){
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .height(55.dp)
-                        .width(245.dp)
+                        .fillMaxWidth()
                 ) {
                     Text(
                         "Create new Account", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -93,10 +91,11 @@ fun MainBody(){
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .height(55.dp)
-                        .width(245.dp)
+                        .fillMaxWidth()
                 ) {
                     Text(
-                        "Log in", style = TextStyle(
+                        "Already have an account", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )

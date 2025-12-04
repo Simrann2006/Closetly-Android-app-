@@ -6,10 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,9 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,7 +100,7 @@ fun LoginBody(){
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ){
-                Spacer(Modifier.height(350.dp))
+                Spacer(Modifier.height(320.dp))
 
                 Text("Log in",
                     modifier = Modifier
@@ -116,7 +114,7 @@ fun LoginBody(){
                     )
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(2.dp))
 
                 OutlinedTextField(
                     value = email,
@@ -126,15 +124,22 @@ fun LoginBody(){
                     onValueChange = { data ->
                         email = data
                     },
+                    leadingIcon = {
+                        Icon(painter = painterResource(R.drawable.baseline_mail_outline_24),
+                            contentDescription = null,
+                            tint = Light_brown
+                        )
+                    },
                     label = {
                         Text("Email", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
                             color = Grey)
                         )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp),
+                        .padding(horizontal = 10.dp),
                     shape = RoundedCornerShape((22.dp)),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = White,
@@ -165,15 +170,22 @@ fun LoginBody(){
                             )
                         }
                     },
+                    leadingIcon = {
+                        Icon(painter = painterResource(R.drawable.baseline_lock_24),
+                            contentDescription = null,
+                            tint = Light_brown
+                        )
+                    },
                     label = {
                         Text("Password", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
                             color = Grey
                         ))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 15.dp),
+                        .padding(horizontal = 10.dp),
                     shape = RoundedCornerShape((22.dp)),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = White,
@@ -183,46 +195,51 @@ fun LoginBody(){
                     )
                 )
 
-                Spacer(Modifier.height(2.dp))
-
-                Text("Forget Password?", style = TextStyle(
-                    color = Brown,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign =TextAlign.End),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 5.dp)
-                )
-
-                Spacer(Modifier.height(1.dp))
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 30.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Checkbox(
-                        checked = terms,
-                        onCheckedChange = {
-                            terms = it
-                        },
-                        modifier = Modifier.size(5.dp),
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Brown,
-                            checkmarkColor = White,
-                            uncheckedColor = Light_brown
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = terms,
+                            onCheckedChange = {
+                                terms = it
+                            },
+                            modifier = Modifier.size(24.dp),
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Brown,
+                                checkmarkColor = White,
+                                uncheckedColor = Light_brown
+                            )
                         )
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text("Remember me", style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    ))
+                        Spacer(Modifier.width(4.dp))
+
+                        Text("Remember me", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        ))
+                    }
+
+                    TextButton(
+                        onClick = { },
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Text("Forget Password?", style = TextStyle(
+                            color = if (isClicked) Color.Blue else Brown,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        ))
+                    }
                 }
 
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(13.dp))
 
                 Button(
                     onClick = {},
@@ -231,12 +248,13 @@ fun LoginBody(){
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
-                        .height(40.dp)
+                        .height(55.dp)
                         .width(170.dp)
                 ) {
                     Text(
                         "Log in", style = TextStyle(
-                            fontSize = 22.sp,
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -250,7 +268,14 @@ fun LoginBody(){
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     HorizontalDivider(Modifier.weight(1f), color = Black)
-                    Text("or sign in with",modifier = Modifier.padding(horizontal = 15.dp), color = Brown)
+                    Text("or sign in with",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular))
+                        ),
+                        modifier = Modifier
+                            .padding(horizontal = 15.dp),
+                        color = Brown
+                    )
                     HorizontalDivider(Modifier.weight(1f), color = Black)
                 }
 
@@ -259,7 +284,7 @@ fun LoginBody(){
                 OutlinedButton(
                     {},
                     modifier = Modifier
-                        .width(135.dp)
+                        .width(140.dp)
                         .height(43.dp),
                     shape = RoundedCornerShape(15.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -277,38 +302,43 @@ fun LoginBody(){
                             contentDescription = null,
                             modifier = Modifier.size(24.dp)
                         )
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             "Google",
                             style = TextStyle(
-                                fontSize = 16.sp,
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         )
                     }
                 }
 
-                Text(
-                    buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = Black)) {
-                            append("Don't have an account?")
-                        }
-                        append(" ")
-                        withStyle(
-                            style = SpanStyle(
-                                color = if (isClicked) Color.Blue else Color.Black,
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append("Sign Up")
-                        }
-                    },
+                Row(
                     modifier = Modifier
-                        .padding(15.dp)
-                        .clickable {
-                            isClicked = true
-                        }
-                )
+                        .padding(15.dp, vertical = 1.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Text("Don't have an account?", style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        color = Black,
+                        fontSize = 14.sp
+                    ))
+
+                    Spacer(Modifier.width(4.dp))
+
+                    TextButton(
+                        onClick = {isClicked = true},
+                        contentPadding = PaddingValues(0.dp)
+                    ){
+                        Text("Sign Up", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            color = if (isClicked) Color.Blue else Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        ))
+                    }
+                }
             }
         }
     }
