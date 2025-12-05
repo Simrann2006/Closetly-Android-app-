@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Closetly</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_forget_main">ForgetMainActivity</string>
     <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_forget">ForgetActivity</string>
 </resources>
