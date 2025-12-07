@@ -1,5 +1,7 @@
 package com.example.closetly
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -64,7 +68,10 @@ class ForgotActivity : ComponentActivity() {
 fun ForgotBody(){
 
     var email by remember { mutableStateOf("") }
-    var isClicked by remember { mutableStateOf(false) }
+    var isLoginClicked by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val activity = context as Activity
 
     Scaffold { padding ->
         Box(
@@ -131,23 +138,30 @@ fun ForgotBody(){
                         .width(325.dp)
                 ) {
                     Text(
-                        "Send Reset", style = TextStyle(
+                        "Send reset link", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 25.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
                 }
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.height(185.dp))
 
                 TextButton(
-                    onClick = { isClicked = true },
-                    contentPadding = PaddingValues(120.dp)
+                    onClick = {
+                        isLoginClicked = true
+                        val intent = Intent(context,
+                            LoginActivity::class.java)
+
+                        context.startActivity(intent)
+                        activity.finish()
+                    },
+                    contentPadding = PaddingValues( 0.dp),
                 ) {
                     Text(
                         "Back to login ?", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = if (isClicked) Color.Blue else Color.Black,
+                            color = if (isLoginClicked) Color.Blue else Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )

@@ -1,5 +1,7 @@
 package com.example.closetly
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -43,6 +46,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainBody(){
+
+    val context = LocalContext.current
+    val activity = context as Activity
+
     Scaffold { padding ->
         Box(
             modifier = Modifier
@@ -59,7 +66,7 @@ fun MainBody(){
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .padding(32.dp,135.dp),
+                    .padding(32.dp,100.dp),
 
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(25.dp)
@@ -77,14 +84,22 @@ fun MainBody(){
                     Text(
                         "Create new Account", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
                 }
 
                 Button(
-                    onClick = {},
+                    onClick = {
+                        val intent = Intent(
+                            context,
+                            LoginActivity::class.java
+                        )
+
+                        context.startActivity(intent)
+                        activity.finish()
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
                     ),
@@ -96,7 +111,7 @@ fun MainBody(){
                     Text(
                         "Already have an account", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )

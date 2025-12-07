@@ -12,9 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Closetly">
         <activity
-            android:name=".ForgetActivity"
+            android:name=".ForgotActivity"
             android:exported="true"
-            android:label="@string/title_activity_forget"
+            android:label="ForgotActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,38 +34,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ForgetMainActivity"
-            android:exported="true"
-            android:label="@string/title_activity_forget_main"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".ForgetMainActivity"
-            android:exported="true"
-            android:label="@string/title_activity_forget_main"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".forgetMainActivity"
-            android:exported="false"
-            android:label="@string/title_activity_forget_main"
-            android:theme="@style/Theme.Closetly" />
-        <activity
-            android:name=".forgetMainActivity"
-            android:exported="false"
-            android:label="@string/title_activity_forget_main"
-            android:theme="@style/Theme.Closetly" />
-        <activity
             android:name=".LoginActivity"
             android:exported="true"
             android:label="@string/title_activity_login"
@@ -79,7 +47,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="MainActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

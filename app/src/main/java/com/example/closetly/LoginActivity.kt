@@ -1,5 +1,7 @@
 package com.example.closetly
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -78,7 +81,11 @@ fun LoginBody(){
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
     var isClicked by remember { mutableStateOf(false) }
+    var isForgotClicked by remember { mutableStateOf(false)}
     var terms by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val activity = context as Activity
 
 
     Scaffold { padding ->
@@ -227,12 +234,19 @@ fun LoginBody(){
                     }
 
                     TextButton(
-                        onClick = { },
+                        onClick = {
+                            isForgotClicked = true
+                            val intent = Intent(context,
+                                ForgotActivity::class.java)
+
+                            context.startActivity(intent)
+                            activity.finish()
+                        },
                         contentPadding = PaddingValues(0.dp),
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Forget Password?", style = TextStyle(
-                            color = if (isClicked) Color.Blue else Brown,
+                        Text("Forgot Password?", style = TextStyle(
+                            color = if (isForgotClicked) Color.Blue else Brown,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         ))
