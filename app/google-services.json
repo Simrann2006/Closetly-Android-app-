@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "976494225720",
+    "firebase_url": "https://practice-22e6d-default-rtdb.firebaseio.com",
+    "project_id": "practice-22e6d",
+    "storage_bucket": "practice-22e6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976494225720:android:c89bfd959cd220bddef9cd",
+        "android_client_info": {
+          "package_name": "com.example.closetly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmuTkW3CYz6TPEmxLyBoIEQnIIKcZpGok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
