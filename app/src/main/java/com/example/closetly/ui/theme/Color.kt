@@ -19,3 +19,5 @@ val Grey = Color(0xFF8F8E8E)
 val White = Color(0xFFFFFFFF)
 
 val Black = Color(0xFF000000)
+
+val Skin = Color(0xFFC59D9B)
