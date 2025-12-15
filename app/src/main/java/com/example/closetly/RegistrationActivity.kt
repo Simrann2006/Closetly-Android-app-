@@ -3,6 +3,7 @@ package com.example.closetly
 import android.app.Activity
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.hardware.lights.Light
 import android.icu.util.Calendar
 import android.os.Bundle
@@ -86,31 +87,34 @@ class RegistrationActivity : ComponentActivity() {
 }
 
 @Composable
-fun RegistrationBody(){
+fun RegistrationBody() {
+
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var visibility by remember { mutableStateOf(false) }
-    var isClicked by remember { mutableStateOf(false) }
-    var isForgotClicked by remember { mutableStateOf(false)}
-    var terms by remember { mutableStateOf(false) }
-    val calendar = Calendar.getInstance()
-//    val context = LocalContext.current
-//    val sharedPreferences = context.getSharedPreferences("User", Context.MODE_PRIVATE)
-//    val editor = sharedPreferences.edit()
     var selectedDate by remember { mutableStateOf("") }
-//    val activity = context as Activity
+
+    var visibility by remember { mutableStateOf(false) }
+    var isloginClicked by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    val calendar = Calendar.getInstance()
+
     val year = calendar.get(Calendar.YEAR)
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-//    var datepicker = DatePickerDialog(
-//        context,{
-//                _,y,m,d->
-//            selectedDate = "$y/${m+1}/$d"
-//
-//        },year,month,day
-//    )
 
+    var datepicker = DatePickerDialog(
+        context, { _, y, m, d ->
+            selectedDate = "$y/${m + 1}/$d"
+
+        }, year, month, day
+    )
+
+    Scaffold { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -122,42 +126,101 @@ fun RegistrationBody(){
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
-            Column (
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp)
-            ){
+                    .padding(horizontal = 20.dp, vertical = 15.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    "Create an account ",
+                    "Sign Up ",
                     modifier = Modifier
                         .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
                     style = TextStyle(
                         fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 32.sp,
+                        fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
                         color = Brown,
                     )
                 )
-                Text(
-                    "Sign up to continue ",
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = fullName,
+
+                    onValueChange = { data ->
+                        fullName = data
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_badge_24),
+                            contentDescription = null,
+                            tint = Light_brown
+                        )
+                    },
+                    label = {
+                        Text(
+                            "Full Name", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
+                            )
+                        )
+                    },
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Light,
-                        color = Brown,
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    shape = RoundedCornerShape((22.dp)),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedIndicatorColor = Brown,
+                        unfocusedIndicatorColor = Light_brown
                     )
                 )
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
 
+                Spacer(Modifier.height(15.dp))
+
+                OutlinedTextField(
+                    value = selectedDate,
+
+                    onValueChange = { data ->
+                        selectedDate = data
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_calendar_month_24),
+                            contentDescription = null,
+                            tint = Light_brown
+                        )
+                    },
+                    placeholder = {
+                        Text(
+                            "dd/mm/yyyy", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
+                            )
+                        )
+                    },
+                    enabled = false,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                        .clickable{datepicker.show()},
+                    shape = RoundedCornerShape((22.dp)),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedIndicatorColor = Brown,
+                        unfocusedIndicatorColor = Light_brown
+                    )
+                )
+
+                Spacer(Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = email,
@@ -168,108 +231,20 @@ fun RegistrationBody(){
                         email = data
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_mail_outline_24),
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_mail_outline_24),
                             contentDescription = null,
                             tint = Light_brown
                         )
                     },
                     label = {
-                        Text("Email", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 15.sp,
-                            color = Grey)
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(6.dp))
-
-                OutlinedTextField(
-                    value = password,
-
-                    onValueChange = { data ->
-                        password = data
-                    },
-                    visualTransformation = if(visibility) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            visibility = !visibility
-                        }) {
-                            Icon(
-                                painter = if (visibility)
-                                    painterResource(R.drawable.outline_visibility_off_24) else
-                                    painterResource(R.drawable.outline_visibility_24),
-                                contentDescription = null
+                        Text(
+                            "Email", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
                             )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            tint = Light_brown
                         )
-                    },
-                    label = {
-                        Text(" Create Password", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 15.sp,
-                            color = Grey
-                        ))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-                Spacer(Modifier.height(6.dp))
-
-                OutlinedTextField(
-                    value = password,
-
-                    onValueChange = { data ->
-                        password = data
-                    },
-                    visualTransformation = if(visibility) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            visibility = !visibility
-                        }) {
-                            Icon(
-                                painter = if (visibility)
-                                    painterResource(R.drawable.outline_visibility_off_24) else
-                                    painterResource(R.drawable.outline_visibility_24),
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    label = {
-                        Text(" Confirm Password", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 15.sp,
-                            color = Grey
-                        ))
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -286,70 +261,105 @@ fun RegistrationBody(){
                 Spacer(Modifier.height(8.dp))
 
                 OutlinedTextField(
-                    value = selectedDate,
-                    onValueChange = {
-                        selectedDate = it
+                    value = password,
+
+                    onValueChange = { data ->
+                        password = data
+                    },
+                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            visibility = !visibility
+                        }) {
+                            Icon(
+                                painter = if (visibility)
+                                    painterResource(R.drawable.outline_visibility_off_24) else
+                                    painterResource(R.drawable.outline_visibility_24),
+                                contentDescription = null
+                            )
+                        }
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_calendar_month_24),
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_lock_24),
                             contentDescription = null,
                             tint = Light_brown
                         )
                     },
-                    placeholder = {
-                        Text("dd/mm/yyyy")
+                    label = {
+                        Text(
+                            " Create Password", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
+                            )
+                        )
                     },
-                    enabled = false,
                     modifier = Modifier
-                        .fillMaxWidth().clickable{
-//                        datepicker.show()
-                        }
-                        .padding(horizontal = 15.dp),
-                    shape = RoundedCornerShape(22.dp),
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    shape = RoundedCornerShape((22.dp)),
                     colors = TextFieldDefaults.colors(
-                        disabledIndicatorColor = Brown,
-                        disabledContainerColor = White,
                         focusedContainerColor = White,
-                        unfocusedContainerColor = Light_brown,
+                        unfocusedContainerColor = White,
                         focusedIndicatorColor = Brown,
                         unfocusedIndicatorColor = Light_brown
                     )
                 )
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    Checkbox(
-                        checked = terms,
-                        onCheckedChange = {
-                            terms = it
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Blue,
-                            checkmarkColor = White
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = password,
+
+                    onValueChange = { data ->
+                        password = data
+                    },
+                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            visibility = !visibility
+                        }) {
+                            Icon(
+                                painter = if (visibility)
+                                    painterResource(R.drawable.outline_visibility_off_24) else
+                                    painterResource(R.drawable.outline_visibility_24),
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_lock_24),
+                            contentDescription = null,
+                            tint = Light_brown
                         )
+                    },
+                    label = {
+                        Text(
+                            " Confirm Password", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
+                            )
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp),
+                    shape = RoundedCornerShape((22.dp)),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedIndicatorColor = Brown,
+                        unfocusedIndicatorColor = Light_brown
                     )
-                    Text("I agree to terms & conditions")
-                }
+                )
+
+                Spacer(Modifier.height(20.dp))
 
                 Button(
                     onClick = {
-//                    if(!terms){
-//                        Toast.makeText(context,"Please agree to terms & conditions", Toast.LENGTH_SHORT).show()
-//                    }else{
-//                        editor.putString("email",email)
-//                        editor.putString("password",password)
-//                        editor.putString("date",selectedDate)
-//
-//                        editor.apply()
-//                        activity.finish()
-//
-//                        Toast.makeText(context,"Registration success", Toast.LENGTH_SHORT).show()
-//
-//
-//                    }
-
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
@@ -357,7 +367,7 @@ fun RegistrationBody(){
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .height(55.dp)
-                        .width(170.dp)
+                        .width(170.dp),
                 ) {
                     Text(
                         "Sign Up", style = TextStyle(
@@ -374,9 +384,10 @@ fun RegistrationBody(){
                         .padding(vertical = 15.dp, horizontal = 15.dp),
 
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     HorizontalDivider(Modifier.weight(1f), color = Black)
-                    Text("or sign in with",
+                    Text(
+                        "or continue with ",
                         style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular))
                         ),
@@ -401,10 +412,10 @@ fun RegistrationBody(){
                     ),
                     border = BorderStroke(1.dp, Black)
                 ) {
-                    Row (
+                    Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
-                    ){
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.google),
                             contentDescription = null,
@@ -421,40 +432,47 @@ fun RegistrationBody(){
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(120.dp))
+
+                Spacer(modifier = Modifier.height(130.dp))
 
                 Row(
                     modifier = Modifier
                         .padding(15.dp, vertical = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
-                ){
-                    Text("Already have an account?", style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        color = Black,
-                        fontSize = 14.sp
-                    ))
-
-                    Spacer(Modifier.width(4.dp))
+                ) {
+                    Text(
+                        "Already have an account?", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            color = Black,
+                            fontSize = 14.sp
+                        )
+                    )
 
                     TextButton(
-                        onClick = {isClicked = true},
+                        onClick = {
+                            isloginClicked = true
+                            val intent = Intent(context,
+                                LoginActivity::class.java)
+
+                            context.startActivity(intent)
+                            activity.finish()},
                         contentPadding = PaddingValues(0.dp)
-                    ){
-                        Text("Login", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = if (isClicked) Color.Blue else Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        ))
+                    ) {
+                        Text(
+                            "Login", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                color = if (isloginClicked) Color.Blue else Color.Black,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        )
                     }
                 }
 
             }
-
         }
     }
-
-
+}
 
 
 @Composable

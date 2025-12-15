@@ -72,7 +72,13 @@ fun MainBody(){
                 verticalArrangement = Arrangement.spacedBy(25.dp)
             ){
                 Button(
-                    onClick = {},
+                    onClick = {
+                        val intent = Intent(context,
+                            RegistrationActivity::class.java)
+
+                        context.startActivity(intent)
+                        activity.finish()
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
                     ),

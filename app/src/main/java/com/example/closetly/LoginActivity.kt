@@ -80,7 +80,7 @@ fun LoginBody(){
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
-    var isClicked by remember { mutableStateOf(false) }
+    var issignUpClicked by remember { mutableStateOf(false) }
     var isForgotClicked by remember { mutableStateOf(false)}
     var terms by remember { mutableStateOf(false) }
 
@@ -107,7 +107,7 @@ fun LoginBody(){
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ){
-                Spacer(Modifier.height(320.dp))
+                Spacer(Modifier.height(335.dp))
 
                 Text("Log in",
                     modifier = Modifier
@@ -342,12 +342,12 @@ fun LoginBody(){
                     Spacer(Modifier.width(4.dp))
 
                     TextButton(
-                        onClick = {isClicked = true},
+                        onClick = {issignUpClicked = true},
                         contentPadding = PaddingValues(0.dp)
                     ){
                         Text("Sign Up", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = if (isClicked) Color.Blue else Color.Black,
+                            color = if (issignUpClicked) Color.Blue else Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         ))
