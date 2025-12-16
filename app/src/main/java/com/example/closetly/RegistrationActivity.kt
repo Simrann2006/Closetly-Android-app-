@@ -2,9 +2,7 @@ package com.example.closetly
 
 import android.app.Activity
 import android.app.DatePickerDialog
-import android.content.Context
 import android.content.Intent
-import android.hardware.lights.Light
 import android.icu.util.Calendar
 import android.os.Bundle
 import android.widget.Toast
@@ -30,9 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,8 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -67,14 +59,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.model.UserModel
+import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
-import com.example.closetly.ui.theme.ClosetlyTheme
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.White
-import org.intellij.lang.annotations.JdkConstants
+import com.example.closetly.viewmodel.UserViewModel
 
 class RegistrationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,12 +82,17 @@ class RegistrationActivity : ComponentActivity() {
 @Composable
 fun RegistrationBody() {
 
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf("") }
 
-    var visibility by remember { mutableStateOf(false) }
+    var visibility1 by remember { mutableStateOf(false) }
+    var visibility2 by remember { mutableStateOf(false) }
+
     var isloginClicked by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -161,7 +159,7 @@ fun RegistrationBody() {
                             tint = Light_brown
                         )
                     },
-                    label = {
+                    placeholder = {
                         Text(
                             "Full Name", style = TextStyle(
                                 fontFamily = FontFamily(Font(R.font.poppins_regular)),
@@ -237,7 +235,7 @@ fun RegistrationBody() {
                             tint = Light_brown
                         )
                     },
-                    label = {
+                    placeholder = {
                         Text(
                             "Email", style = TextStyle(
                                 fontFamily = FontFamily(Font(R.font.poppins_regular)),
@@ -266,13 +264,13 @@ fun RegistrationBody() {
                     onValueChange = { data ->
                         password = data
                     },
-                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (visibility1) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = {
-                            visibility = !visibility
+                            visibility1 = !visibility1
                         }) {
                             Icon(
-                                painter = if (visibility)
+                                painter = if (visibility1)
                                     painterResource(R.drawable.outline_visibility_off_24) else
                                     painterResource(R.drawable.outline_visibility_24),
                                 contentDescription = null
@@ -310,18 +308,18 @@ fun RegistrationBody() {
                 Spacer(Modifier.height(8.dp))
 
                 OutlinedTextField(
-                    value = password,
+                    value = confirmPassword,
 
                     onValueChange = { data ->
-                        password = data
+                        confirmPassword = data
                     },
-                    visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (visibility2) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = {
-                            visibility = !visibility
+                            visibility2 = !visibility2
                         }) {
                             Icon(
-                                painter = if (visibility)
+                                painter = if (visibility2)
                                     painterResource(R.drawable.outline_visibility_off_24) else
                                     painterResource(R.drawable.outline_visibility_24),
                                 contentDescription = null
@@ -335,7 +333,7 @@ fun RegistrationBody() {
                             tint = Light_brown
                         )
                     },
-                    label = {
+                    placeholder = {
                         Text(
                             " Confirm Password", style = TextStyle(
                                 fontFamily = FontFamily(Font(R.font.poppins_regular)),
@@ -360,6 +358,44 @@ fun RegistrationBody() {
 
                 Button(
                     onClick = {
+                        when {
+                            email.isBlank() || password.isBlank() || fullName.isBlank() || selectedDate.isBlank() || confirmPassword.isBlank() -> {
+                                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG)
+                                    .show()
+                            }
+
+                            password != confirmPassword -> {
+                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_LONG)
+                                    .show()
+                            }
+                            else -> {
+                                userViewModel.register(email, password, fullName, selectedDate) {
+                                        success, message, userId ->
+                                    if(success){
+                                        val model = UserModel(
+                                            userId = userId,
+                                            email = email,
+                                            fullName = fullName,
+                                            selectedDate = selectedDate
+                                        )
+                                        userViewModel.addUserToDatabase(userId, model) {
+                                                success, message ->
+                                            if(success){
+                                                Toast.makeText(context,message, Toast.LENGTH_LONG).show()
+                                            }
+                                            else{
+                                                Toast.makeText(context,message, Toast.LENGTH_LONG).show()
+                                            }
+                                        }
+                                        val intent = Intent(context, LoginActivity::class.java)
+                                        context.startActivity(intent)
+                                        activity.finish()
+                                    }else{
+                                        Toast.makeText(context,message, Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown

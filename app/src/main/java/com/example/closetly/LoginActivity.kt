@@ -3,6 +3,7 @@ package com.example.closetly
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -57,12 +58,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.White
+import com.example.closetly.viewmodel.UserViewModel
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,6 +80,8 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginBody(){
 
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
@@ -87,6 +92,8 @@ fun LoginBody(){
     val context = LocalContext.current
     val activity = context as Activity
 
+    var isErrorEmail by remember { mutableStateOf(false) }
+    var isErrorPassword by remember { mutableStateOf(false) }
 
     Scaffold { padding ->
         Box(
@@ -137,7 +144,7 @@ fun LoginBody(){
                             tint = Light_brown
                         )
                     },
-                    label = {
+                    placeholder = {
                         Text("Email", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
@@ -183,7 +190,7 @@ fun LoginBody(){
                             tint = Light_brown
                         )
                     },
-                    label = {
+                    placeholder = {
                         Text("Password", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
@@ -256,7 +263,29 @@ fun LoginBody(){
                 Spacer(Modifier.height(13.dp))
 
                 Button(
-                    onClick = {},
+                    onClick = {
+                        if (email.isBlank() || password.isBlank()){
+                            isErrorEmail = email.isBlank()
+                            isErrorPassword = password.isBlank()
+                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG).show()
+                        }
+                        else {
+                            userViewModel.login(email, password) { success, message ->
+                                if (success) {
+                                    Toast.makeText(
+                                        context, message, Toast.LENGTH_LONG
+                                    ).show()
+                                    val intent = Intent(context, DashboardActivity::class.java)
+                                    context.startActivity(intent)
+                                    activity.finish()
+                                } else {
+                                    Toast.makeText(
+                                        context, message, Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        }
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
                     ),

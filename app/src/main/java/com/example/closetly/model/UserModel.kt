@@ -1,17 +1,17 @@
 package com.example.closetly.model
 
 data class UserModel(
-    var userId : String = "",
-    var fullName : String = "",
-    val dob : String = "",
-    var email : String = "",
+    val userId : String = "",
+    val fullName : String = "",
+    val selectedDate : String = "",
+    val email : String = "",
 ) {
     fun toMap() : Map<String, Any?>{
         return mapOf(
             "userId" to userId,
-            "email" to email,
             "fullName" to fullName,
-            "dob" to dob
+            "selectedDate" to selectedDate,
+            "email" to email,
         )
     }
 }

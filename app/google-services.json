@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "976494225720",
-    "firebase_url": "https://practice-22e6d-default-rtdb.firebaseio.com",
-    "project_id": "practice-22e6d",
-    "storage_bucket": "practice-22e6d.firebasestorage.app"
+    "project_number": "233120554772",
+    "firebase_url": "https://closetly-f2f11-default-rtdb.firebaseio.com",
+    "project_id": "closetly-f2f11",
+    "storage_bucket": "closetly-f2f11.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:976494225720:android:c89bfd959cd220bddef9cd",
+        "mobilesdk_app_id": "1:233120554772:android:ce0ef64861b17cc2ae6c01",
         "android_client_info": {
           "package_name": "com.example.closetly"
         }
@@ -16,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBmuTkW3CYz6TPEmxLyBoIEQnIIKcZpGok"
+          "current_key": "AIzaSyCk0-YJRreWNJoVVtRUVCQ3IZjXf_b2gn4"
         }
       ],
       "services": {
