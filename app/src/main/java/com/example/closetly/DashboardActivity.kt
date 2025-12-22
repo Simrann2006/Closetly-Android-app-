@@ -119,7 +119,7 @@ fun DashboardBody(){
         Box (
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = padding.calculateTopPadding())
+                .padding(padding)
                 .background(color = Brown)
         ){
             when(selectedIndex){

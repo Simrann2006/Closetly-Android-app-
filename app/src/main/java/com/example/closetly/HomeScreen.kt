@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,145 +68,333 @@ fun HomeScreen() {
 
     val scrollState = rememberScrollState()
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(scrollState),
+//            .verticalScroll(scrollState)
+            .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        HorizontalPager(
-            count = images.size,
-            state = pagerState,
-        ) { indexOfImages ->
+        item {
+            HorizontalPager(
+                count = images.size,
+                state = pagerState,
+            ) { indexOfImages ->
 
-            Image(
-                painter = painterResource(id = images[indexOfImages]),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth()
-                    .height(300.dp)
-                    .clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-
-        HorizontalPagerIndicator(
-            pagerState = pagerState,
-            pageCount = 4,
-            activeColor = Color.White,
-            inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
-        )
-        Row (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 12.dp),
-
-            verticalAlignment = Alignment.CenterVertically,
-
-        ) {
-            Image(
-                painter = painterResource(R.drawable.image4),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.LightGray, CircleShape)
-            )
-            Spacer(modifier = Modifier.width(13.dp))
-
-            Text("Emily",
-                style = TextStyle(
-                    fontSize = 23.sp,
-                    fontWeight = FontWeight.Bold
+                Image(
+                    painter = painterResource(id = images[indexOfImages]),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(MaterialTheme.shapes.medium),
+                    contentScale = ContentScale.Crop
                 )
-            )
-            Spacer(modifier = Modifier.width(50.dp))
+            }
+            Spacer(Modifier.height(10.dp))
 
-            androidx.compose.material3.Button(
-                onClick = {
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(32.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(R.color.purple_200),
-                ),
-                shape = RoundedCornerShape(8.dp),
+            HorizontalPagerIndicator(
+                pagerState = pagerState,
+                pageCount = 4,
+                activeColor = Color.White,
+                inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
+            )
+            Card(
+                contentColor = Color.Transparent
             ) {
-                Text(
-                    "Follow", style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 12.dp),
 
-            Icon(
-                painter = painterResource(R.drawable.edit),
-                null,
-                modifier = Modifier.size(50.dp)
-            )
+                        verticalAlignment = Alignment.CenterVertically,
+
+                        ) {
+                        Image(
+                            painter = painterResource(R.drawable.image4),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color.LightGray, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(13.dp))
+
+                        Text(
+                            "Emily",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(50.dp))
+
+                        androidx.compose.material3.Button(
+                            onClick = {
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(32.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.purple_200),
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                        ) {
+                            Text(
+                                "Follow", style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.edit),
+                            null,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.lu),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(20.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.img),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "1143", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.chat),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "59", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.share),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "34", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Eco-friendly, wallet-friendly.", style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        )
+                    }
+                    Row {
+                        Text(
+                            "22 hours ago", style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Card(
+                contentColor = Color.Transparent
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 12.dp),
+
+                        verticalAlignment = Alignment.CenterVertically,
+
+                        ) {
+                        Image(
+                            painter = painterResource(R.drawable.image1),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color.LightGray, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(13.dp))
+
+                        Text(
+                            "kendall",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(50.dp))
+
+                        androidx.compose.material3.Button(
+                            onClick = {
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(32.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.purple_200),
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                        ) {
+                            Text(
+                                "Follow", style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.edit),
+                            null,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.jacket),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(20.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.img),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "509", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.chat),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "32", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.share),
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            "3", style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "“Style that tells a story”", style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Row {
+                        Text(
+                            "5 days ago", style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        )
+                    }
+                }
+            }
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Image(painter = painterResource(R.drawable.lu),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-            )
-            }
-            Spacer(modifier = Modifier.width(20.dp))
-
-            Row (
-                modifier = Modifier
-                    .fillMaxWidth(),
-
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(
-                    painter = painterResource(R.drawable.img),
-                    null,
-                    modifier = Modifier.size(25.dp)
-                )
-                Text("1143",style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                ))
-                Spacer(modifier = Modifier.width(5.dp))
-
-                Icon(
-                    painter = painterResource(R.drawable.chat),
-                    null,
-                    modifier = Modifier.size(25.dp)
-                )
-                Text("59",style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                ))
-                Spacer(modifier = Modifier.width(5.dp))
-
-                Icon(
-                    painter = painterResource(R.drawable.share),
-                    null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text("34",style = TextStyle(
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                ))
-            }
-        Text(
-            "Eco-friendly, wallet-friendly.", style = TextStyle(
-                fontSize = 23.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        )
     }
 }
 
