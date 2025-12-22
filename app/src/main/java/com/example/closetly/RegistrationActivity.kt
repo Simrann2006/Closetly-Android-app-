@@ -1,9 +1,7 @@
 package com.example.closetly
 
 import android.app.Activity
-import android.app.DatePickerDialog
 import android.content.Intent
-import android.icu.util.Calendar
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -24,16 +22,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -79,6 +80,9 @@ class RegistrationActivity : ComponentActivity() {
     }
 }
 
+// Data class for country codes
+data class Country(val name: String, val code: String, val dialCode: String)
+
 @Composable
 fun RegistrationBody() {
 
@@ -86,433 +90,545 @@ fun RegistrationBody() {
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf("") }
 
     var visibility1 by remember { mutableStateOf(false) }
     var visibility2 by remember { mutableStateOf(false) }
 
     var isloginClicked by remember { mutableStateOf(false) }
 
+    // Country code picker state
+    var selectedCountry by remember { mutableStateOf(Country("United States", "US", "+1")) }
+    var expanded by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val activity = context as Activity
 
-    val calendar = Calendar.getInstance()
+    val scrollState = rememberScrollState()
 
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-
-    var datepicker = DatePickerDialog(
-        context, { _, y, m, d ->
-            selectedDate = "$y/${m + 1}/$d"
-
-        }, year, month, day
+    // List of popular countries with their dial codes
+    val countries = listOf(
+        Country("United States", "US", "+1"),
+        Country("United Kingdom", "GB", "+44"),
+        Country("Canada", "CA", "+1"),
+        Country("Australia", "AU", "+61"),
+        Country("India", "IN", "+91"),
+        Country("Germany", "DE", "+49"),
+        Country("France", "FR", "+33"),
+        Country("Italy", "IT", "+39"),
+        Country("Spain", "ES", "+34"),
+        Country("Japan", "JP", "+81"),
+        Country("China", "CN", "+86"),
+        Country("Brazil", "BR", "+55"),
+        Country("Mexico", "MX", "+52"),
+        Country("South Korea", "KR", "+82"),
+        Country("Netherlands", "NL", "+31"),
+        Country("Sweden", "SE", "+46"),
+        Country("Norway", "NO", "+47"),
+        Country("Denmark", "DK", "+45"),
+        Country("Finland", "FI", "+358"),
+        Country("Switzerland", "CH", "+41")
     )
 
-    Scaffold { padding ->
-        Box(
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Image(
+            painter = painterResource(R.drawable.registrationbg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding()
+                .padding(horizontal = 20.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(R.drawable.registrationbg),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+            Spacer(modifier = Modifier.height(50.dp))
+
+            // Title
+            Text("Create Account",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Brown,
+                )
             )
-            Column(
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                "Join us and start your wardrobe journey",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Grey,
+                )
+            )
+
+            Spacer(modifier = Modifier.height(25.dp))
+
+            // Full Name Field
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { data ->
+                    fullName = data
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_person_24),
+                        contentDescription = null,
+                        tint = Light_brown
+                    )
+                },
+                placeholder = {
+                    Text(
+                        "Full Name", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Grey
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 15.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape((22.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = Brown,
+                    unfocusedIndicatorColor = Light_brown
+                )
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Phone Number Field with Country Code
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    "Sign Up ",
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Brown,
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = fullName,
-
-                    onValueChange = { data ->
-                        fullName = data
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_badge_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            "Full Name", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(15.dp))
-
-                OutlinedTextField(
-                    value = selectedDate,
-
-                    onValueChange = { data ->
-                        selectedDate = data
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_calendar_month_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            "dd/mm/yyyy", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    enabled = false,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp)
-                        .clickable{datepicker.show()},
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = email,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email
-                    ),
-                    onValueChange = { data ->
-                        email = data
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_mail_outline_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            "Email", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = password,
-
-                    onValueChange = { data ->
-                        password = data
-                    },
-                    visualTransformation = if (visibility1) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            visibility1 = !visibility1
-                        }) {
+                // Country Code Picker
+                Box {
+                    OutlinedTextField(
+                        value = selectedCountry.dialCode,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
                             Icon(
-                                painter = if (visibility1)
-                                    painterResource(R.drawable.outline_visibility_off_24) else
-                                    painterResource(R.drawable.outline_visibility_24),
-                                contentDescription = null
+                                painter = painterResource(android.R.drawable.arrow_down_float),
+                                contentDescription = "Select Country",
+                                tint = Light_brown,
+                                modifier = Modifier.size(20.dp)
                             )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            tint = Light_brown
+                        },
+                        modifier = Modifier
+                            .width(110.dp)
+                            .clickable { expanded = true },
+                        shape = RoundedCornerShape(22.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = White,
+                            unfocusedContainerColor = White,
+                            focusedIndicatorColor = Brown,
+                            unfocusedIndicatorColor = Light_brown,
+                            disabledContainerColor = White,
+                            disabledIndicatorColor = Light_brown
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Black
                         )
-                    },
-                    label = {
-                        Text(
-                            " Create Password", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
                     )
-                )
 
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = confirmPassword,
-
-                    onValueChange = { data ->
-                        confirmPassword = data
-                    },
-                    visualTransformation = if (visibility2) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            visibility2 = !visibility2
-                        }) {
-                            Icon(
-                                painter = if (visibility2)
-                                    painterResource(R.drawable.outline_visibility_off_24) else
-                                    painterResource(R.drawable.outline_visibility_24),
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text(
-                            " Confirm Password", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(20.dp))
-
-                Button(
-                    onClick = {
-                        when {
-                            email.isBlank() || password.isBlank() || fullName.isBlank() || selectedDate.isBlank() || confirmPassword.isBlank() -> {
-                                Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG)
-                                    .show()
-                            }
-
-                            password != confirmPassword -> {
-                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_LONG)
-                                    .show()
-                            }
-                            else -> {
-                                userViewModel.register(email, password, fullName, selectedDate) {
-                                        success, message, userId ->
-                                    if(success){
-                                        val model = UserModel(
-                                            userId = userId,
-                                            email = email,
-                                            fullName = fullName,
-                                            selectedDate = selectedDate
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.height(300.dp)
+                    ) {
+                        countries.forEach { country ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "${country.name} (${country.dialCode})",
+                                        style = TextStyle(
+                                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                            fontSize = 14.sp
                                         )
-                                        userViewModel.addUserToDatabase(userId, model) {
-                                                success, message ->
-                                            if(success){
-                                                Toast.makeText(context,message, Toast.LENGTH_LONG).show()
-                                            }
-                                            else{
-                                                Toast.makeText(context,message, Toast.LENGTH_LONG).show()
-                                            }
+                                    )
+                                },
+                                onClick = {
+                                    selectedCountry = country
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Phone Number Input
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { data ->
+                        // Only allow digits
+                        if (data.all { it.isDigit() }) {
+                            phoneNumber = data
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone
+                    ),
+                    placeholder = {
+                        Text(
+                            "Phone Number", style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 15.sp,
+                                color = Grey
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedIndicatorColor = Brown,
+                        unfocusedIndicatorColor = Light_brown
+                    ),
+                    singleLine = true
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Email Field
+            OutlinedTextField(
+                value = email,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email
+                ),
+                onValueChange = { data ->
+                    email = data
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_mail_outline_24),
+                        contentDescription = null,
+                        tint = Light_brown
+                    )
+                },
+                placeholder = {
+                    Text(
+                        "Email", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Grey
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape((22.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = Brown,
+                    unfocusedIndicatorColor = Light_brown
+                )
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Password Field
+            OutlinedTextField(
+                value = password,
+                onValueChange = { data ->
+                    password = data
+                },
+                visualTransformation = if (visibility1) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = {
+                        visibility1 = !visibility1
+                    }) {
+                        Icon(
+                            painter = if (visibility1)
+                                painterResource(R.drawable.outline_visibility_off_24) else
+                                painterResource(R.drawable.outline_visibility_24),
+                            contentDescription = null
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_lock_24),
+                        contentDescription = null,
+                        tint = Light_brown
+                    )
+                },
+                placeholder = {
+                    Text(
+                        "Create Password", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Grey
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape((22.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = Brown,
+                    unfocusedIndicatorColor = Light_brown
+                )
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Confirm Password Field
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { data ->
+                    confirmPassword = data
+                },
+                visualTransformation = if (visibility2) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = {
+                        visibility2 = !visibility2
+                    }) {
+                        Icon(
+                            painter = if (visibility2)
+                                painterResource(R.drawable.outline_visibility_off_24) else
+                                painterResource(R.drawable.outline_visibility_24),
+                            contentDescription = null
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_lock_24),
+                        contentDescription = null,
+                        tint = Light_brown
+                    )
+                },
+                placeholder = {
+                    Text(
+                        "Confirm Password", style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Grey
+                        )
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape((22.dp)),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = Brown,
+                    unfocusedIndicatorColor = Light_brown
+                )
+            )
+
+            Spacer(Modifier.height(25.dp))
+
+            // Create Account Button
+            Button(
+                onClick = {
+                    when {
+                        fullName.isBlank() || phoneNumber.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG)
+                                .show()
+                        }
+
+                        password != confirmPassword -> {
+                            Toast.makeText(context, "Passwords do not match", Toast.LENGTH_LONG)
+                                .show()
+                        }
+
+                        phoneNumber.length < 7 -> {
+                            Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_LONG)
+                                .show()
+                        }
+
+                        else -> {
+                            val fullPhoneNumber = "${selectedCountry.dialCode}$phoneNumber"
+                            // You'll need to update your backend to accept phone number
+                            // For now, we'll pass empty string for DOB
+                            userViewModel.register(email, password, fullName, phoneNumber) {
+                                    success, message, userId ->
+                                if (success) {
+                                    val model = UserModel(
+                                        userId = userId,
+                                        email = email,
+                                        fullName = fullName,
+                                        phoneNumber = fullPhoneNumber
+                                    )
+                                    userViewModel.addUserToDatabase(userId, model) {
+                                            success, message ->
+                                        if (success) {
+                                            Toast.makeText(
+                                                context,
+                                                message,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                message,
+                                                Toast.LENGTH_LONG
+                                            ).show()
                                         }
-                                        val intent = Intent(context, LoginActivity::class.java)
-                                        context.startActivity(intent)
-                                        activity.finish()
-                                    }else{
-                                        Toast.makeText(context,message, Toast.LENGTH_LONG).show()
                                     }
+                                    val intent = Intent(context, LoginActivity::class.java)
+                                    context.startActivity(intent)
+                                    activity.finish()
+                                } else {
+                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Brown
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .height(55.dp)
-                        .width(170.dp),
-                ) {
-                    Text(
-                        "Sign Up", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 15.dp, horizontal = 15.dp),
-
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(Modifier.weight(1f), color = Black)
-                    Text(
-                        "or continue with ",
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular))
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 15.dp),
-                        color = Brown
-                    )
-                    HorizontalDivider(Modifier.weight(1f), color = Black)
-                }
-
-                Spacer(Modifier.height(1.dp))
-
-                OutlinedButton(
-                    {},
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(43.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Light_grey,
-                        contentColor = Black
-                    ),
-                    border = BorderStroke(1.dp, Black)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.google),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Google",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Brown
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .height(55.dp)
+                    .width(230.dp),
+            ) {
+                Text(
+                    "Create Account", style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
 
-                Spacer(modifier = Modifier.height(130.dp))
+            Spacer(Modifier.height(20.dp))
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp, horizontal = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(Modifier.weight(1f), color = Black, thickness = 1.dp)
+                Text(
+                    "or continue with",
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    color = Brown
+                )
+                HorizontalDivider(Modifier.weight(1f), color = Black, thickness = 1.dp)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = {},
+                modifier = Modifier
+                    .width(160.dp)
+                    .height(50.dp),
+                shape = RoundedCornerShape(15.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Light_grey,
+                    contentColor = Black
+                ),
+                border = BorderStroke(1.dp, Black)
+            ) {
                 Row(
-                    modifier = Modifier
-                        .padding(15.dp, vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.google),
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Google",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Row(
+                modifier = Modifier.padding(15.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Already have an account?", style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        color = Black,
+                        fontSize = 14.sp
+                    )
+                )
+
+                Spacer(Modifier.width(5.dp))
+
+                TextButton(
+                    onClick = {
+                        isloginClicked = true
+                        val intent = Intent(
+                            context,
+                            LoginActivity::class.java
+                        )
+                        context.startActivity(intent)
+                        activity.finish()
+                    },
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
-                        "Already have an account?", style = TextStyle(
+                        "Login", style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = Black,
+                            color = if (isloginClicked) Color.Blue else Black,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                     )
-
-                    TextButton(
-                        onClick = {
-                            isloginClicked = true
-                            val intent = Intent(context,
-                                LoginActivity::class.java)
-
-                            context.startActivity(intent)
-                            activity.finish()},
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text(
-                            "Login", style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                color = if (isloginClicked) Color.Blue else Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        )
-                    }
                 }
-
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
-
 @Composable
 @Preview
-fun PreviewRegistration(){
+fun PreviewRegistration() {
     RegistrationBody()
 }

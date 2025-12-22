@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -32,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -64,6 +66,7 @@ import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
+import com.example.closetly.ui.theme.Red
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.UserViewModel
 
@@ -85,304 +88,358 @@ fun LoginBody(){
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
-    var issignUpClicked by remember { mutableStateOf(false) }
-    var isForgotClicked by remember { mutableStateOf(false)}
     var terms by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val activity = context as Activity
 
-    var isErrorEmail by remember { mutableStateOf(false) }
-    var isErrorPassword by remember { mutableStateOf(false) }
+    var isforgotClicked by remember { mutableStateOf(false) }
+    var issignupClicked by remember { mutableStateOf(false) }
 
-    Scaffold { padding ->
-        Box(
+    val scrollState = rememberScrollState()
+
+    var isError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ){
+        Image(
+            painter = painterResource(R.drawable.loginbg),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ){
-            Image(painter = painterResource(R.drawable.loginbg),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+            Spacer(Modifier.height(340.dp))
+
+            Text(
+                "Log in",
+                modifier = Modifier.fillMaxWidth(),
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontSize = 52.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Brown,
+                    textAlign = TextAlign.Center
+                )
             )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ){
-                Spacer(Modifier.height(335.dp))
+            Spacer(Modifier.height(2.dp))
 
-                Text("Log in",
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 52.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Brown,
-                        textAlign = TextAlign.Center
+            OutlinedTextField(
+                value = email,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email
+                ),
+                onValueChange = { data ->
+                    email = data
+                    if (isError) {
+                        isError = false
+                        errorMessage = ""
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_mail_outline_24),
+                        contentDescription = null,
+                        tint = if (isError) Red else Light_brown
                     )
-                )
-
-                Spacer(Modifier.height(2.dp))
-
-                OutlinedTextField(
-                    value = email,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email
-                    ),
-                    onValueChange = { data ->
-                        email = data
-                    },
-                    leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_mail_outline_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text("Email", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 15.sp,
-                            color = Grey)
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Spacer(Modifier.height(6.dp))
-
-                OutlinedTextField(
-                    value = password,
-
-                    onValueChange = { data ->
-                        password = data
-                    },
-                    visualTransformation = if(visibility) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            visibility = !visibility
-                        }) {
-                            Icon(
-                                painter = if (visibility)
-                                    painterResource(R.drawable.outline_visibility_off_24) else
-                                    painterResource(R.drawable.outline_visibility_24),
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            tint = Light_brown
-                        )
-                    },
-                    placeholder = {
-                        Text("Password", style = TextStyle(
+                },
+                placeholder = {
+                    Text(
+                        "Email",
+                        style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
                             color = Grey
-                        ))
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape((22.dp)),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedIndicatorColor = Brown,
-                        unfocusedIndicatorColor = Light_brown
-                    )
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = terms,
-                            onCheckedChange = {
-                                terms = it
-                            },
-                            modifier = Modifier.size(24.dp),
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = Brown,
-                                checkmarkColor = White,
-                                uncheckedColor = Light_brown
-                            )
                         )
-                        Spacer(Modifier.width(4.dp))
+                    )
+                },
+                isError = isError,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape(22.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = if(isError) Red else Brown,
+                    unfocusedIndicatorColor = if(isError) Red else Light_brown,
+                    errorContainerColor = White,
+                    errorIndicatorColor = Red
+                )
+            )
 
-                        Text("Remember me", style = TextStyle(
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { data ->
+                    password = data
+                    if (isError) {
+                        isError = false
+                        errorMessage = ""
+                    }
+                },
+                visualTransformation = if(visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = {
+                        visibility = !visibility
+                    }) {
+                        Icon(
+                            painter = if (visibility)
+                                painterResource(R.drawable.outline_visibility_off_24) else
+                                painterResource(R.drawable.outline_visibility_24),
+                            contentDescription = null,
+                            tint = if (isError) Red else Light_brown
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_lock_24),
+                        contentDescription = null,
+                        tint = if (isError) Red else Light_brown
+                    )
+                },
+                placeholder = {
+                    Text(
+                        "Password",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            color = Grey
+                        )
+                    )
+                },
+                isError = isError,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                shape = RoundedCornerShape(22.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = White,
+                    unfocusedContainerColor = White,
+                    focusedIndicatorColor = if(isError) Red else Brown,
+                    unfocusedIndicatorColor = if(isError) Red else Light_brown,
+                    errorContainerColor = White,
+                    errorIndicatorColor = Red
+                )
+            )
+
+            if (isError && errorMessage.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    errorMessage,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 12.sp,
+                        color = Red
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = terms,
+                        onCheckedChange = {
+                            terms = it
+                        },
+                        modifier = Modifier.size(24.dp),
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Brown,
+                            checkmarkColor = White,
+                            uncheckedColor = Light_brown
+                        )
+                    )
+                    Spacer(Modifier.width(4.dp))
+
+                    Text(
+                        "Remember me",
+                        style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
-                        ))
-                    }
-
-                    TextButton(
-                        onClick = {
-                            isForgotClicked = true
-                            val intent = Intent(context,
-                                ForgotActivity::class.java)
-
-                            context.startActivity(intent)
-                            activity.finish()
-                        },
-                        contentPadding = PaddingValues(0.dp),
-                        modifier = Modifier.height(30.dp)
-                    ) {
-                        Text("Forgot Password?", style = TextStyle(
-                            color = if (isForgotClicked) Color.Blue else Brown,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        ))
-                    }
+                        )
+                    )
                 }
 
-                Spacer(Modifier.height(13.dp))
-
-                Button(
+                TextButton(
                     onClick = {
-                        if (email.isBlank() || password.isBlank()){
-                            isErrorEmail = email.isBlank()
-                            isErrorPassword = password.isBlank()
-                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG).show()
+                        isforgotClicked = true
+                        val intent = Intent(context, ForgotActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.height(30.dp)
+                ) {
+                    Text(
+                        "Forgot Password?",
+                        style = TextStyle(
+                            color = if(isforgotClicked) Blue else Brown,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(13.dp))
+
+            Button(
+                onClick = {
+                    when {
+                        email.isBlank() || password.isBlank() -> {
+                            isError = true
+                            errorMessage = "Please fill all fields"
                         }
-                        else {
+                        else -> {
                             userViewModel.login(email, password) { success, message ->
                                 if (success) {
-                                    Toast.makeText(
-                                        context, message, Toast.LENGTH_LONG
-                                    ).show()
+                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
                                     val intent = Intent(context, DashboardActivity::class.java)
                                     context.startActivity(intent)
                                     activity.finish()
                                 } else {
-                                    Toast.makeText(
-                                        context, message, Toast.LENGTH_LONG
-                                    ).show()
+                                    isError = true
+                                    errorMessage = "Invalid credentials"
                                 }
                             }
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Brown
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .height(55.dp)
-                        .width(170.dp)
-                ) {
-                    Text(
-                        "Log in", style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 15.dp, horizontal = 15.dp),
-
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    HorizontalDivider(Modifier.weight(1f), color = Black)
-                    Text("or sign in with",
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular))
-                        ),
-                        modifier = Modifier
-                            .padding(horizontal = 15.dp),
-                        color = Brown
-                    )
-                    HorizontalDivider(Modifier.weight(1f), color = Black)
-                }
-
-                Spacer(Modifier.height(1.dp))
-
-                OutlinedButton(
-                    {},
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(43.dp),
-                    shape = RoundedCornerShape(15.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Light_grey,
-                        contentColor = Black
-                    ),
-                    border = BorderStroke(1.dp, Black)
-                ) {
-                    Row (
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ){
-                        Image(
-                            painter = painterResource(R.drawable.google),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Google",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        )
                     }
-                }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Brown
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .height(55.dp)
+                    .width(170.dp)
+            ) {
+                Text(
+                    "Log in",
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
 
-                Row(
-                    modifier = Modifier
-                        .padding(15.dp, vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 15.dp, horizontal = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                HorizontalDivider(Modifier.weight(1f), color = Black)
+                Text(
+                    "or sign in with",
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
+                    ),
+                    modifier = Modifier.padding(horizontal = 15.dp),
+                    color = Brown
+                )
+                HorizontalDivider(Modifier.weight(1f), color = Black)
+            }
+
+            Spacer(Modifier.height(1.dp))
+
+            OutlinedButton(
+                onClick = {},
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(43.dp),
+                shape = RoundedCornerShape(15.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Light_grey,
+                    contentColor = Black
+                ),
+                border = BorderStroke(1.dp, Black)
+            ) {
+                Row (
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ){
-                    Text("Don't have an account?", style = TextStyle(
+                    Image(
+                        painter = painterResource(R.drawable.google),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Google",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(15.dp))
+
+            Row(
+                modifier = Modifier.padding(15.dp, vertical = 1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Text(
+                    "Don't have an account?",
+                    style = TextStyle(
                         fontFamily = FontFamily(Font(R.font.poppins_regular)),
                         color = Black,
                         fontSize = 14.sp
-                    ))
+                    )
+                )
 
-                    Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(4.dp))
 
-                    TextButton(
-                        onClick = {issignUpClicked = true},
-                        contentPadding = PaddingValues(0.dp)
-                    ){
-                        Text("Sign Up", style = TextStyle(
+                TextButton(
+                    onClick = {
+                        issignupClicked = true
+                        val intent = Intent(context, RegistrationActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                    contentPadding = PaddingValues(0.dp)
+                ){
+                    Text(
+                        "Sign Up",
+                        style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = if (issignUpClicked) Color.Blue else Color.Black,
+                            color = if(issignupClicked) Blue else Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
-                        ))
-                    }
+                        )
+                    )
                 }
             }
+
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
