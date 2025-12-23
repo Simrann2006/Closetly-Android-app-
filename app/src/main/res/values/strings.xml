@@ -5,6 +5,5 @@
     <string name="title_activity_splash">SplashActivity</string>
     <string name="title_activity_forget">ForgetActivity</string>
     <string name="title_activity_dashboard">DashboardActivity</string>
-    <string name="title_activity_registration">RegistrationActivity</string>
-    <string name="title_activity_virtual_try_on_screen">VirtualTryOnScreen</string>
+    <string name="title_activity_edit_profile">EditProfileActivity</string>
 </resources>

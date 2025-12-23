@@ -14,7 +14,7 @@
         <activity
             android:name=".RegistrationActivity"
             android:exported="true"
-            android:label="@string/title_activity_registration"
+            android:label="RegistrationActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
