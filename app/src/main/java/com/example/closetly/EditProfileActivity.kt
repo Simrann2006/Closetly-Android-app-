@@ -58,7 +58,7 @@ fun EditProfile() {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-
+        // Background Image
         Image(
             painter = painterResource(id = R.drawable.registrationbg),
             contentDescription = null,
@@ -66,6 +66,7 @@ fun EditProfile() {
             modifier = Modifier.fillMaxSize()
         )
 
+        // Foreground UI
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -73,7 +74,6 @@ fun EditProfile() {
                 .padding(8.dp)
         ) {
             TopBar()
-
             ProfileImage()
 
             Row(
@@ -153,6 +153,7 @@ fun TopBar() {
     ) {
         IconButton(
             onClick = {
+                // Go back to ProfileActivity
                 (context as? Activity)?.finish()
             }
         ) {
@@ -166,9 +167,13 @@ fun TopBar() {
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "Edit Profile")
+            Text(
+                text = "Edit Profile",
+                style = MaterialTheme.typography.titleMedium
+            )
         }
 
+        // Right Spacer
         Box(modifier = Modifier.size(48.dp))
     }
 }
