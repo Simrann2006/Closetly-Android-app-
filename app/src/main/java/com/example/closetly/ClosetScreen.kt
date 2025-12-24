@@ -1,13 +1,10 @@
 package com.example.closetly
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,24 +12,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,15 +41,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_brown
@@ -56,18 +59,51 @@ import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Skin
 import com.example.closetly.ui.theme.White
 
+object CategoryPreferences {
+    private const val PREFS_NAME = "closetly_categories"
+    private const val KEY_CATEGORIES = "categories"
+    private const val DEFAULT_CATEGORIES = "All,Tops,Bottoms,Shoes,Accessories,Dresses,Outerwear"
+
+    fun getCategories(context: Context): List<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val categoriesString = prefs.getString(KEY_CATEGORIES, DEFAULT_CATEGORIES) ?: DEFAULT_CATEGORIES
+        return categoriesString.split(",")
+    }
+
+    fun addCategory(context: Context, category: String) {
+        val categories = getCategories(context).toMutableList()
+        if (!categories.contains(category)) {
+            categories.add(category)
+            saveCategories(context, categories)
+        }
+    }
+
+    private fun saveCategories(context: Context, categories: List<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_CATEGORIES, categories.joinToString(",")).apply()
+    }
+}
+
 @Composable
 fun ClosetScreen() {
 
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
-    var isFabExpanded by remember { mutableStateOf(false) }
-    var showAddCategoryDialog by remember { mutableStateOf(false) }
-    var showAddClothesDialog by remember { mutableStateOf(false) }
-    var newCategoryName by remember { mutableStateOf("") }
+    var refreshKey by remember { mutableStateOf(0) }
 
-    val categories = remember {
-        mutableStateListOf("All", "Tops", "Bottoms", "Shoes")
+    var categories by remember(refreshKey) {
+        mutableStateOf(CategoryPreferences.getCategories(context))
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            val newCategories = CategoryPreferences.getCategories(context)
+            if (newCategories != categories) {
+                categories = newCategories
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -116,20 +152,15 @@ fun ClosetScreen() {
                     singleLine = true
                 )
 
-                val rotation by animateFloatAsState(
-                    targetValue = if (isFabExpanded) 45f else 0f,
-                    label = "rotation"
-                )
-
                 FloatingActionButton(
-                    onClick = { isFabExpanded = !isFabExpanded },
+                    onClick = {
+                    },
                     containerColor = Skin,
                     modifier = Modifier.size(46.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_add_24),
-                        contentDescription = null,
-                        modifier = Modifier.rotate(rotation)
+                        contentDescription = null
                     )
                 }
             }
@@ -157,12 +188,8 @@ fun ClosetScreen() {
             Spacer(Modifier.height(16.dp))
 
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(57.dp)
-                    .padding(bottom = 12.dp),
-
-                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
                 color = Light_grey
             ) {
                 val scrollState = rememberScrollState()
@@ -170,8 +197,9 @@ fun ClosetScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(scrollState)
-                        .padding(7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     categories.forEach { category ->
                         CategoryButton(
@@ -182,157 +210,18 @@ fun ClosetScreen() {
                     }
                 }
             }
-        }
 
-        AnimatedVisibility(
-            visible = isFabExpanded,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 80.dp, end = 24.dp),
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Column(
-                horizontalAlignment = Alignment.End,
+            Spacer(Modifier.height(12.dp))
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Brown,
-                        shadowElevation = 4.dp
-                    ) {
-                        Text(
-                            "Add to Closet",
-                            modifier = Modifier.padding(12.dp, 6.dp),
-                            color = White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    FloatingActionButton(
-                        onClick = {
-                            showAddClothesDialog = true
-                            isFabExpanded = false
-                        },
-                        containerColor = Light_brown,
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.closet),
-                            contentDescription = "Add to Closet",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Brown,
-                        shadowElevation = 4.dp
-                    ) {
-                        Text(
-                            "Add Category",
-                            modifier = Modifier.padding(12.dp, 6.dp),
-                            color = White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    FloatingActionButton(
-                        onClick = {
-                            showAddCategoryDialog = true
-                            isFabExpanded = false
-                        },
-                        containerColor = Light_brown,
-                        modifier = Modifier.size(46.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_add_24),
-                            contentDescription = "Add Category",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                // TODO: Clothes data from database
             }
         }
-    }
-
-    if (showAddCategoryDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showAddCategoryDialog = false
-                newCategoryName = ""
-            },
-            title = {
-                Text(
-                    text = "Add New Category",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Enter category name:",
-                        fontSize = 14.sp,
-                        color = Grey
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = newCategoryName,
-                        onValueChange = { newCategoryName = it },
-                        singleLine = true,
-                        shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Brown,
-                            unfocusedBorderColor = Grey
-                        )
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (newCategoryName.isNotBlank() && !categories.contains(newCategoryName)) {
-                            categories.add(newCategoryName)
-                            newCategoryName = ""
-                            showAddCategoryDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Brown
-                    )
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showAddCategoryDialog = false
-                        newCategoryName = ""
-                    }
-                ) {
-                    Text("Cancel", color = Grey)
-                }
-            },
-            containerColor = White,
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-
-    if (showAddClothesDialog) {
-        TODO("Add to closet work")
     }
 }
 
@@ -344,28 +233,97 @@ fun CategoryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = Modifier
-            .height(38.dp),
+        modifier = Modifier.height(34.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) White else Light_grey,
             contentColor = if (isSelected) Brown else Grey
         ),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(17.dp),
         elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = if (isSelected) 4.dp else 0.dp,
-            pressedElevation = if (isSelected) 6.dp else 1.dp
+            defaultElevation = if (isSelected) 2.dp else 0.dp,
+            pressedElevation = if (isSelected) 4.dp else 1.dp
         ),
         border = if (isSelected) BorderStroke(
             width = 1.5.dp,
             brush = SolidColor(Brown)
         ) else null,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
     ) {
         Text(
             text = text,
             fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
         )
+    }
+}
+
+@Composable
+fun ClothingItemCard(
+    itemName: String,
+    category: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.75f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Light_grey
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(Light_brown.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.closet),
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = Brown.copy(alpha = 0.4f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = itemName,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = category,
+                    fontSize = 10.sp,
+                    color = Grey
+                )
+
+                Icon(
+                    painter = painterResource(R.drawable.baseline_add_24),
+                    contentDescription = "Favorite",
+                    modifier = Modifier.size(14.dp),
+                    tint = Skin
+                )
+            }
+        }
     }
 }
 
