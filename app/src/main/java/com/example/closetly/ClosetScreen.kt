@@ -154,6 +154,7 @@ fun ClosetScreen() {
 
                 FloatingActionButton(
                     onClick = {
+                        context.startActivity(Intent(context, AddClothesActivity::class.java))
                     },
                     containerColor = Skin,
                     modifier = Modifier.size(46.dp)
