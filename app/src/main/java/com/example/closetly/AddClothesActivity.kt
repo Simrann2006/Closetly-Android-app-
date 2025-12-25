@@ -1,6 +1,7 @@
 package com.example.closetly
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -17,8 +18,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -98,13 +97,18 @@ fun AddClothesBody() {
                 },
                 navigationIcon = {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(painterResource(R.drawable.baseline_close_24),
+                            contentDescription = null)
                     }
                 },
                 actions = {
                     TextButton(
                         onClick = {
-
+                            val imageUris = listOfNotNull(selectedImage)
+                            val intent = Intent(context, ClothesDetailsActivity::class.java)
+                            intent.putStringArrayListExtra("IMAGE_URIS", ArrayList(imageUris.map { it.toString() }))
+                            context.startActivity(intent)
+                            (context as? ComponentActivity)?.finish()
                         },
                         enabled = selectedImage != null
                     ) {

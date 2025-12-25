@@ -62,7 +62,7 @@ import com.example.closetly.ui.theme.White
 object CategoryPreferences {
     private const val PREFS_NAME = "closetly_categories"
     private const val KEY_CATEGORIES = "categories"
-    private const val DEFAULT_CATEGORIES = "All,Tops,Bottoms,Shoes,Accessories,Dresses,Outerwear"
+    private const val DEFAULT_CATEGORIES = "All,Tops,Bottoms,Shoes"
 
     fun getCategories(context: Context): List<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
