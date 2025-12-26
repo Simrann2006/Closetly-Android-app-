@@ -24,14 +24,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,14 +79,6 @@ object CategoryPreferences {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val categoriesString = prefs.getString(KEY_CATEGORIES, DEFAULT_CATEGORIES) ?: DEFAULT_CATEGORIES
         return categoriesString.split(",")
-    }
-
-    fun addCategory(context: Context, category: String) {
-        val categories = getCategories(context).toMutableList()
-        if (!categories.contains(category)) {
-            categories.add(category)
-            saveCategories(context, categories)
-        }
     }
 
     private fun saveCategories(context: Context, categories: List<String>) {
@@ -256,6 +253,7 @@ fun ClosetScreen() {
 @Composable
 fun ClothesItem(clothes: ClothesModel) {
     var showDialog by remember { mutableStateOf(false) }
+    var refreshKey by remember { mutableStateOf(0) }
     
     Card(
         modifier = Modifier
@@ -275,7 +273,7 @@ fun ClothesItem(clothes: ClothesModel) {
             ) {
                 AsyncImage(
                     model = clothes.image,
-                    contentDescription = clothes.clothesName,
+                    contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -309,7 +307,11 @@ fun ClothesItem(clothes: ClothesModel) {
     if (showDialog) {
         ClothesDetailsDialog(
             clothes = clothes,
-            onDismiss = { showDialog = false }
+            onDismiss = { showDialog = false },
+            onDeleted = { 
+                showDialog = false
+                refreshKey++
+            }
         )
     }
 }
@@ -317,8 +319,18 @@ fun ClothesItem(clothes: ClothesModel) {
 @Composable
 fun ClothesDetailsDialog(
     clothes: ClothesModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDeleted: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val clothesRepo = remember { ClothesRepoImpl() }
+    val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
+    val categoryRepo = remember { CategoryRepoImpl() }
+    val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
+    
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss
     ) {
@@ -336,7 +348,7 @@ fun ClothesDetailsDialog(
             ) {
                 AsyncImage(
                     model = clothes.image,
-                    contentDescription = clothes.clothesName,
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
@@ -374,8 +386,59 @@ fun ClothesDetailsDialog(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = { showEditDialog = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_edit_24),
+                            contentDescription = null,
+                            tint = Color.Green
+                        )
+                    }
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_delete_24),
+                            contentDescription = null,
+                            tint = Color.Red
+                        )
+                    }
+                }
             }
         }
+    }
+    
+    if (showEditDialog) {
+        EditClothesDialog(
+            clothes = clothes,
+            clothesViewModel = clothesViewModel,
+            categoryViewModel = categoryViewModel,
+            onDismiss = { 
+                showEditDialog = false
+                onDismiss()
+            },
+            onSaved = {
+                showEditDialog = false
+                onDismiss()
+            }
+        )
+    }
+    
+    if (showDeleteDialog) {
+        DeleteConfirmationDialog(
+            clothesName = clothes.clothesName,
+            onConfirm = {
+                clothesViewModel.deleteClothes(clothes.clothesId) { success, message ->
+                    if (success) {
+                        onDeleted()
+                    }
+                }
+                showDeleteDialog = false
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
     }
 }
 
@@ -400,6 +463,244 @@ fun DetailRow(label: String, value: String) {
             color = Black
         )
     }
+}
+
+@Composable
+fun EditClothesDialog(
+    clothes: ClothesModel,
+    clothesViewModel: ClothesViewModel,
+    categoryViewModel: CategoryViewModel,
+    onDismiss: () -> Unit,
+    onSaved: () -> Unit
+) {
+    var clothesName by remember { mutableStateOf(clothes.clothesName) }
+    var brand by remember { mutableStateOf(clothes.brand) }
+    var season by remember { mutableStateOf(clothes.season) }
+    var notes by remember { mutableStateOf(clothes.notes) }
+    var selectedCategory by remember { mutableStateOf(clothes.categoryName) }
+    var categories by remember { mutableStateOf<List<String>>(emptyList()) }
+    var expandedCategory by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        categoryViewModel.getAllCategories { success, _, data ->
+            if (success && data != null) {
+                categories = data.map { it.categoryName }
+            }
+        }
+    }
+    
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Edit Clothes",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                OutlinedTextField(
+                    value = clothesName,
+                    onValueChange = { clothesName = it },
+                    label = { Text("Clothes Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedCategory,
+                        onValueChange = { },
+                        label = { Text("Category") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expandedCategory = true },
+                        readOnly = true,
+                        enabled = false,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = Grey,
+                            disabledTextColor = Black
+                        ),
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                contentDescription = null
+                            )
+                        }
+                    )
+                    
+                    DropdownMenu(
+                        expanded = expandedCategory,
+                        onDismissRequest = { expandedCategory = false },
+                        modifier = Modifier.background(White)
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category) },
+                                onClick = {
+                                    selectedCategory = category
+                                    expandedCategory = false
+                                }
+                            )
+                        }
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { expandedCategory = true }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = season,
+                    onValueChange = { season = it },
+                    label = { Text("Season") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    ),
+                    maxLines = 4
+                )
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Light_grey
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Cancel", color = Black)
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val updatedClothes = clothes.copy(
+                                clothesName = clothesName,
+                                brand = brand,
+                                categoryName = selectedCategory,
+                                season = season,
+                                notes = notes
+                            )
+                            clothesViewModel.editClothes(updatedClothes) { success, message ->
+                                if (success) {
+                                    onSaved()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brown
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Save", color = White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    clothesName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Delete Clothes?",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text("Are you sure you want to delete \"$clothesName\"? This action cannot be undone.")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color.Red
+                )
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        containerColor = White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 @Composable
