@@ -78,21 +78,71 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            HorizontalPager(
-                count = images.size,
-                state = pagerState,
-            ) { indexOfImages ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            ) {
+                // Background slider with cards overlay
+                HorizontalPager(
+                    count = images.size,
+                    state = pagerState,
+                ) { indexOfImages ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) {
+                        // Background profile image
+                        Image(
+                            painter = painterResource(id = images[indexOfImages]),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .clip(MaterialTheme.shapes.medium),
+                            contentScale = ContentScale.Crop
+                        )
 
-                Image(
-                    painter = painterResource(id = images[indexOfImages]),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .clip(MaterialTheme.shapes.medium),
-                    contentScale = ContentScale.Crop
-                )
+                        // Product cards overlaying on this slider page - different for each slide
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            when (indexOfImages) {
+                                0 -> {
+                                    // Slide 1 Cards
+                                    ProductCard(R.drawable.image4, "Half Jeans", "Rs.299")
+                                    ProductCard(R.drawable.image2, "Blue Hoodie", "Rs.799")
+                                    ProductCard(R.drawable.image3, "Bebe Tee", "Rs.499")
+                                }
+                                1 -> {
+                                    // Slide 2 Cards
+                                    ProductCard(R.drawable.image3, "White Tee", "Rs.399")
+                                    ProductCard(R.drawable.image1, "Denim Jacket", "Rs.899")
+                                    ProductCard(R.drawable.image4, "Shorts", "Rs.349")
+                                }
+                                2 -> {
+                                    // Slide 3 Cards
+                                    ProductCard(R.drawable.image2, "Hoodie", "Rs.699")
+                                    ProductCard(R.drawable.image4, "Jeans", "Rs.599")
+                                    ProductCard(R.drawable.image1, "Dress", "Rs.799")
+                                }
+                                3 -> {
+                                    // Slide 4 Cards
+                                    ProductCard(R.drawable.image1, "Jacket", "Rs.999")
+                                    ProductCard(R.drawable.image3, "T-Shirt", "Rs.299")
+                                    ProductCard(R.drawable.image2, "Pants", "Rs.649")
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
             Spacer(Modifier.height(10.dp))
 
             HorizontalPagerIndicator(
@@ -101,49 +151,8 @@ fun HomeScreen() {
                 activeColor = Color.White,
                 inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
             )
-            Card(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(120.dp),
-                shape = RoundedCornerShape(12.dp),
-//                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box {
-                    Image(
-                        painter = painterResource(R.drawable.image4),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .background(Color.Black.copy(alpha = 0.6f))
-                            .fillMaxWidth()
-                            .padding(6.dp)
-                    ) {
-                        Text(
-                            "Half Jeans",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = White
-                            )
-                        )
-                        Text(
-                            "Rs 245",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 9.sp,
-                                color = White
-                            )
-                        )
 
-                    }
-                }
-            }
+            Spacer(Modifier.height(16.dp))
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -437,6 +446,51 @@ fun HomeScreen() {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductCard(imageRes: Int, title: String, price: String) {
+    Card(
+        modifier = Modifier
+            .width(110.dp)
+            .height(140.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = 4.dp
+    ) {
+        Box {
+            Image(
+                painter = painterResource(imageRes),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .fillMaxWidth()
+                    .padding(6.dp)
+            ) {
+                Text(
+                    title,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = White
+                    )
+                )
+                Text(
+                    price,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 9.sp,
+                        color = White
+                    )
+                )
             }
         }
     }
