@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -50,6 +51,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.closetly.model.ClothesModel
+import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
@@ -59,6 +63,7 @@ import com.example.closetly.ui.theme.Skin
 import com.example.closetly.repository.CategoryRepoImpl
 import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.ui.theme.White
+import com.example.closetly.viewmodel.ClothesViewModel
 
 object CategoryPreferences {
     private const val PREFS_NAME = "closetly_categories"
@@ -91,11 +96,14 @@ fun ClosetScreen() {
     val context = LocalContext.current
     val categoryRepo = remember { CategoryRepoImpl() }
     val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
+    val clothesRepo = remember { ClothesRepoImpl() }
+    val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
     
     var selectedCategory by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
 
     var categories by remember { mutableStateOf(listOf("All")) }
+    var allClothes by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         categoryViewModel.getAllCategories { success, _, data ->
@@ -103,6 +111,22 @@ fun ClosetScreen() {
                 val categoryNames = listOf("All") + data.map { it.categoryName }
                 categories = categoryNames
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        clothesViewModel.getAllClothes { success, _, data ->
+            if (success && data != null) {
+                allClothes = data
+            }
+        }
+    }
+
+    val filteredClothes = remember(selectedCategory, allClothes) {
+        if (selectedCategory == "All") {
+            allClothes
+        } else {
+            allClothes.filter { it.categoryName == selectedCategory }
         }
     }
 
@@ -220,9 +244,161 @@ fun ClosetScreen() {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // TODO: Clothes data from database
+                items(filteredClothes.size) { index ->
+                    val clothes = filteredClothes[index]
+                    ClothesItem(clothes = clothes)
+                }
             }
         }
+    }
+}
+
+@Composable
+fun ClothesItem(clothes: ClothesModel) {
+    var showDialog by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.75f)
+            .clickable { showDialog = true },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(8.dp)
+            ) {
+                AsyncImage(
+                    model = clothes.image,
+                    contentDescription = clothes.clothesName,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = clothes.clothesName,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = clothes.categoryName,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Grey,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+    
+    if (showDialog) {
+        ClothesDetailsDialog(
+            clothes = clothes,
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ClothesDetailsDialog(
+    clothes: ClothesModel,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                AsyncImage(
+                    model = clothes.image,
+                    contentDescription = clothes.clothesName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(Light_grey, RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = clothes.clothesName,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                DetailRow(label = "Brand", value = clothes.brand)
+                DetailRow(label = "Category", value = clothes.categoryName)
+                DetailRow(label = "Season", value = clothes.season)
+                
+                if (clothes.notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Notes:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Grey
+                    )
+                    Text(
+                        text = clothes.notes,
+                        fontSize = 14.sp,
+                        color = Black,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "$label:",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Grey
+        )
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Black
+        )
     }
 }
 
@@ -255,76 +431,6 @@ fun CategoryButton(
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
         )
-    }
-}
-
-@Composable
-fun ClothingItemCard(
-    itemName: String,
-    category: String,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(0.75f)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Light_grey
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Light_brown.copy(alpha = 0.3f), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.closet),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = Brown.copy(alpha = 0.4f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = itemName,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = category,
-                    fontSize = 10.sp,
-                    color = Grey
-                )
-
-                Icon(
-                    painter = painterResource(R.drawable.baseline_add_24),
-                    contentDescription = "Favorite",
-                    modifier = Modifier.size(14.dp),
-                    tint = Skin
-                )
-            }
-        }
     }
 }
 

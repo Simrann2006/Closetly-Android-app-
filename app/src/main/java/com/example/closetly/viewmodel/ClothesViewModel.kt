@@ -46,6 +46,10 @@ class ClothesViewModel (val repo : ClothesRepo) : ViewModel() {
             if(success){
                 _loading.postValue(false)
                 _allClothes.postValue(data)
+                callback(success, msg, data)
+            } else {
+                _loading.postValue(false)
+                callback(success, msg, null)
             }
         }
     }
