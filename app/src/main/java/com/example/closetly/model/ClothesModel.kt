@@ -7,6 +7,7 @@ data class ClothesModel(
     val season : String = "",
     val notes : String = "",
     val categoryId : String = "",
+    val categoryName : String = "",
     var image : String = ""
 ) {
     fun toMap(): Map<String, Any> {
@@ -17,6 +18,7 @@ data class ClothesModel(
             "season" to season,
             "notes" to notes,
             "categoryId" to categoryId,
+            "categoryName" to categoryName,
             "image" to image
         )
     }

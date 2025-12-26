@@ -35,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +56,8 @@ import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Skin
+import com.example.closetly.repository.CategoryRepoImpl
+import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.ui.theme.White
 
 object CategoryPreferences {
@@ -88,20 +89,19 @@ object CategoryPreferences {
 fun ClosetScreen() {
 
     val context = LocalContext.current
+    val categoryRepo = remember { CategoryRepoImpl() }
+    val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
+    
     var selectedCategory by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
-    var refreshKey by remember { mutableStateOf(0) }
 
-    var categories by remember(refreshKey) {
-        mutableStateOf(CategoryPreferences.getCategories(context))
-    }
+    var categories by remember { mutableStateOf(listOf("All")) }
 
     LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(1000)
-            val newCategories = CategoryPreferences.getCategories(context)
-            if (newCategories != categories) {
-                categories = newCategories
+        categoryViewModel.getAllCategories { success, _, data ->
+            if (success && data != null) {
+                val categoryNames = listOf("All") + data.map { it.categoryName }
+                categories = categoryNames
             }
         }
     }

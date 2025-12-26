@@ -1,16 +1,11 @@
 package com.example.closetly
 
-import android.Manifest
+import ImageUtils
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,67 +23,37 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.closetly.ui.theme.*
-import java.io.File
 
 class AddClothesActivity : ComponentActivity() {
+    lateinit var imageUtils: ImageUtils
+    var selectedImageUri by mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        imageUtils = ImageUtils(this, this)
+        imageUtils.registerLaunchers { uri ->
+            selectedImageUri = uri
+        }
         setContent {
-            AddClothesBody()
+            AddClothesBody(
+                selectedImageUri = selectedImageUri,
+                onPickCamera = { imageUtils.launchCamera() },
+                onPickGallery = { imageUtils.launchImagePicker() }
+            )
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddClothesBody() {
+fun AddClothesBody(
+    selectedImageUri: Uri?,
+    onPickCamera: () -> Unit,
+    onPickGallery: () -> Unit
+) {
     val context = LocalContext.current
-    var selectedImage by remember { mutableStateOf<Uri?>(null) }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        selectedImage = uri
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success && imageUri != null) {
-            selectedImage = imageUri
-        }
-    }
-
-    val storagePermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            galleryLauncher.launch("image/*")
-        } else {
-            Toast.makeText(context, "Storage permission denied", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            val file = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
-            imageUri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                file
-            )
-            cameraLauncher.launch(imageUri!!)
-        } else {
-            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -104,17 +69,16 @@ fun AddClothesBody() {
                 actions = {
                     TextButton(
                         onClick = {
-                            val imageUris = listOfNotNull(selectedImage)
                             val intent = Intent(context, ClothesDetailsActivity::class.java)
-                            intent.putStringArrayListExtra("IMAGE_URIS", ArrayList(imageUris.map { it.toString() }))
+                            intent.putExtra("IMAGE_URI", selectedImageUri.toString())
                             context.startActivity(intent)
                             (context as? ComponentActivity)?.finish()
                         },
-                        enabled = selectedImage != null
+                        enabled = selectedImageUri != null
                     ) {
                         Text(
                             "Next",
-                            color = if (selectedImage != null) Brown else Grey,
+                            color = if (selectedImageUri != null) Brown else Grey,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -140,9 +104,9 @@ fun AddClothesBody() {
                     .background(Light_grey),
                 contentAlignment = Alignment.Center
             ) {
-                if (selectedImage != null) {
+                if (selectedImageUri != null) {
                     AsyncImage(
-                        model = selectedImage,
+                        model = selectedImageUri,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -170,24 +134,7 @@ fun AddClothesBody() {
                             .aspectRatio(1f)
                             .background(Light_grey, RoundedCornerShape(12.dp))
                             .clickable {
-                                if (ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.CAMERA
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    val file = File(
-                                        context.cacheDir,
-                                        "temp_image_${System.currentTimeMillis()}.jpg"
-                                    )
-                                    imageUri = FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.provider",
-                                        file
-                                    )
-                                    cameraLauncher.launch(imageUri!!)
-                                } else {
-                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                }
+                                onPickCamera()
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -224,28 +171,7 @@ fun AddClothesBody() {
                             .aspectRatio(1f)
                             .background(Light_grey, RoundedCornerShape(12.dp))
                             .clickable {
-                                val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.READ_MEDIA_IMAGES
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                } else {
-                                    ContextCompat.checkSelfPermission(
-                                        context,
-                                        Manifest.permission.READ_EXTERNAL_STORAGE
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                }
-
-                                if (hasPermission) {
-                                    galleryLauncher.launch("image/*")
-                                } else {
-                                    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        Manifest.permission.READ_MEDIA_IMAGES
-                                    } else {
-                                        Manifest.permission.READ_EXTERNAL_STORAGE
-                                    }
-                                    storagePermissionLauncher.launch(permission)
-                                }
+                                onPickGallery()
                             },
                         contentAlignment = Alignment.Center
                     ) {
