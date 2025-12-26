@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,13 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
 import androidx.compose.material.Card
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,10 +34,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.ui.theme.White
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
@@ -71,7 +71,8 @@ fun HomeScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+//            .padding(16.dp)
+            .background(White)
 //            .verticalScroll(scrollState)
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -100,6 +101,49 @@ fun HomeScreen() {
                 activeColor = Color.White,
                 inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
             )
+            Card(
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(120.dp),
+                shape = RoundedCornerShape(12.dp),
+//                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Box {
+                    Image(
+                        painter = painterResource(R.drawable.image4),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .fillMaxWidth()
+                            .padding(6.dp)
+                    ) {
+                        Text(
+                            "Half Jeans",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
+                        )
+                        Text(
+                            "Rs 245",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 9.sp,
+                                color = White
+                            )
+                        )
+
+                    }
+                }
+            }
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -130,13 +174,12 @@ fun HomeScreen() {
                                 fontWeight = FontWeight.Bold
                             )
                         )
-                        Spacer(modifier = Modifier.width(50.dp))
+                        Spacer(modifier = Modifier.width(160.dp))
 
                         androidx.compose.material3.Button(
                             onClick = {
                             },
                             modifier = Modifier
-                                .weight(1f)
                                 .height(32.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.purple_200),
@@ -240,6 +283,7 @@ fun HomeScreen() {
                             "22 hours ago", style = TextStyle(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
+                                color = Color.Gray
                             )
                         )
                     }
@@ -277,13 +321,12 @@ fun HomeScreen() {
                                 fontWeight = FontWeight.Bold
                             )
                         )
-                        Spacer(modifier = Modifier.width(50.dp))
+                        Spacer(modifier = Modifier.width(150.dp))
 
                         androidx.compose.material3.Button(
                             onClick = {
                             },
                             modifier = Modifier
-                                .weight(1f)
                                 .height(32.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorResource(R.color.purple_200),
@@ -389,6 +432,7 @@ fun HomeScreen() {
                             "5 days ago", style = TextStyle(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
+                                color = Color.Gray
                             )
                         )
                     }
@@ -402,5 +446,5 @@ fun HomeScreen() {
 @Composable
 fun PreviewHome() {
     HomeScreen()
-    
+
 }
