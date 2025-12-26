@@ -1,0 +1,429 @@
+package com.example.closetly
+
+import android.app.Activity
+import android.net.Uri
+import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.closetly.model.CategoryModel
+import com.example.closetly.model.ClothesModel
+import com.example.closetly.repository.CategoryRepoImpl
+import com.example.closetly.repository.ClothesRepoImpl
+import com.example.closetly.repository.CommonRepoImpl
+import com.example.closetly.ui.theme.*
+import com.example.closetly.viewmodel.CategoryViewModel
+import com.example.closetly.viewmodel.ClothesViewModel
+import com.example.closetly.viewmodel.CommonViewModel
+
+class ClothesDetailsActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val imageUriString = intent.getStringExtra("IMAGE_URI")
+        val imageUri = imageUriString?.let { Uri.parse(it) }
+
+        setContent {
+            ClothesDetailsBody(imageUri = imageUri)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ClothesDetailsBody(
+    imageUri: Uri?
+) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    val clothesRepo = remember { ClothesRepoImpl() }
+    val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
+    val commonRepo = remember { CommonRepoImpl() }
+    val commonViewModel = remember { CommonViewModel(commonRepo) }
+    val categoryRepo = remember { CategoryRepoImpl() }
+    val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
+
+    var clothesName by remember { mutableStateOf("") }
+    var selectedCategoryId by remember { mutableStateOf("") }
+    var selectedCategoryName by remember { mutableStateOf("") }
+    var brand by remember { mutableStateOf("") }
+    var season by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    var showCategoryDropdown by remember { mutableStateOf(false) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var newCategoryName by remember { mutableStateOf("") }
+
+    var categories by remember { mutableStateOf<List<CategoryModel>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        categoryViewModel.getAllCategories { success, _, data ->
+            if (success) {
+                if (data == null || data.isEmpty()) {
+                    val defaultCategories = CategoryPreferences.getCategories(context)
+                        .filter { it != "All" }
+                    
+                    var addedCount = 0
+                    defaultCategories.forEach { categoryName ->
+                        val newCategory = CategoryModel(categoryName = categoryName)
+                        categoryViewModel.addCategory(newCategory) { addSuccess, _ ->
+                            if (addSuccess) {
+                                addedCount++
+                                if (addedCount == defaultCategories.size) {
+                                    // All categories added, fetch again
+                                    categoryViewModel.getAllCategories { _, _, refreshedData ->
+                                        if (refreshedData != null) {
+                                            categories = refreshedData
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    categories = data
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Add Details",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            if (imageUri != null) {
+                                commonViewModel.uploadImage(context, imageUri) { imageUrl ->
+                                    if (imageUrl != null) {
+                                        val model = ClothesModel(
+                                            clothesName = clothesName,
+                                            brand = brand,
+                                            season = season,
+                                            notes = notes,
+                                            categoryId = selectedCategoryId,
+                                            categoryName = selectedCategoryName,
+                                            image = imageUrl
+                                        )
+                                        clothesViewModel.addClothes(model) { success, message ->
+                                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                            if (success) activity?.finish()
+                                        }
+                                    } else {
+                                        Log.e("Upload Error", "Failed to upload image to Cloudinary")
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Please select an image first",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        enabled = clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null
+                    ) {
+                        Text(
+                            "Save",
+                            color = if (clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null)
+                                Brown else Grey,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = White,
+                    titleContentColor = Black,
+                    navigationIconContentColor = Black
+                )
+            )
+        },
+        containerColor = White
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+
+            Divider(color = Light_grey)
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = clothesName,
+                    onValueChange = { clothesName = it },
+                    label = { Text("Clothes Name *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                Box {
+                    OutlinedTextField(
+                        value = selectedCategoryName,
+                        onValueChange = { },
+                        label = { Text("Category *") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showCategoryDropdown = true },
+                        enabled = false,
+                        readOnly = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = if (selectedCategoryName.isNotEmpty()) Brown else Grey.copy(alpha = 0.5f),
+                            disabledLabelColor = if (selectedCategoryName.isNotEmpty()) Brown else Grey,
+                            disabledTextColor = Black,
+                            disabledContainerColor = White
+                        ),
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                tint = Grey
+                            )
+                        }
+                    )
+
+                    DropdownMenu(
+                        expanded = showCategoryDropdown,
+                        onDismissRequest = { showCategoryDropdown = false },
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .background(White)
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.categoryName, color = Black) },
+                                onClick = {
+                                    selectedCategoryId = category.categoryId
+                                    selectedCategoryName = category.categoryName
+                                    showCategoryDropdown = false
+                                },
+                                modifier = Modifier.background(White)
+                            )
+                        }
+                        Divider(color = Light_grey)
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.baseline_add_24),
+                                        contentDescription = null,
+                                        tint = Brown,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text("Add New Category", color = Brown, fontWeight = FontWeight.Medium)
+                                }
+                            },
+                            onClick = {
+                                showCategoryDropdown = false
+                                showAddCategoryDialog = true
+                            },
+                            modifier = Modifier.background(White)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                OutlinedTextField(
+                    value = season,
+                    onValueChange = { season = it },
+                    label = { Text("Season") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    maxLines = 5,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+            }
+        }
+    }
+
+    if (showAddCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showAddCategoryDialog = false
+                newCategoryName = ""
+            },
+            title = {
+                Text(
+                    text = "Add New Category",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Enter category name:",
+                        fontSize = 14.sp,
+                        color = Grey
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = newCategoryName,
+                        onValueChange = { newCategoryName = it },
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Brown,
+                            unfocusedBorderColor = Grey,
+                            unfocusedContainerColor = White,
+                            focusedContainerColor = White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newCategoryName.isNotBlank()) {
+                            val categoryToAdd = newCategoryName
+                            val newCategory = CategoryModel(categoryName = categoryToAdd)
+                            categoryViewModel.addCategory(newCategory) { success, message ->
+                                if (success) {
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        categoryViewModel.getAllCategories { _, _, data ->
+                                            if (data != null) {
+                                                categories = data
+                                                val addedCategory = data.find { it.categoryName == categoryToAdd }
+                                                if (addedCategory != null) {
+                                                    selectedCategoryId = addedCategory.categoryId
+                                                    selectedCategoryName = addedCategory.categoryName
+                                                }
+                                            }
+                                        }
+                                    }, 300)
+                                    newCategoryName = ""
+                                    showAddCategoryDialog = false
+                                } else {
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Add", color = Brown, fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showAddCategoryDialog = false
+                        newCategoryName = ""
+                    }
+                ) {
+                    Text("Cancel", color = Grey)
+                }
+            },
+            containerColor = White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+}

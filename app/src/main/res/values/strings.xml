@@ -6,4 +6,6 @@
     <string name="title_activity_forget">ForgetActivity</string>
     <string name="title_activity_dashboard">DashboardActivity</string>
     <string name="title_activity_edit_profile">EditProfileActivity</string>
+    <string name="title_activity_add_clothes">AddClothesActivity</string>
+    <string name="title_activity_clothes_detail">ClothesDetailActivity</string>
 </resources>

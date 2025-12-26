@@ -54,8 +54,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
-    implementation("com.hbb20:ccp:2.7.3")
+    implementation("com.googlecode.libphonenumber:libphonenumber:8.13.26")
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.cloudinary:cloudinary-android:2.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

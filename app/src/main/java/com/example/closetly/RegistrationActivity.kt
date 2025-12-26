@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,6 +72,8 @@ import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.UserViewModel
+import com.google.i18n.phonenumbers.PhoneNumberUtil
+import java.util.Locale
 
 class RegistrationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,8 +85,19 @@ class RegistrationActivity : ComponentActivity() {
     }
 }
 
-// Data class for country codes
 data class Country(val name: String, val code: String, val dialCode: String)
+
+fun getCountryFlagEmoji(countryCode: String): String {
+    return countryCode
+        .uppercase()
+        .map { char ->
+            Character.codePointAt("$char", 0) - 0x41 + 0x1F1E6
+        }
+        .map { codePoint ->
+            Character.toChars(codePoint)
+        }
+        .joinToString("") { String(it) }
+}
 
 @Composable
 fun RegistrationBody() {
@@ -90,7 +106,7 @@ fun RegistrationBody() {
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf(TextFieldValue(text = "", selection = TextRange(0))) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
@@ -99,38 +115,25 @@ fun RegistrationBody() {
 
     var isloginClicked by remember { mutableStateOf(false) }
 
-    // Country code picker state
-    var selectedCountry by remember { mutableStateOf(Country("United States", "US", "+1")) }
+    val phoneUtil = PhoneNumberUtil.getInstance()
+    val countries = remember {
+        phoneUtil.supportedRegions
+            .sorted()
+            .map { regionCode ->
+                val countryCode = phoneUtil.getCountryCodeForRegion(regionCode)
+                val countryName = Locale("", regionCode).displayCountry
+                Country(countryName, regionCode, "+$countryCode")
+            }
+    }
+    
+    val nepalCountry = countries.find { it.code == "NP" } ?: countries.first()
+    var selectedCountry by remember { mutableStateOf(nepalCountry) }
     var expanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val activity = context as Activity
 
     val scrollState = rememberScrollState()
-
-    // List of popular countries with their dial codes
-    val countries = listOf(
-        Country("United States", "US", "+1"),
-        Country("United Kingdom", "GB", "+44"),
-        Country("Canada", "CA", "+1"),
-        Country("Australia", "AU", "+61"),
-        Country("India", "IN", "+91"),
-        Country("Germany", "DE", "+49"),
-        Country("France", "FR", "+33"),
-        Country("Italy", "IT", "+39"),
-        Country("Spain", "ES", "+34"),
-        Country("Japan", "JP", "+81"),
-        Country("China", "CN", "+86"),
-        Country("Brazil", "BR", "+55"),
-        Country("Mexico", "MX", "+52"),
-        Country("South Korea", "KR", "+82"),
-        Country("Netherlands", "NL", "+31"),
-        Country("Sweden", "SE", "+46"),
-        Country("Norway", "NO", "+47"),
-        Country("Denmark", "DK", "+45"),
-        Country("Finland", "FI", "+358"),
-        Country("Switzerland", "CH", "+41")
-    )
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -151,7 +154,6 @@ fun RegistrationBody() {
         ) {
             Spacer(modifier = Modifier.height(50.dp))
 
-            // Title
             Text("Create Account",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
@@ -179,7 +181,6 @@ fun RegistrationBody() {
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // Full Name Field
             OutlinedTextField(
                 value = fullName,
                 onValueChange = { data ->
@@ -215,30 +216,33 @@ fun RegistrationBody() {
 
             Spacer(Modifier.height(12.dp))
 
-            // Phone Number Field with Country Code
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Country Code Picker
-                Box {
+                Box(
+                    modifier = Modifier.clickable { expanded = true }
+                ) {
                     OutlinedTextField(
-                        value = selectedCountry.dialCode,
+                        value = "${getCountryFlagEmoji(selectedCountry.code)} ${selectedCountry.dialCode}",
                         onValueChange = {},
                         readOnly = true,
+                        enabled = false,
                         trailingIcon = {
-                            Icon(
-                                painter = painterResource(android.R.drawable.arrow_down_float),
-                                contentDescription = "Select Country",
-                                tint = Light_brown,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                    contentDescription = null,
+                                    tint = Light_brown,
+                                    modifier = Modifier.size(35.dp)
+                                )
+                            }
                         },
                         modifier = Modifier
-                            .width(110.dp)
-                            .clickable { expanded = true },
+                            .width(135.dp),
                         shape = RoundedCornerShape(22.dp),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = White,
@@ -246,48 +250,71 @@ fun RegistrationBody() {
                             focusedIndicatorColor = Brown,
                             unfocusedIndicatorColor = Light_brown,
                             disabledContainerColor = White,
-                            disabledIndicatorColor = Light_brown
+                            disabledIndicatorColor = Light_brown,
+                            disabledTextColor = Black
                         ),
+                        singleLine = true,
                         textStyle = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 15.sp,
-                            color = Black
+                            color = Black,
+                            fontWeight = FontWeight.SemiBold,
                         )
                     )
 
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        modifier = Modifier.height(300.dp)
+                        modifier = Modifier
+                            .height(300.dp)
+                            .background(White, RoundedCornerShape(12.dp))
                     ) {
                         countries.forEach { country ->
                             DropdownMenuItem(
                                 text = {
-                                    Text(
-                                        "${country.name} (${country.dialCode})",
-                                        style = TextStyle(
-                                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                            fontSize = 14.sp
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            getCountryFlagEmoji(country.code),
+                                            style = TextStyle(
+                                                fontSize = 22.sp,
+                                                shadow = androidx.compose.ui.graphics.Shadow(
+                                                    color = Color.Black.copy(alpha = 0.2f),
+                                                    offset = androidx.compose.ui.geometry.Offset(1f, 1f),
+                                                    blurRadius = 2f
+                                                )
+                                            )
                                         )
-                                    )
+                                        Text(
+                                            "${country.name} (${country.dialCode})",
+                                            style = TextStyle(
+                                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                                fontSize = 14.sp,
+                                                color = Black
+                                            )
+                                        )
+                                    }
                                 },
                                 onClick = {
                                     selectedCountry = country
                                     expanded = false
-                                }
+                                },
+                                modifier = Modifier.background(White)
                             )
                         }
                     }
                 }
 
-                // Phone Number Input
                 OutlinedTextField(
                     value = phoneNumber,
-                    onValueChange = { data ->
-                        // Only allow digits
-                        if (data.all { it.isDigit() }) {
-                            phoneNumber = data
-                        }
+                    onValueChange = { newValue ->
+                        val filteredText = newValue.text.filter { it.isDigit() }
+                        phoneNumber = newValue.copy(
+                            text = filteredText,
+                            selection = TextRange(filteredText.length)
+                        )
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone
@@ -309,13 +336,17 @@ fun RegistrationBody() {
                         focusedIndicatorColor = Brown,
                         unfocusedIndicatorColor = Light_brown
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 )
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Email Field
             OutlinedTextField(
                 value = email,
                 keyboardOptions = KeyboardOptions(
@@ -354,7 +385,6 @@ fun RegistrationBody() {
 
             Spacer(Modifier.height(12.dp))
 
-            // Password Field
             OutlinedTextField(
                 value = password,
                 onValueChange = { data ->
@@ -403,7 +433,6 @@ fun RegistrationBody() {
 
             Spacer(Modifier.height(12.dp))
 
-            // Confirm Password Field
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { data ->
@@ -452,11 +481,11 @@ fun RegistrationBody() {
 
             Spacer(Modifier.height(25.dp))
 
-            // Create Account Button
             Button(
                 onClick = {
+                    val phoneNumberText = phoneNumber.text
                     when {
-                        fullName.isBlank() || phoneNumber.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                        fullName.isBlank() || phoneNumberText.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
                             Toast.makeText(context, "Please fill all fields", Toast.LENGTH_LONG)
                                 .show()
                         }
@@ -466,16 +495,14 @@ fun RegistrationBody() {
                                 .show()
                         }
 
-                        phoneNumber.length < 7 -> {
+                        phoneNumberText.length < 7 -> {
                             Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_LONG)
                                 .show()
                         }
 
                         else -> {
-                            val fullPhoneNumber = "${selectedCountry.dialCode}$phoneNumber"
-                            // You'll need to update your backend to accept phone number
-                            // For now, we'll pass empty string for DOB
-                            userViewModel.register(email, password, fullName, phoneNumber) {
+                            val fullPhoneNumber = "${selectedCountry.dialCode}$phoneNumberText"
+                            userViewModel.register(email, password, fullName, phoneNumberText) {
                                     success, message, userId ->
                                 if (success) {
                                     val model = UserModel(
