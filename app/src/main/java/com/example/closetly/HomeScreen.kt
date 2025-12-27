@@ -81,9 +81,8 @@ fun HomeScreen() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(400.dp)
             ) {
-                // Background slider with cards overlay
                 HorizontalPager(
                     count = images.size,
                     state = pagerState,
@@ -91,20 +90,68 @@ fun HomeScreen() {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
+                            .height(400.dp)
                     ) {
-                        // Background profile image
                         Image(
                             painter = painterResource(id = images[indexOfImages]),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(300.dp)
+                                .height(400.dp)
                                 .clip(MaterialTheme.shapes.medium),
                             contentScale = ContentScale.Crop
                         )
 
-                        // Product cards overlaying on this slider page - different for each slide
+                        // Profile name and View Profile button overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxSize()
+                        ) {
+                            // View Profile button at top right corner
+                            androidx.compose.material3.Button(
+                                onClick = { },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 16.dp, end = 16.dp)
+                                    .height(36.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFD4C4B0)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    "View Profile",
+                                    style = TextStyle(
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = Color.Black
+                                    )
+                                )
+                            }
+
+                            // Different name for each slider - left corner
+                            val nameText = when (indexOfImages) {
+                                0 -> "kendall"
+                                1 -> "emily"
+                                2 -> "sophia"
+                                3 -> "olivia"
+                                else -> "kendall"
+                            }
+
+                            Text(
+                                text = nameText,
+                                style = TextStyle(
+                                    fontSize = 64.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = 16.dp)
+                            )
+                        }
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -225,7 +272,8 @@ fun HomeScreen() {
 
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
 
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
@@ -278,7 +326,9 @@ fun HomeScreen() {
                         )
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp)
                     ) {
                         Text(
                             "Eco-friendly, wallet-friendly.", style = TextStyle(
@@ -287,7 +337,9 @@ fun HomeScreen() {
                             )
                         )
                     }
-                    Row {
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp)
+                    ) {
                         Text(
                             "22 hours ago", style = TextStyle(
                                 fontSize = 15.sp,
@@ -372,7 +424,8 @@ fun HomeScreen() {
 
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
 
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
@@ -425,10 +478,12 @@ fun HomeScreen() {
                         )
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp)
                     ) {
                         Text(
-                            "“Style that tells a story”", style = TextStyle(
+                            "Style that tells a story", style = TextStyle(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -436,7 +491,9 @@ fun HomeScreen() {
                     }
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Row {
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp)
+                    ) {
                         Text(
                             "5 days ago", style = TextStyle(
                                 fontSize = 15.sp,
