@@ -1,5 +1,7 @@
 package com.example.closetly
 
+import android.app.Activity
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,6 +58,9 @@ fun HomeScreen() {
         R.drawable.image3,
         R.drawable.image4,
     )
+
+    val context = LocalContext.current
+    val activity = context as Activity
 
     val pagerState = rememberPagerState()
 
@@ -102,15 +108,16 @@ fun HomeScreen() {
                             contentScale = ContentScale.Crop
                         )
 
-                        // Profile name and View Profile button overlay
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .fillMaxSize()
                         ) {
-                            // View Profile button at top right corner
                             androidx.compose.material3.Button(
-                                onClick = { },
+                                onClick = {
+                                    val intent = Intent(context, PostActivity::class.java)
+                                    context.startActivity(intent)
+                                },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(top = 16.dp, end = 16.dp)
@@ -129,8 +136,6 @@ fun HomeScreen() {
                                     )
                                 )
                             }
-
-                            // Different name for each slider - left corner
                             val nameText = when (indexOfImages) {
                                 0 -> "kendall"
                                 1 -> "emily"
@@ -161,25 +166,21 @@ fun HomeScreen() {
                         ) {
                             when (indexOfImages) {
                                 0 -> {
-                                    // Slide 1 Cards
                                     ProductCard(R.drawable.image4, "Half Jeans", "Rs.299")
                                     ProductCard(R.drawable.image2, "Blue Hoodie", "Rs.799")
                                     ProductCard(R.drawable.image3, "Bebe Tee", "Rs.499")
                                 }
                                 1 -> {
-                                    // Slide 2 Cards
                                     ProductCard(R.drawable.image3, "White Tee", "Rs.399")
                                     ProductCard(R.drawable.image1, "Denim Jacket", "Rs.899")
                                     ProductCard(R.drawable.image4, "Shorts", "Rs.349")
                                 }
                                 2 -> {
-                                    // Slide 3 Cards
                                     ProductCard(R.drawable.image2, "Hoodie", "Rs.699")
                                     ProductCard(R.drawable.image4, "Jeans", "Rs.599")
                                     ProductCard(R.drawable.image1, "Dress", "Rs.799")
                                 }
                                 3 -> {
-                                    // Slide 4 Cards
                                     ProductCard(R.drawable.image1, "Jacket", "Rs.999")
                                     ProductCard(R.drawable.image3, "T-Shirt", "Rs.299")
                                     ProductCard(R.drawable.image2, "Pants", "Rs.649")
