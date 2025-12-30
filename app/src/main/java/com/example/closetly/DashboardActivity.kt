@@ -1,46 +1,33 @@
 package com.example.closetly
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.*
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
+import com.google.firebase.database.*
 
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,8 +41,8 @@ class DashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardBody(){
-    data class NavItem(val label : String, val image : Int)
+fun DashboardBody() {
+    data class NavItem(val label: String, val image: Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
 
@@ -63,11 +50,31 @@ fun DashboardBody(){
         NavItem(label = "Home", image = R.drawable.home),
         NavItem(label = "Market", image = R.drawable.marketplace),
         NavItem(label = "Closet", image = R.drawable.closet),
-        NavItem(label = "Calender", image = R.drawable.calendar),
+        NavItem(label = "Calendar", image = R.drawable.calendar),
         NavItem(label = "Profile", image = R.drawable.profile)
     )
 
-    Scaffold (
+    val context = LocalContext.current
+
+    // Firebase unread notifications count
+    var unreadCount by remember { mutableStateOf(0) }
+    val database = FirebaseDatabase.getInstance().getReference("notifications")
+    LaunchedEffect(Unit) {
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var count = 0
+                for (child in snapshot.children) {
+                    val read = child.child("read").getValue(Boolean::class.java) ?: false
+                    if (!read) count++
+                }
+                unreadCount = count
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 modifier = Modifier.height(65.dp),
@@ -79,26 +86,44 @@ fun DashboardBody(){
                 ),
                 title = {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Closetly")
+                        Text("Closetly", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Image(painter = painterResource(R.drawable.notification),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(22.dp)
-                        )
+                    // Notification icon with badge
+                    Box {
+                        IconButton(onClick = {
+                            context.startActivity(Intent(context, NotificationActivity::class.java))
+                        }) {
+                            Image(
+                                painter = painterResource(R.drawable.notification),
+                                contentDescription = "Notifications",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        if (unreadCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 4.dp, y = (-4).dp)
+                                    .background(Color.Red, shape = RoundedCornerShape(6.dp))
+                            )
+                        }
                     }
-                    IconButton(onClick = {}) {
-                        Image(painter = painterResource(R.drawable.chat),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(22.dp)
+
+                    IconButton(onClick = {
+                        // Chat functionality if you add ChatActivity
+                        // context.startActivity(Intent(context, ChatActivity::class.java))
+                    }) {
+                        Image(
+                            painter = painterResource(R.drawable.chat),
+                            contentDescription = "Chat",
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -153,13 +178,13 @@ fun DashboardBody(){
                 }
             }
         }
-    ){ padding ->
-        Box (
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-        ){
-            when(selectedIndex){
+        ) {
+            when (selectedIndex) {
                 0 -> HomeScreen()
                 1 -> MarketplaceScreen()
                 2 -> ClosetScreen()
@@ -169,10 +194,4 @@ fun DashboardBody(){
             }
         }
     }
-}
-
-@Composable
-@Preview
-fun PreviewDashboard() {
-    DashboardBody()
 }

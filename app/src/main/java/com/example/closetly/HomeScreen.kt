@@ -222,7 +222,7 @@ fun HomeScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.img),
+                            painter = painterResource(R.drawable.heart),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
@@ -369,7 +369,7 @@ fun HomeScreen() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.img),
+                            painter = painterResource(R.drawable.heart),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
