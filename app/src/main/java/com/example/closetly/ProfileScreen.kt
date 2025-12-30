@@ -1,5 +1,6 @@
 package com.example.closetly
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,7 +27,7 @@ import com.example.closetly.ui.theme.Pink40
 fun ProfileScreen() {
 
     val selectedTab = remember { mutableStateOf("Posts") }
-
+    val  context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +73,12 @@ fun ProfileScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .height(40.dp)
+                .height(40.dp),
+            onClick = {
+                context.startActivity(
+                    Intent(context, EditProfileActivity::class.java)
+                )
+            }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -150,12 +157,14 @@ fun ProfileStat(number: String, label: String) {
 @Composable
 fun ProfileButton(
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Pink40),
+            .background(Pink40)
+            .clickable{onClick() } ,
         contentAlignment = Alignment.Center
     ) {
         Text(

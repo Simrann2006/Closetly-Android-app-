@@ -33,185 +33,170 @@ class EditProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            EditProfile()
+            EditProfileScreen()
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfile() {
-    val notification = rememberSaveable { mutableStateOf("") }
+fun EditProfileScreen() {
+    val context = LocalContext.current
+    var name by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
+    var bio by rememberSaveable { mutableStateOf("") }
 
-    if (notification.value.isNotEmpty()) {
-        Toast.makeText(
-            LocalContext.current,
-            notification.value,
-            Toast.LENGTH_LONG
-        ).show()
-        notification.value = ""
-    }
-
-    var name by rememberSaveable { mutableStateOf("default name") }
-    var username by rememberSaveable { mutableStateOf("default username") }
-    var bio by rememberSaveable { mutableStateOf("default bio") }
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Background Image
-        Image(
-            painter = painterResource(id = R.drawable.registrationbg),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Foreground UI
-        Column(
+    Scaffold(
+        topBar = {
+            EditProfileTopBar(
+                onBackClick = { (context as? Activity)?.finish() },
+                onSaveClick = {
+                    Toast.makeText(context, "Profile Saved", Toast.LENGTH_SHORT).show()
+                    // Add save logic here
+                }
+            )
+        }
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(8.dp)
+                .padding(padding)
         ) {
-            TopBar()
-            ProfileImage()
+            // Background image
+            Image(
+                painter = painterResource(id = R.drawable.registrationbg),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
 
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
+                ProfileImage()
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 TextField(
                     value = name,
                     onValueChange = { name = it },
+                    label = { Text("Name") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 TextField(
                     value = username,
                     onValueChange = { username = it },
+                    label = { Text("Username") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = "Bio",
-                    modifier = Modifier
-                        .width(100.dp)
-                        .padding(top = 8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                var bio by rememberSaveable { mutableStateOf("") }
 
                 TextField(
                     value = bio,
                     onValueChange = { bio = it },
-                    singleLine = false,
-                    modifier = Modifier.height(150.dp),
+                    label = { Text("Bio") },
+                    modifier = Modifier
+                        .fillMaxWidth(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                    singleLine = false,
+                    minLines = 3,
+                    maxLines = 10
                 )
+
+
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar() {
-    val context = LocalContext.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = {
-                // Go back to ProfileActivity
-                (context as? Activity)?.finish()
+fun EditProfileTopBar(onBackClick: () -> Unit, onSaveClick: () -> Unit) {
+    TopAppBar(
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Edit Profile")
             }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back"
-            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Image(
+                    painter = painterResource(R.drawable.back),
+                    contentDescription = "Back",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
+        actions = {
+            TextButton(onClick = onSaveClick) {
+                Text("Save", color = Color.Black)
+            }
         }
-
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Edit Profile",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        // Right Spacer
-        Box(modifier = Modifier.size(48.dp))
-    }
+    )
 }
 
 @Composable
 fun ProfileImage() {
-    val imageUri = rememberSaveable { mutableStateOf<Any>(R.drawable.baseline_person_outline_24) }
+    val context = LocalContext.current
+    val imageUri = rememberSaveable { mutableStateOf<Any>(R.drawable.profile) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> uri?.let { imageUri.value = it } }
+    ) { uri: Uri? ->
+        uri?.let { imageUri.value = it }
+    }
 
     Column(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Card(
             shape = CircleShape,
             modifier = Modifier
-                .padding(8.dp)
                 .size(100.dp)
+                .clickable { launcher.launch("image/*") }
         ) {
             AsyncImage(
                 model = imageUri.value,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { launcher.launch("image/*") }
+                modifier = Modifier.fillMaxSize()
             )
         }
-        Text(text = "Change Profile Picture")
+        Text("Change Profile Picture", modifier = Modifier.padding(top = 8.dp))
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
-    EditProfile()
+fun EditProfilePreview() {
+    EditProfileScreen()
 }
