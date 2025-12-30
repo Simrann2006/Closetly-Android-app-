@@ -1,19 +1,15 @@
 package com.example.closetly
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,17 +24,19 @@ import com.example.closetly.model.NotificationModel
 import com.example.closetly.model.NotificationType
 import com.example.closetly.ui.theme.ClosetlyTheme
 import com.google.firebase.database.*
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Icon
+
+
+
 
 class NotificationActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             ClosetlyTheme {
-                NotificationScreen(
-                    onBackClick = { finish() }
-                )
+                NotificationScreen(onBackClick = { finish() })
             }
         }
     }
@@ -48,7 +46,6 @@ class NotificationActivity : ComponentActivity() {
 @Composable
 fun NotificationScreen(onBackClick: () -> Unit) {
 
-    // Firebase reference
     val database = FirebaseDatabase.getInstance().getReference("notifications")
     var notifications by remember { mutableStateOf(listOf<NotificationModel>()) }
 
@@ -58,29 +55,55 @@ fun NotificationScreen(onBackClick: () -> Unit) {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = mutableListOf<NotificationModel>()
                 for (child in snapshot.children) {
-                    val notification = child.getValue(NotificationModel::class.java)
-                    notification?.let { list.add(it) }
+                    val userName = child.child("userName").getValue(String::class.java) ?: ""
+                    val userProfileImage = child.child("userProfileImage").getValue(String::class.java) ?: ""
+                    val typeStr = child.child("type").getValue(String::class.java) ?: "FOLLOW"
+                    val type = NotificationType.valueOf(typeStr)
+                    val message = child.child("message").getValue(String::class.java) ?: ""
+                    val time = child.child("time").getValue(String::class.java) ?: ""
+
+                    val notification = NotificationModel(
+                        userName = userName,
+                        userProfileImage = userProfileImage,
+                        type = type,
+                        message = message,
+                        time = time
+                    )
+                    list.add(notification)
                 }
-                notifications = list.reversed() // show latest first
+                notifications = list.reversed() // latest first
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-            }
+            override fun onCancelled(error: DatabaseError) {}
         })
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Notifications") } },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {}
+        topBar = {TopAppBar(
+            title = {
+                Box(
+                    Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Notifications",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Image(
+                        painter = painterResource(R.drawable.back),
+                        contentDescription = "Back",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primary
             )
+        )
         }
     ) { padding ->
         Box(
@@ -88,14 +111,6 @@ fun NotificationScreen(onBackClick: () -> Unit) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Background image
-            Image(
-                painter = painterResource(R.drawable.registrationbg), // your background drawable
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -118,23 +133,22 @@ fun NotificationItem(notification: NotificationModel) {
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile image
         Box(
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
         ) {
-            if (notification.userProfileImage is Int) {
+            if (notification.userProfileImage.toString().matches(Regex("\\d+"))) {
                 Image(
-                    painter = painterResource(id = notification.userProfileImage),
+                    painter = painterResource(id = notification.userProfileImage.toString().toInt()),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
-            } else if (notification.userProfileImage is String) {
+            } else {
                 AsyncImage(
-                    model = notification.userProfileImage,
+                    model = notification.userProfileImage.toString(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -158,7 +172,7 @@ fun NotificationItem(notification: NotificationModel) {
 
         when (notification.type) {
             NotificationType.FOLLOW -> {
-                Button(onClick = { /* Follow back logic */ }) {
+                Button(onClick = { /* Follow back */ }) {
                     Text("Follow")
                 }
             }
@@ -170,7 +184,7 @@ fun NotificationItem(notification: NotificationModel) {
                 )
             }
 
-            else -> {}
+
         }
     }
 }

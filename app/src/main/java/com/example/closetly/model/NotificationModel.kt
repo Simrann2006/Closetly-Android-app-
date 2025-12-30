@@ -1,9 +1,14 @@
 package com.example.closetly.model
 
+enum class NotificationType {
+    FOLLOW,
+    LIKE
+}
+
 data class NotificationModel(
     var userName: String = "",
-    var userProfileImage: String = "",
-    var type: String = "FOLLOW",
+    var userProfileImage: Any = "", // drawable resource ID or URL string
+    var type: NotificationType = NotificationType.FOLLOW,
     var message: String = "",
     var time: String = ""
 ) {
@@ -11,7 +16,7 @@ data class NotificationModel(
         return mapOf(
             "userName" to userName,
             "userProfileImage" to userProfileImage,
-            "type" to type,
+            "type" to type.name,
             "message" to message,
             "time" to time
         )
