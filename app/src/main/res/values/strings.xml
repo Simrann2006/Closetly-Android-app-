@@ -8,4 +8,6 @@
     <string name="title_activity_edit_profile">EditProfileActivity</string>
     <string name="title_activity_add_clothes">AddClothesActivity</string>
     <string name="title_activity_clothes_detail">ClothesDetailActivity</string>
+    <string name="title_activity_avatar">AvatarActivity</string>
+    <string name="title_activity_virtual_try_on">VirtualTryOnActivity</string>
 </resources>

@@ -24,6 +24,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,40 +73,119 @@ fun DashboardBody(){
 
     Scaffold (
         topBar = {
-            CenterAlignedTopAppBar(
-                modifier = Modifier.height(65.dp),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    titleContentColor = Black,
-                    actionIconContentColor = Black,
-                    containerColor = White,
-                    navigationIconContentColor = Black
-                ),
-                title = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Closetly")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) {
-                        Image(painter = painterResource(R.drawable.notification),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(22.dp)
+            if (selectedIndex == 4) {
+                CenterAlignedTopAppBar(
+                    modifier = Modifier.height(65.dp),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        titleContentColor = Black,
+                        actionIconContentColor = Black,
+                        containerColor = White,
+                        navigationIconContentColor = Black
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_add_24),
+                                contentDescription = "Add",
+                                modifier = Modifier.size(22.dp),
+                                tint = Black
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            "Profile",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Cursive
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_menu_24),
+                                contentDescription = "Settings",
+                                modifier = Modifier.size(22.dp),
+                                tint = Black
+                            )
+                        }
                     }
-                    IconButton(onClick = {}) {
-                        Image(painter = painterResource(R.drawable.chat),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(22.dp)
+                )
+            } else {
+                TopAppBar(
+                    modifier = Modifier.height(65.dp),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        titleContentColor = Black,
+                        actionIconContentColor = Black,
+                        containerColor = White,
+                        navigationIconContentColor = Black
+                    ),
+                    title = {
+                        Text(
+                            when(selectedIndex) {
+                                0 -> "Closetly"
+                                1 -> "Marketplace"
+                                2 -> "My Closet"
+                                3 -> "Calendar"
+                                else -> "Closetly"
+                            },
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            fontFamily = FontFamily.Cursive
                         )
+                    },
+                    actions = {
+                        when(selectedIndex) {
+                            0 -> {
+                                IconButton(onClick = {}) {
+                                    Image(painter = painterResource(R.drawable.notification),
+                                        contentDescription = "Notifications",
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                    )
+                                }
+                                IconButton(onClick = {}) {
+                                    Image(painter = painterResource(R.drawable.chat),
+                                        contentDescription = "Messages",
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                    )
+                                }
+                            }
+                            1 -> {
+                                IconButton(onClick = {}) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.chat),
+                                        contentDescription = "Filter",
+                                        modifier = Modifier.size(22.dp),
+                                        tint = Black
+                                    )
+                                }
+                            }
+                            2 -> {
+                                IconButton(onClick = {}) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.chat),
+                                        contentDescription = "Add Clothes",
+                                        modifier = Modifier.size(22.dp),
+                                        tint = Black
+                                    )
+                                }
+                            }
+                            3 -> {
+                                IconButton(onClick = {}) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.chat),
+                                        contentDescription = "Today",
+                                        modifier = Modifier.size(22.dp),
+                                        tint = Black
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         bottomBar = {
             NavigationBar(
