@@ -9,4 +9,6 @@
     <string name="title_activity_add_clothes">AddClothesActivity</string>
     <string name="title_activity_clothes_detail">ClothesDetailActivity</string>
     <string name="title_activity_post">PostActivity</string>
+    <string name="title_activity_notification">NotificationActivity</string>
+    <string name="title_activity_message">MessageActivity</string>
 </resources>

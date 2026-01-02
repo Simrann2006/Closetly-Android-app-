@@ -1,9 +1,9 @@
 package com.example.closetly
 
-import android.app.Activity
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +50,9 @@ import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
+
+    val context = LocalContext.current
 
     val images = listOf(
         R.drawable.image1,
@@ -58,9 +60,6 @@ fun HomeScreen() {
         R.drawable.image3,
         R.drawable.image4,
     )
-
-    val context = LocalContext.current
-    val activity = context as Activity
 
     val pagerState = rememberPagerState()
 
@@ -77,9 +76,7 @@ fun HomeScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-//            .padding(16.dp)
             .background(White)
-//            .verticalScroll(scrollState)
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -97,6 +94,46 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(400.dp)
+                            .clickable {
+                                // Navigate to PostActivity with different profile data
+                                val intent = Intent(context, PostActivity::class.java).apply {
+                                    when (indexOfImages) {
+                                        0 -> {
+                                            putExtra("USER_NAME", "Kendall")
+                                            putExtra("USER_HANDLE", "k2")
+                                            putExtra("USER_BIO", "Sustainable style for every soul.")
+                                            putExtra("POSTS_COUNT", 3)
+                                            putExtra("FOLLOWERS_COUNT", 1456)
+                                            putExtra("FOLLOWING_COUNT", 11)
+                                        }
+                                        1 -> {
+                                            putExtra("USER_NAME", "Emily")
+                                            putExtra("USER_HANDLE", "emily_style")
+                                            putExtra("USER_BIO", "Eco-friendly, wallet-friendly.")
+                                            putExtra("POSTS_COUNT", 8)
+                                            putExtra("FOLLOWERS_COUNT", 2340)
+                                            putExtra("FOLLOWING_COUNT", 156)
+                                        }
+                                        2 -> {
+                                            putExtra("USER_NAME", "Sophia")
+                                            putExtra("USER_HANDLE", "sophia_fashion")
+                                            putExtra("USER_BIO", "Vintage vibes & modern style")
+                                            putExtra("POSTS_COUNT", 15)
+                                            putExtra("FOLLOWERS_COUNT", 3890)
+                                            putExtra("FOLLOWING_COUNT", 234)
+                                        }
+                                        3 -> {
+                                            putExtra("USER_NAME", "Olivia")
+                                            putExtra("USER_HANDLE", "liv_closet")
+                                            putExtra("USER_BIO", "Minimalist wardrobe enthusiast")
+                                            putExtra("POSTS_COUNT", 12)
+                                            putExtra("FOLLOWERS_COUNT", 1987)
+                                            putExtra("FOLLOWING_COUNT", 89)
+                                        }
+                                    }
+                                }
+                                context.startActivity(intent)
+                            }
                     ) {
                         Image(
                             painter = painterResource(id = images[indexOfImages]),
@@ -108,34 +145,12 @@ fun HomeScreen() {
                             contentScale = ContentScale.Crop
                         )
 
+                        // Profile name overlay
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .fillMaxSize()
                         ) {
-                            androidx.compose.material3.Button(
-                                onClick = {
-                                    val intent = Intent(context, PostActivity::class.java)
-                                    context.startActivity(intent)
-                                },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 16.dp, end = 16.dp)
-                                    .height(36.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFD4C4B0)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    "View Profile",
-                                    style = TextStyle(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = Color.Black
-                                    )
-                                )
-                            }
                             val nameText = when (indexOfImages) {
                                 0 -> "kendall"
                                 1 -> "emily"
@@ -209,10 +224,8 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 12.dp),
-
                         verticalAlignment = Alignment.CenterVertically,
-
-                        ) {
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.image4),
                             contentDescription = null,
@@ -275,7 +288,6 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 10.dp),
-
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -284,9 +296,7 @@ fun HomeScreen() {
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "1143", style = TextStyle(
                                 fontSize = 12.sp,
@@ -295,30 +305,35 @@ fun HomeScreen() {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        Icon(
-                            painter = painterResource(R.drawable.chat),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            "59", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                        // Chat icon - clickable to navigate to MessageActivity
+                        Row(
+                            modifier = Modifier.clickable {
+                                val intent = Intent(context, MessageActivity::class.java)
+                                context.startActivity(intent)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.chat),
+                                null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                "59", style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
 
+                        Spacer(modifier = Modifier.width(20.dp))
                         Icon(
                             painter = painterResource(R.drawable.share),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "34", style = TextStyle(
                                 fontSize = 12.sp,
@@ -361,10 +376,8 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 12.dp),
-
                         verticalAlignment = Alignment.CenterVertically,
-
-                        ) {
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.image1),
                             contentDescription = null,
@@ -427,7 +440,6 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 10.dp),
-
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -436,9 +448,7 @@ fun HomeScreen() {
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "509", style = TextStyle(
                                 fontSize = 12.sp,
@@ -447,30 +457,35 @@ fun HomeScreen() {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        Icon(
-                            painter = painterResource(R.drawable.chat),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            "32", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                        // Chat icon - clickable to navigate to MessageActivity
+                        Row(
+                            modifier = Modifier.clickable {
+                                val intent = Intent(context, MessageActivity::class.java)
+                                context.startActivity(intent)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.chat),
+                                null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                "32", style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
 
+                        Spacer(modifier = Modifier.width(20.dp))
                         Icon(
                             painter = painterResource(R.drawable.share),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "3", style = TextStyle(
                                 fontSize = 12.sp,
@@ -558,5 +573,4 @@ fun ProductCard(imageRes: Int, title: String, price: String) {
 @Composable
 fun PreviewHome() {
     HomeScreen()
-
 }
