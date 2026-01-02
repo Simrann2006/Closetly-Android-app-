@@ -22,15 +22,9 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
-<<<<<<< Updated upstream
             android:name=".MessageActivity"
             android:exported="true"
-            android:label="@string/title_activity_message"
-=======
-            android:name=".AnalysisActivity"
-            android:exported="true"
-            android:label="@string/title_activity_analysis"
->>>>>>> Stashed changes
+            android:label="MessageActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,11 +32,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-<<<<<<< Updated upstream
         <activity
             android:name=".NotificationActivity"
             android:exported="true"
-            android:label="@string/title_activity_notification"
+            android:label="NotificationActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -53,7 +46,7 @@
         <activity
             android:name=".PostActivity"
             android:exported="true"
-            android:label="@string/title_activity_post"
+            android:label="PostActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -61,8 +54,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-=======
->>>>>>> Stashed changes
         <activity
             android:name=".ClothesDetailsActivity"
             android:exported="true"
