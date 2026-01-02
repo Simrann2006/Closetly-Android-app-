@@ -1,15 +1,17 @@
 package com.example.closetly
 
 import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
@@ -33,185 +34,186 @@ class EditProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            EditProfile()
+            EditProfileScreen()
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfile() {
-    val notification = rememberSaveable { mutableStateOf("") }
+fun EditProfileScreen() {
+    val context = LocalContext.current
 
-    if (notification.value.isNotEmpty()) {
-        Toast.makeText(
-            LocalContext.current,
-            notification.value,
-            Toast.LENGTH_LONG
-        ).show()
-        notification.value = ""
+    // Retrieve data from Intent
+    var name by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("name") ?: "") }
+    var username by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("username") ?: "") }
+    var bio by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("bio") ?: "") }
+    var imageUri by rememberSaveable { mutableStateOf<Any>((context as Activity).intent.getStringExtra("imageUri")?.let { Uri.parse(it) } ?: R.drawable.profile) }
+
+    var usernameError by remember { mutableStateOf(false) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { imageUri = it }
     }
 
-    var name by rememberSaveable { mutableStateOf("default name") }
-    var username by rememberSaveable { mutableStateOf("default username") }
-    var bio by rememberSaveable { mutableStateOf("default bio") }
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Background Image
-        Image(
-            painter = painterResource(id = R.drawable.registrationbg),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Foreground UI
-        Column(
+    Scaffold(
+        topBar = {
+            EditProfileTopBar(
+                username = username,
+                onBackClick = {
+                    if (username.isBlank()) {
+                        usernameError = true
+                        Toast.makeText(context, "Username is required", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val resultIntent = Intent().apply {
+                            putExtra("name", name)
+                            putExtra("username", username)
+                            putExtra("bio", bio)
+                            putExtra("imageUri", (imageUri as? Uri)?.toString())
+                        }
+                        (context as Activity).setResult(Activity.RESULT_OK, resultIntent)
+                        (context as Activity).finish()
+                    }
+                },
+                onSaveClick = {
+                    if (username.isBlank()) {
+                        usernameError = true
+                        Toast.makeText(context, "Username is required", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val resultIntent = Intent().apply {
+                            putExtra("name", name)
+                            putExtra("username", username)
+                            putExtra("bio", bio)
+                            putExtra("imageUri", (imageUri as? Uri)?.toString())
+                        }
+                        (context as Activity).setResult(Activity.RESULT_OK, resultIntent)
+                        (context as Activity).finish()
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(8.dp)
+                .padding(padding)
         ) {
-            TopBar()
-            ProfileImage()
+            // Background
+            Image(
+                painter = painterResource(id = R.drawable.registrationbg),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
 
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
             ) {
+                // Profile picture
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clickable { imagePickerLauncher.launch("image/*") }
+                    ) {
+                        AsyncImage(
+                            model = imageUri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Change Profile Picture", color = Color.DarkGray)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Name
                 TextField(
                     value = name,
                     onValueChange = { name = it },
+                    label = { Text("Name") },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Username
                 TextField(
                     value = username,
-                    onValueChange = { username = it },
+                    onValueChange = {
+                        username = it
+                        usernameError = false
+                    },
+                    label = { Text("Username") },
+                    isError = usernameError,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black
-                    )
+                        unfocusedTextColor = Color.Black,
+                        errorLabelColor = Color.Red
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
+                if (usernameError) {
+                    Text("Username is required", color = Color.Red, style = MaterialTheme.typography.bodySmall)
+                }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = "Bio",
-                    modifier = Modifier
-                        .width(100.dp)
-                        .padding(top = 8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
+                // Bio
                 TextField(
                     value = bio,
                     onValueChange = { bio = it },
-                    singleLine = false,
-                    modifier = Modifier.height(150.dp),
+                    label = { Text("Bio") },
+                    modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black
-                    )
+                    ),
+                    singleLine = false,
+                    minLines = 3,
+                    maxLines = 10
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar() {
+fun EditProfileTopBar(
+    username: String,
+    onBackClick: () -> Unit,
+    onSaveClick: () -> Unit
+) {
     val context = LocalContext.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = {
-                // Go back to ProfileActivity
-                (context as? Activity)?.finish()
+
+    TopAppBar(
+        title = { Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Edit Profile") } },
+        navigationIcon = {
+            IconButton(onClick = { onBackClick() }) {
+                Image(painter = painterResource(R.drawable.back), contentDescription = "Back")
             }
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back"
-            )
+        },
+        actions = {
+            TextButton(onClick = { onSaveClick() }) {
+                Text("Save")
+            }
         }
-
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Edit Profile",
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        // Right Spacer
-        Box(modifier = Modifier.size(48.dp))
-    }
-}
-
-@Composable
-fun ProfileImage() {
-    val imageUri = rememberSaveable { mutableStateOf<Any>(R.drawable.baseline_person_outline_24) }
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> uri?.let { imageUri.value = it } }
-
-    Column(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Card(
-            shape = CircleShape,
-            modifier = Modifier
-                .padding(8.dp)
-                .size(100.dp)
-        ) {
-            AsyncImage(
-                model = imageUri.value,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { launcher.launch("image/*") }
-            )
-        }
-        Text(text = "Change Profile Picture")
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    EditProfile()
+    )
 }

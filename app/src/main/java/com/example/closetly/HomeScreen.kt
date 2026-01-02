@@ -1,7 +1,9 @@
 package com.example.closetly
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -47,7 +50,9 @@ import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
+
+    val context = LocalContext.current
 
     val images = listOf(
         R.drawable.image1,
@@ -71,28 +76,136 @@ fun HomeScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-//            .padding(16.dp)
             .background(White)
-//            .verticalScroll(scrollState)
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            HorizontalPager(
-                count = images.size,
-                state = pagerState,
-            ) { indexOfImages ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            ) {
+                HorizontalPager(
+                    count = images.size,
+                    state = pagerState,
+                ) { indexOfImages ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                            .clickable {
+                                // Navigate to PostActivity with different profile data
+                                val intent = Intent(context, PostActivity::class.java).apply {
+                                    when (indexOfImages) {
+                                        0 -> {
+                                            putExtra("USER_NAME", "Kendall")
+                                            putExtra("USER_HANDLE", "k2")
+                                            putExtra("USER_BIO", "Sustainable style for every soul.")
+                                            putExtra("POSTS_COUNT", 3)
+                                            putExtra("FOLLOWERS_COUNT", 1456)
+                                            putExtra("FOLLOWING_COUNT", 11)
+                                        }
+                                        1 -> {
+                                            putExtra("USER_NAME", "Emily")
+                                            putExtra("USER_HANDLE", "emily_style")
+                                            putExtra("USER_BIO", "Eco-friendly, wallet-friendly.")
+                                            putExtra("POSTS_COUNT", 8)
+                                            putExtra("FOLLOWERS_COUNT", 2340)
+                                            putExtra("FOLLOWING_COUNT", 156)
+                                        }
+                                        2 -> {
+                                            putExtra("USER_NAME", "Sophia")
+                                            putExtra("USER_HANDLE", "sophia_fashion")
+                                            putExtra("USER_BIO", "Vintage vibes & modern style")
+                                            putExtra("POSTS_COUNT", 15)
+                                            putExtra("FOLLOWERS_COUNT", 3890)
+                                            putExtra("FOLLOWING_COUNT", 234)
+                                        }
+                                        3 -> {
+                                            putExtra("USER_NAME", "Olivia")
+                                            putExtra("USER_HANDLE", "liv_closet")
+                                            putExtra("USER_BIO", "Minimalist wardrobe enthusiast")
+                                            putExtra("POSTS_COUNT", 12)
+                                            putExtra("FOLLOWERS_COUNT", 1987)
+                                            putExtra("FOLLOWING_COUNT", 89)
+                                        }
+                                    }
+                                }
+                                context.startActivity(intent)
+                            }
+                    ) {
+                        Image(
+                            painter = painterResource(id = images[indexOfImages]),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(400.dp)
+                                .clip(MaterialTheme.shapes.medium),
+                            contentScale = ContentScale.Crop
+                        )
 
-                Image(
-                    painter = painterResource(id = images[indexOfImages]),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .clip(MaterialTheme.shapes.medium),
-                    contentScale = ContentScale.Crop
-                )
+                        // Profile name overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxSize()
+                        ) {
+                            val nameText = when (indexOfImages) {
+                                0 -> "kendall"
+                                1 -> "emily"
+                                2 -> "sophia"
+                                3 -> "olivia"
+                                else -> "kendall"
+                            }
+
+                            Text(
+                                text = nameText,
+                                style = TextStyle(
+                                    fontSize = 64.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                ),
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(start = 16.dp)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            when (indexOfImages) {
+                                0 -> {
+                                    ProductCard(R.drawable.image4, "Half Jeans", "Rs.299")
+                                    ProductCard(R.drawable.image2, "Blue Hoodie", "Rs.799")
+                                    ProductCard(R.drawable.image3, "Bebe Tee", "Rs.499")
+                                }
+                                1 -> {
+                                    ProductCard(R.drawable.image3, "White Tee", "Rs.399")
+                                    ProductCard(R.drawable.image1, "Denim Jacket", "Rs.899")
+                                    ProductCard(R.drawable.image4, "Shorts", "Rs.349")
+                                }
+                                2 -> {
+                                    ProductCard(R.drawable.image2, "Hoodie", "Rs.699")
+                                    ProductCard(R.drawable.image4, "Jeans", "Rs.599")
+                                    ProductCard(R.drawable.image1, "Dress", "Rs.799")
+                                }
+                                3 -> {
+                                    ProductCard(R.drawable.image1, "Jacket", "Rs.999")
+                                    ProductCard(R.drawable.image3, "T-Shirt", "Rs.299")
+                                    ProductCard(R.drawable.image2, "Pants", "Rs.649")
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
             Spacer(Modifier.height(10.dp))
 
             HorizontalPagerIndicator(
@@ -101,49 +214,8 @@ fun HomeScreen() {
                 activeColor = Color.White,
                 inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
             )
-            Card(
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(120.dp),
-                shape = RoundedCornerShape(12.dp),
-//                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box {
-                    Image(
-                        painter = painterResource(R.drawable.image4),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .background(Color.Black.copy(alpha = 0.6f))
-                            .fillMaxWidth()
-                            .padding(6.dp)
-                    ) {
-                        Text(
-                            "Half Jeans",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = White
-                            )
-                        )
-                        Text(
-                            "Rs 245",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 9.sp,
-                                color = White
-                            )
-                        )
 
-                    }
-                }
-            }
+            Spacer(Modifier.height(16.dp))
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -152,10 +224,8 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 12.dp),
-
                         verticalAlignment = Alignment.CenterVertically,
-
-                        ) {
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.image4),
                             contentDescription = null,
@@ -216,19 +286,17 @@ fun HomeScreen() {
 
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(),
-
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.img),
+                            painter = painterResource(R.drawable.heart),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "1143", style = TextStyle(
                                 fontSize = 12.sp,
@@ -237,30 +305,35 @@ fun HomeScreen() {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        Icon(
-                            painter = painterResource(R.drawable.chat),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            "59", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                        // Chat icon - clickable to navigate to MessageActivity
+                        Row(
+                            modifier = Modifier.clickable {
+                                val intent = Intent(context, MessageActivity::class.java)
+                                context.startActivity(intent)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.chat),
+                                null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                "59", style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
 
+                        Spacer(modifier = Modifier.width(20.dp))
                         Icon(
                             painter = painterResource(R.drawable.share),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "34", style = TextStyle(
                                 fontSize = 12.sp,
@@ -269,7 +342,9 @@ fun HomeScreen() {
                         )
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp)
                     ) {
                         Text(
                             "Eco-friendly, wallet-friendly.", style = TextStyle(
@@ -278,7 +353,9 @@ fun HomeScreen() {
                             )
                         )
                     }
-                    Row {
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp)
+                    ) {
                         Text(
                             "22 hours ago", style = TextStyle(
                                 fontSize = 15.sp,
@@ -299,10 +376,8 @@ fun HomeScreen() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 12.dp),
-
                         verticalAlignment = Alignment.CenterVertically,
-
-                        ) {
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.image1),
                             contentDescription = null,
@@ -363,19 +438,17 @@ fun HomeScreen() {
 
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(),
-
+                            .fillMaxWidth()
+                            .padding(start = 10.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.img),
+                            painter = painterResource(R.drawable.heart),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "509", style = TextStyle(
                                 fontSize = 12.sp,
@@ -384,30 +457,35 @@ fun HomeScreen() {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        Icon(
-                            painter = painterResource(R.drawable.chat),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            "32", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                        // Chat icon - clickable to navigate to MessageActivity
+                        Row(
+                            modifier = Modifier.clickable {
+                                val intent = Intent(context, MessageActivity::class.java)
+                                context.startActivity(intent)
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.chat),
+                                null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                "32", style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
 
+                        Spacer(modifier = Modifier.width(20.dp))
                         Icon(
                             painter = painterResource(R.drawable.share),
                             null,
                             modifier = Modifier.size(20.dp)
                         )
-
                         Spacer(modifier = Modifier.width(5.dp))
-
                         Text(
                             "3", style = TextStyle(
                                 fontSize = 12.sp,
@@ -416,10 +494,12 @@ fun HomeScreen() {
                         )
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp)
                     ) {
                         Text(
-                            "“Style that tells a story”", style = TextStyle(
+                            "Style that tells a story", style = TextStyle(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -427,7 +507,9 @@ fun HomeScreen() {
                     }
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Row {
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp)
+                    ) {
                         Text(
                             "5 days ago", style = TextStyle(
                                 fontSize = 15.sp,
@@ -442,9 +524,53 @@ fun HomeScreen() {
     }
 }
 
+@Composable
+fun ProductCard(imageRes: Int, title: String, price: String) {
+    Card(
+        modifier = Modifier
+            .width(110.dp)
+            .height(140.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = 4.dp
+    ) {
+        Box {
+            Image(
+                painter = painterResource(imageRes),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .fillMaxWidth()
+                    .padding(6.dp)
+            ) {
+                Text(
+                    title,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = White
+                    )
+                )
+                Text(
+                    price,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 9.sp,
+                        color = White
+                    )
+                )
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun PreviewHome() {
     HomeScreen()
-
 }
