@@ -41,6 +41,11 @@ interface UserRepo {
 
     fun getCurrentUser() : FirebaseUser?
 
+    fun signInWithGoogle(
+        idToken: String,
+        callback: (Boolean, String) -> Unit
+    )
+
     fun getUserById(
         userId: String,
         callback: (Boolean, String, UserModel?) -> Unit

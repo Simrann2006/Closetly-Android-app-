@@ -74,6 +74,14 @@ import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import androidx.credentials.CustomCredential
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class RegistrationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -509,7 +517,8 @@ fun RegistrationBody() {
                                         userId = userId,
                                         email = email,
                                         fullName = fullName,
-                                        phoneNumber = fullPhoneNumber
+                                        phoneNumber = fullPhoneNumber,
+                                        selectedCountry = selectedCountry.name
                                     )
                                     userViewModel.addUserToDatabase(userId, model) {
                                             success, message ->
@@ -578,7 +587,40 @@ fun RegistrationBody() {
             Spacer(Modifier.height(12.dp))
 
             OutlinedButton(
-                onClick = {},
+                onClick = {
+                    val credentialManager = CredentialManager.create(context)
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId("233120554772-kh29l4pko3gl9e6k46kf29v5t6v39974.apps.googleusercontent.com")
+                        .build()
+                    
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+                    
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val result = credentialManager.getCredential(context, request)
+                            val credential = result.credential
+
+                            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                val idToken = googleIdTokenCredential.idToken
+
+                                userViewModel.signInWithGoogle(idToken) { success, message ->
+                                    if (success) {
+                                        val intent = Intent(context, DashboardActivity::class.java)
+                                        context.startActivity(intent)
+                                        activity.finish()
+                                    } else {
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                        }
+                    }
+                },
                 modifier = Modifier
                     .width(160.dp)
                     .height(50.dp),

@@ -59,6 +59,13 @@ class UserViewModel (val repo : UserRepo) : ViewModel(){
         return repo.getCurrentUser()
     }
 
+    fun signInWithGoogle(
+        idToken: String,
+        callback: (Boolean, String) -> Unit
+    ){
+        repo.signInWithGoogle(idToken, callback)
+    }
+
     fun getUserById(
         userId: String,
         callback: (Boolean, String, UserModel?) -> Unit

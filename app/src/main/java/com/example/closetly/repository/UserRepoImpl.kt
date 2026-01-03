@@ -3,6 +3,7 @@ package com.example.closetly.repository
 import com.example.closetly.model.UserModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -114,6 +115,19 @@ class UserRepoImpl : UserRepo{
 
     override fun getCurrentUser(): FirebaseUser? {
         return  auth.currentUser
+    }
+
+    override fun signInWithGoogle(idToken: String, callback: (Boolean, String) -> Unit) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val user = auth.currentUser
+                    callback(true, user?.uid ?: "")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
     }
 
     override fun getUserById(
