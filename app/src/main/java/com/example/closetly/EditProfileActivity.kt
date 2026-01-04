@@ -1,7 +1,6 @@
 package com.example.closetly
 
 import android.app.Activity
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -43,51 +42,142 @@ class EditProfileActivity : ComponentActivity() {
 @Composable
 fun EditProfileScreen() {
     val context = LocalContext.current
+    val userRepo = remember { com.example.closetly.repository.UserRepoImpl() }
+    val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
+    val commonRepo = remember { com.example.closetly.repository.CommonRepoImpl() }
+    val commonViewModel = remember { com.example.closetly.viewmodel.CommonViewModel(commonRepo) }
+    val currentUser = remember { com.google.firebase.auth.FirebaseAuth.getInstance().currentUser }
 
-    // Retrieve data from Intent
     var name by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("name") ?: "") }
     var username by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("username") ?: "") }
-    var bio by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("bio") ?: "") }
+    var bio by remember { mutableStateOf("") }
     var imageUri by rememberSaveable { mutableStateOf<Any>((context as Activity).intent.getStringExtra("imageUri")?.let { Uri.parse(it) } ?: R.drawable.profile) }
+    var cloudinaryImageUrl by remember { mutableStateOf("") }
 
     var usernameError by remember { mutableStateOf(false) }
+    var usernameErrorMessage by remember { mutableStateOf("") }
+    var isSaving by remember { mutableStateOf(false) }
+    var isUploadingImage by remember { mutableStateOf(false) }
+    var shouldSaveAfterUpload by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isUploadingImage, shouldSaveAfterUpload) {
+        if (!isUploadingImage && shouldSaveAfterUpload && isSaving) {
+            shouldSaveAfterUpload = false
+            currentUser?.let { user ->
+                userRepo.checkUsernameExists(username.lowercase(), user.uid) { exists ->
+                    if (exists) {
+                        isSaving = false
+                        usernameError = true
+                        usernameErrorMessage = "Username already taken"
+                        Toast.makeText(context, "Username already taken", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val updatedUser = com.example.closetly.model.UserModel(
+                            userId = user.uid,
+                            fullName = name,
+                            email = user.email ?: "",
+                            phoneNumber = "",
+                            selectedCountry = "",
+                            profilePicture = cloudinaryImageUrl,
+                            username = username.lowercase(),
+                            bio = bio
+                        )
+                        
+                        userViewModel.editProfile(user.uid, updatedUser) { success, message ->
+                            isSaving = false
+                            if (success) {
+                                (context as Activity).setResult(Activity.RESULT_OK)
+                                (context as Activity).finish()
+                            } else {
+                                Toast.makeText(context, "Failed: $message", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
+            userViewModel.getUserById(user.uid) { success, message, userData ->
+                if (success && userData != null) {
+                    if (userData.profilePicture.isNotEmpty()) {
+                        cloudinaryImageUrl = userData.profilePicture
+                    }
+                    if (userData.bio.isNotEmpty()) {
+                        bio = userData.bio
+                    }
+                }
+            }
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { imageUri = it }
+        uri?.let { 
+            imageUri = it
+            isUploadingImage = true
+            commonViewModel.uploadImage(context, it) { uploadedUrl ->
+                isUploadingImage = false
+                uploadedUrl?.let { url ->
+                    cloudinaryImageUrl = url
+                } ?: run {
+                    Toast.makeText(context, "Failed to upload image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     Scaffold(
         topBar = {
             EditProfileTopBar(
-                username = username,
+                isLoading = isSaving || isUploadingImage,
                 onBackClick = {
-                    if (username.isBlank()) {
-                        usernameError = true
-                        Toast.makeText(context, "Username is required", Toast.LENGTH_SHORT).show()
-                    } else {
-                        val resultIntent = Intent().apply {
-                            putExtra("name", name)
-                            putExtra("username", username)
-                            putExtra("bio", bio)
-                            putExtra("imageUri", (imageUri as? Uri)?.toString())
-                        }
-                        (context as Activity).setResult(Activity.RESULT_OK, resultIntent)
-                        (context as Activity).finish()
-                    }
+                    (context as Activity).finish()
                 },
                 onSaveClick = {
                     if (username.isBlank()) {
                         usernameError = true
+                        usernameErrorMessage = "Username is required"
                         Toast.makeText(context, "Username is required", Toast.LENGTH_SHORT).show()
-                    } else {
-                        val resultIntent = Intent().apply {
-                            putExtra("name", name)
-                            putExtra("username", username)
-                            putExtra("bio", bio)
-                            putExtra("imageUri", (imageUri as? Uri)?.toString())
+                    } else if (!isSaving) {
+                        isSaving = true
+                        
+                        if (isUploadingImage) {
+                            shouldSaveAfterUpload = true
+                            return@EditProfileTopBar
                         }
-                        (context as Activity).setResult(Activity.RESULT_OK, resultIntent)
-                        (context as Activity).finish()
+                        
+                        currentUser?.let { user ->
+                            userRepo.checkUsernameExists(username.lowercase(), user.uid) { exists ->
+                                if (exists) {
+                                    isSaving = false
+                                    usernameError = true
+                                    usernameErrorMessage = "Username already taken"
+                                    Toast.makeText(context, "Username already taken", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val updatedUser = com.example.closetly.model.UserModel(
+                                        userId = user.uid,
+                                        fullName = name,
+                                        email = user.email ?: "",
+                                        phoneNumber = "",
+                                        selectedCountry = "",
+                                        profilePicture = cloudinaryImageUrl,
+                                        username = username.lowercase(),
+                                        bio = bio
+                                    )
+                                    
+                                    userViewModel.editProfile(user.uid, updatedUser) { success, message ->
+                                        isSaving = false
+                                        if (success) {
+                                            (context as Activity).setResult(Activity.RESULT_OK)
+                                            (context as Activity).finish()
+                                        } else {
+                                            Toast.makeText(context, "Failed: $message", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             )
@@ -98,7 +188,6 @@ fun EditProfileScreen() {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Background
             Image(
                 painter = painterResource(id = R.drawable.registrationbg),
                 contentDescription = null,
@@ -112,7 +201,6 @@ fun EditProfileScreen() {
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                // Profile picture
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Card(
                         shape = CircleShape,
@@ -133,7 +221,6 @@ fun EditProfileScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Name
                 TextField(
                     value = name,
                     onValueChange = { name = it },
@@ -149,7 +236,6 @@ fun EditProfileScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Username
                 TextField(
                     value = username,
                     onValueChange = {
@@ -168,12 +254,11 @@ fun EditProfileScreen() {
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (usernameError) {
-                    Text("Username is required", color = Color.Red, style = MaterialTheme.typography.bodySmall)
+                    Text(usernameErrorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Bio
                 TextField(
                     value = bio,
                     onValueChange = { bio = it },
@@ -197,22 +282,31 @@ fun EditProfileScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileTopBar(
-    username: String,
+    isLoading: Boolean,
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     TopAppBar(
         title = { Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Edit Profile") } },
         navigationIcon = {
-            IconButton(onClick = { onBackClick() }) {
+            IconButton(onClick = { onBackClick() }, enabled = !isLoading) {
                 Image(painter = painterResource(R.drawable.back), contentDescription = "Back")
             }
         },
         actions = {
-            TextButton(onClick = { onSaveClick() }) {
-                Text("Save")
+            TextButton(
+                onClick = { onSaveClick() },
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text("Save")
+                }
             }
         }
     )

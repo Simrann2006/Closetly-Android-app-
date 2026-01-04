@@ -5,7 +5,10 @@ data class UserModel(
     val fullName : String = "",
     val email : String = "",
     val phoneNumber : String = "",
-    val selectedCountry : String = ""
+    val selectedCountry : String = "",
+    val profilePicture : String = "",
+    val username : String = "",
+    val bio : String = ""
 ) {
     fun toMap() : Map<String, Any?>{
         return mapOf(
@@ -13,7 +16,10 @@ data class UserModel(
             "fullName" to fullName,
             "email" to email,
             "phoneNumber" to phoneNumber,
-            "selectedCountry" to selectedCountry
+            "selectedCountry" to selectedCountry,
+            "profilePicture" to profilePicture,
+            "username" to username,
+            "bio" to bio
         )
     }
 }

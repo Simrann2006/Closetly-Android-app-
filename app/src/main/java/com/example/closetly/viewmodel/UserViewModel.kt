@@ -70,12 +70,12 @@ class UserViewModel (val repo : UserRepo) : ViewModel(){
         userId: String,
         callback: (Boolean, String, UserModel?) -> Unit
     ){
-
+        repo.getUserById(userId, callback)
     }
 
     fun getAllUser(
         callback: (Boolean, String, List<UserModel>) -> Unit
     ){
-
+        repo.getAllUser(callback)
     }
 }

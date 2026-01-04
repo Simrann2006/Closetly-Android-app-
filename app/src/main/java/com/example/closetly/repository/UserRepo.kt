@@ -54,4 +54,10 @@ interface UserRepo {
     fun getAllUser(
         callback: (Boolean, String, List<UserModel>) -> Unit
     )
+    
+    fun checkUsernameExists(
+        username: String,
+        currentUserId: String,
+        callback: (Boolean) -> Unit
+    )
 }

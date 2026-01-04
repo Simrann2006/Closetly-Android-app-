@@ -171,4 +171,32 @@ class UserRepoImpl : UserRepo{
             }
         })
     }
+    
+    override fun checkUsernameExists(
+        username: String,
+        currentUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        ref.orderByChild("username").equalTo(username)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (data in snapshot.children) {
+                            val userId = data.key
+                            if (userId != currentUserId) {
+                                callback(true)
+                                return
+                            }
+                        }
+                        callback(false)
+                    } else {
+                        callback(false)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
+    }
 }
