@@ -24,10 +24,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,10 +56,14 @@ import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
     val context = LocalContext.current
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var selectedPostImage by remember { mutableStateOf<Int?>(null) }
+    val sheetState = rememberModalBottomSheetState()
 
     val images = listOf(
         R.drawable.image1,
@@ -266,7 +277,12 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         Icon(
                             painter = painterResource(R.drawable.edit),
                             null,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    selectedPostImage = R.drawable.lu
+                                    showBottomSheet = true
+                                }
                         )
                     }
                     Column(
@@ -415,7 +431,12 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         Icon(
                             painter = painterResource(R.drawable.edit),
                             null,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    selectedPostImage = R.drawable.jacket
+                                    showBottomSheet = true
+                                }
                         )
                     }
                     Column(
@@ -513,6 +534,114 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                 }
             }
         }
+    }
+
+    // Bottom Sheet Popup
+    if (showBottomSheet && selectedPostImage != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = sheetState,
+            containerColor = Color(0xFF2D2D2D)
+        ) {
+            BottomSheetContent(
+                imageRes = selectedPostImage!!,
+                onDismiss = { showBottomSheet = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Post Image
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .clip(RoundedCornerShape(12.dp))
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Save Button
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF404040))
+                .clickable {
+                    // Handle save action
+                    onDismiss()
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.edit),
+                    contentDescription = "Save",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Save",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // About this account
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    // Handle about this account action
+                },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF404040)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.edit),
+                    contentDescription = "Account",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                "About this account",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
