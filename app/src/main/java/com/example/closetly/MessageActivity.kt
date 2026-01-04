@@ -1,10 +1,8 @@
 package com.example.closetly
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,7 +51,6 @@ fun MessageBody() {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
 
-    // Sample data
     val messages = remember {
         listOf(
             MessageItem(
@@ -78,7 +73,6 @@ fun MessageBody() {
             )
         )
     }
-
     Scaffold(
         topBar = {
             Column(
@@ -94,7 +88,6 @@ fun MessageBody() {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = {
-                        // Navigate back to HomeScreen (or finish the activity)
                         (context as? ComponentActivity)?.finish()
                     }) {
                         Icon(
@@ -103,7 +96,6 @@ fun MessageBody() {
                             tint = Black
                         )
                     }
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable {}
@@ -121,7 +113,7 @@ fun MessageBody() {
                         )
                     }
 
-                    IconButton(onClick = { /* Edit action */ }) {
+                    IconButton(onClick = { }) {
                         Icon(
                             painter = painterResource(R.drawable.edit),
                             contentDescription = "Edit",
@@ -130,7 +122,6 @@ fun MessageBody() {
                         )
                     }
                 }
-
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -246,7 +237,6 @@ fun MessageListItem(message: MessageItem) {
                     )
                 }
             }
-
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(

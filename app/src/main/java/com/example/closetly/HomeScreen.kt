@@ -95,7 +95,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             .fillMaxWidth()
                             .height(400.dp)
                             .clickable {
-                                // Navigate to PostActivity with different profile data
                                 val intent = Intent(context, PostActivity::class.java).apply {
                                     when (indexOfImages) {
                                         0 -> {
@@ -145,7 +144,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             contentScale = ContentScale.Crop
                         )
 
-                        // Profile name overlay
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -305,11 +303,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        // Chat icon - clickable to navigate to MessageActivity
                         Row(
                             modifier = Modifier.clickable {
-                                val intent = Intent(context, MessageActivity::class.java)
-                                context.startActivity(intent)
                             },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -457,11 +452,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         )
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        // Chat icon - clickable to navigate to MessageActivity
                         Row(
                             modifier = Modifier.clickable {
-                                val intent = Intent(context, MessageActivity::class.java)
-                                context.startActivity(intent)
                             },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
