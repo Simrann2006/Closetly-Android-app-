@@ -23,9 +23,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -50,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.closetly.ui.theme.White
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
@@ -65,11 +70,22 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
     var selectedPostImage by remember { mutableStateOf<Int?>(null) }
     val sheetState = rememberModalBottomSheetState()
 
+    // Like states for posts
+    var isPost1Liked by remember { mutableStateOf(false) }
+    var post1LikeCount by remember { mutableStateOf(1143) }
+
+    var isPost2Liked by remember { mutableStateOf(false) }
+    var post2LikeCount by remember { mutableStateOf(509) }
+
+    // Follow states for posts
+    var isPost1Following by remember { mutableStateOf(false) }
+    var isPost2Following by remember { mutableStateOf(false) }
+
     val images = listOf(
-        R.drawable.image1,
-        R.drawable.image2,
-        R.drawable.image3,
-        R.drawable.image4,
+        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
+        "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800",
+        "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800",
+        "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800",
     )
 
     val pagerState = rememberPagerState()
@@ -145,8 +161,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 context.startActivity(intent)
                             }
                     ) {
-                        Image(
-                            painter = painterResource(id = images[indexOfImages]),
+                        AsyncImage(
+                            model = images[indexOfImages],
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -190,24 +206,24 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         ) {
                             when (indexOfImages) {
                                 0 -> {
-                                    ProductCard(R.drawable.image4, "Half Jeans", "Rs.299")
-                                    ProductCard(R.drawable.image2, "Blue Hoodie", "Rs.799")
-                                    ProductCard(R.drawable.image3, "Bebe Tee", "Rs.499")
+                                    ProductCard("https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400", "Half Jeans", "Rs.299")
+                                    ProductCard("https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400", "Blue Hoodie", "Rs.799")
+                                    ProductCard("https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", "Bebe Tee", "Rs.499")
                                 }
                                 1 -> {
-                                    ProductCard(R.drawable.image3, "White Tee", "Rs.399")
-                                    ProductCard(R.drawable.image1, "Denim Jacket", "Rs.899")
-                                    ProductCard(R.drawable.image4, "Shorts", "Rs.349")
+                                    ProductCard("https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", "White Tee", "Rs.399")
+                                    ProductCard("https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400", "Denim Jacket", "Rs.899")
+                                    ProductCard("https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400", "Shorts", "Rs.349")
                                 }
                                 2 -> {
-                                    ProductCard(R.drawable.image2, "Hoodie", "Rs.699")
-                                    ProductCard(R.drawable.image4, "Jeans", "Rs.599")
-                                    ProductCard(R.drawable.image1, "Dress", "Rs.799")
+                                    ProductCard("https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400", "Hoodie", "Rs.699")
+                                    ProductCard("https://images.unsplash.com/photo-1542272604-787c3835535d?w=400", "Jeans", "Rs.599")
+                                    ProductCard("https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400", "Dress", "Rs.799")
                                 }
                                 3 -> {
-                                    ProductCard(R.drawable.image1, "Jacket", "Rs.999")
-                                    ProductCard(R.drawable.image3, "T-Shirt", "Rs.299")
-                                    ProductCard(R.drawable.image2, "Pants", "Rs.649")
+                                    ProductCard("https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400", "Jacket", "Rs.999")
+                                    ProductCard("https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", "T-Shirt", "Rs.299")
+                                    ProductCard("https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400", "Pants", "Rs.649")
                                 }
                             }
                         }
@@ -225,6 +241,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
             )
 
             Spacer(Modifier.height(16.dp))
+
+            // First Post Card
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -235,8 +253,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             .padding(horizontal = 10.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.image4),
+                        AsyncImage(
+                            model = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -257,18 +275,21 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         androidx.compose.material3.Button(
                             onClick = {
+                                isPost1Following = !isPost1Following
                             },
                             modifier = Modifier
                                 .height(32.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.purple_200),
+                                containerColor = if (isPost1Following) Color.LightGray else colorResource(R.color.purple_200),
                             ),
                             shape = RoundedCornerShape(8.dp),
                         ) {
                             Text(
-                                "Follow", style = TextStyle(
+                                if (isPost1Following) "Following" else "Follow",
+                                style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
+                                    color = if (isPost1Following) Color.DarkGray else Color.White
                                 )
                             )
                         }
@@ -288,8 +309,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.lu),
+                        AsyncImage(
+                            model = "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -305,14 +326,23 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.heart),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        IconButton(
+                            onClick = {
+                                isPost1Liked = !isPost1Liked
+                                post1LikeCount = if (isPost1Liked) post1LikeCount + 1 else post1LikeCount - 1
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPost1Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Like",
+                                tint = if (isPost1Liked) Color.Red else Color.Black,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            "1143", style = TextStyle(
+                            "$post1LikeCount", style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -379,6 +409,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
             }
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Second Post Card
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -389,8 +420,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             .padding(horizontal = 10.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.image1),
+                        AsyncImage(
+                            model = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -411,18 +442,21 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         androidx.compose.material3.Button(
                             onClick = {
+                                isPost2Following = !isPost2Following
                             },
                             modifier = Modifier
                                 .height(32.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.purple_200),
+                                containerColor = if (isPost2Following) Color.LightGray else colorResource(R.color.purple_200),
                             ),
                             shape = RoundedCornerShape(8.dp),
                         ) {
                             Text(
-                                "Follow", style = TextStyle(
+                                if (isPost2Following) "Following" else "Follow",
+                                style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
+                                    color = if (isPost2Following) Color.DarkGray else Color.White
                                 )
                             )
                         }
@@ -442,8 +476,8 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.jacket),
+                        AsyncImage(
+                            model = "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
@@ -459,14 +493,23 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.heart),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        IconButton(
+                            onClick = {
+                                isPost2Liked = !isPost2Liked
+                                post2LikeCount = if (isPost2Liked) post2LikeCount + 1 else post2LikeCount - 1
+                            },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isPost2Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Like",
+                                tint = if (isPost2Liked) Color.Red else Color.Black,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            "509", style = TextStyle(
+                            "$post2LikeCount", style = TextStyle(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -566,6 +609,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 .clip(CircleShape)
                 .background(Color(0xFF404040))
                 .clickable {
+                    // Handle save action
                     onDismiss()
                 },
             contentAlignment = Alignment.Center
@@ -574,7 +618,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.save),
+                    painter = painterResource(R.drawable.edit),
                     contentDescription = "Save",
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
@@ -598,6 +642,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
+                    // Handle about this account action
                 },
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -609,7 +654,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.profile),
+                    painter = painterResource(R.drawable.edit),
                     contentDescription = "Account",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
@@ -631,7 +676,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun ProductCard(imageRes: Int, title: String, price: String) {
+fun ProductCard(imageUrl: String, title: String, price: String) {
     Card(
         modifier = Modifier
             .width(110.dp)
@@ -640,8 +685,8 @@ fun ProductCard(imageRes: Int, title: String, price: String) {
         elevation = 4.dp
     ) {
         Box {
-            Image(
-                painter = painterResource(imageRes),
+            AsyncImage(
+                model = imageUrl,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
