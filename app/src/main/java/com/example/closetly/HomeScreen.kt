@@ -556,22 +556,9 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Post Image
-        Image(
-            painter = painterResource(imageRes),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .clip(RoundedCornerShape(12.dp))
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
         // Save Button
         Box(
             modifier = Modifier
@@ -579,7 +566,6 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 .clip(CircleShape)
                 .background(Color(0xFF404040))
                 .clickable {
-                    // Handle save action
                     onDismiss()
                 },
             contentAlignment = Alignment.Center
@@ -588,7 +574,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.edit),
+                    painter = painterResource(R.drawable.save),
                     contentDescription = "Save",
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
@@ -605,14 +591,13 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         // About this account
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    // Handle about this account action
                 },
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -624,7 +609,7 @@ fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.edit),
+                    painter = painterResource(R.drawable.profile),
                     contentDescription = "Account",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
