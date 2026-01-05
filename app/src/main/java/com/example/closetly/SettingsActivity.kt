@@ -1,6 +1,9 @@
 package com.example.closetly
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,19 +11,31 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.repository.UserRepoImpl
+import com.example.closetly.ui.theme.Black
+import com.example.closetly.ui.theme.Grey
+import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Light_grey1
+import com.example.closetly.ui.theme.Pink40
+import com.example.closetly.ui.theme.White
+import com.example.closetly.viewmodel.UserViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +50,11 @@ class SettingsActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsBody() {
+    val context = LocalContext.current
+    val userRepo = remember { UserRepoImpl() }
+    val userViewModel = remember { UserViewModel(userRepo) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -159,19 +179,101 @@ fun SettingsBody() {
             SettingsItem(
                 icon = R.drawable.baseline_logout_24,
                 title = "Logout",
-                onClick = { },
+                onClick = { showLogoutDialog = true },
                 textColor = Color.Black
             )
 
             SettingsItem(
                 icon = R.drawable.baseline_delete_24,
                 title = "Delete Account",
-                onClick = {  },
+                onClick = { showDeleteDialog = true },
                 textColor = Color.Red
             )
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            containerColor = White,
+            shape = RoundedCornerShape(16.dp),
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout", color = Black) },
+
+
+            text = { Text("Are you sure you want to logout?", color = Color.Black) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        userViewModel.logout { success, message ->
+                            if (success) {
+                                val intent = Intent(context, LoginActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                context.startActivity(intent)
+                                (context as Activity).finish()
+                            } else {
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Logout", color = Pink40)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            }
+        )
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            containerColor = White,
+            shape = RoundedCornerShape(16.dp),
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Account", color = Black) },
+            text = { Text("Are you sure you want to delete your account? This action cannot be undone.", color = Color.Black) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        val user = FirebaseAuth.getInstance().currentUser
+                        user?.let {
+                            val userId = it.uid
+                            FirebaseDatabase.getInstance().getReference("Users").child(userId).removeValue()
+                                .addOnCompleteListener { dbTask ->
+                                    if (dbTask.isSuccessful) {
+                                        it.delete().addOnCompleteListener { authTask ->
+                                            if (authTask.isSuccessful) {
+                                                val intent = Intent(context, LoginActivity::class.java)
+                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                context.startActivity(intent)
+                                                Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+                                                (context as Activity).finish()
+                                            } else {
+                                                Toast.makeText(context, "Failed to delete account", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Failed to delete data", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                        }
+                    }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            }
+        )
     }
 }
 
