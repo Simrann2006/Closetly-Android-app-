@@ -22,4 +22,4 @@ val Black = Color(0xFF000000)
 
 val Skin = Color(0xFFC59D9B)
 
-val Red = Color(0xFFFF0E00)
+val Red = Color(0xFFD50B00)

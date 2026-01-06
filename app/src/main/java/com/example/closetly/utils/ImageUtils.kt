@@ -15,10 +15,12 @@ import java.io.File
 
 class ImageUtils(private val activity: Activity, private val registryOwner: ActivityResultRegistryOwner) {
     private lateinit var galleryLauncher: ActivityResultLauncher<Intent>
+    private lateinit var multipleGalleryLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraLauncher: ActivityResultLauncher<Uri>
     private lateinit var galleryPermissionLauncher: ActivityResultLauncher<String>
     private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
     private var onImageSelectedCallback: ((Uri?) -> Unit)? = null
+    private var onMultipleImagesSelectedCallback: ((List<Uri>) -> Unit)? = null
     private var currentImageUri: Uri? = null
 
     fun registerLaunchers(onImageSelected: (Uri?) -> Unit) {
@@ -44,6 +46,27 @@ class ImageUtils(private val activity: Activity, private val registryOwner: Acti
                 onImageSelectedCallback?.invoke(currentImageUri)
             } else {
                 Log.e("ImageUtils", "Camera capture cancelled or failed")
+            }
+        }
+        
+        // Register for multiple gallery selection
+        multipleGalleryLauncher = registryOwner.activityResultRegistry.register(
+            "multipleGalleryLauncher", ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val uris = mutableListOf<Uri>()
+                result.data?.clipData?.let { clipData ->
+                    for (i in 0 until clipData.itemCount) {
+                        uris.add(clipData.getItemAt(i).uri)
+                    }
+                } ?: result.data?.data?.let { uri ->
+                    uris.add(uri)
+                }
+                if (uris.isNotEmpty()) {
+                    onMultipleImagesSelectedCallback?.invoke(uris)
+                }
+            } else {
+                Log.e("ImageUtils", "Multiple image selection cancelled or failed")
             }
         }
 
@@ -83,6 +106,21 @@ class ImageUtils(private val activity: Activity, private val registryOwner: Acti
             openGallery()
         }
     }
+    
+    fun launchMultipleImagePicker(onMultipleImagesSelected: (List<Uri>) -> Unit) {
+        onMultipleImagesSelectedCallback = onMultipleImagesSelected
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+            galleryPermissionLauncher.launch(permission)
+        } else {
+            openMultipleGallery()
+        }
+    }
 
     fun launchCamera() {
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -97,6 +135,14 @@ class ImageUtils(private val activity: Activity, private val registryOwner: Acti
             type = "image/*"
         }
         galleryLauncher.launch(intent)
+    }
+    
+    private fun openMultipleGallery() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+            type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        multipleGalleryLauncher.launch(intent)
     }
 
     private fun openCamera() {

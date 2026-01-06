@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
+    implementation("com.google.firebase:firebase-storage:20.3.0")
     implementation("androidx.compose.material3:material3:1.3.1")
     implementation("com.googlecode.libphonenumber:libphonenumber:8.13.26")
     implementation("io.coil-kt:coil-compose:2.6.0")

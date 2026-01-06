@@ -33,6 +33,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ChatActivity"
+            android:exported="false"
+            android:label="ChatActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".NotificationActivity"
             android:exported="true"
             android:label="NotificationActivity"
@@ -156,7 +161,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

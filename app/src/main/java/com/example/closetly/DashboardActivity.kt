@@ -1,5 +1,6 @@
 package com.example.closetly
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -59,6 +61,7 @@ class DashboardActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardBody(){
+    val context = LocalContext.current
     data class NavItem(val label : String, val image : Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -137,14 +140,20 @@ fun DashboardBody(){
                     actions = {
                         when(selectedIndex) {
                             0 -> {
-                                IconButton(onClick = {}) {
+                                IconButton(onClick = {
+                                    val intent = Intent(context, NotificationActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
                                     Image(painter = painterResource(R.drawable.notification),
                                         contentDescription = "Notifications",
                                         modifier = Modifier
                                             .size(22.dp)
                                     )
                                 }
-                                IconButton(onClick = {}) {
+                                IconButton(onClick = {
+                                    val intent = Intent(context, MessageActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
                                     Image(painter = painterResource(R.drawable.chat),
                                         contentDescription = "Messages",
                                         modifier = Modifier
