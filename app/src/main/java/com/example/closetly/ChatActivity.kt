@@ -103,6 +103,9 @@ fun ChatBody(
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf<List<MessageModel>>(emptyList()) }
     var isUploading by remember { mutableStateOf(false) }
+    var showFullScreenImage by remember { mutableStateOf(false) }
+    var fullScreenImageUrls by remember { mutableStateOf<List<String>>(emptyList()) }
+    var fullScreenImageIndex by remember { mutableStateOf(0) }
     
     val listState = rememberLazyListState()
 
@@ -196,7 +199,12 @@ fun ChatBody(
                 items(messages) { message ->
                     MessageBubble(
                         message = message,
-                        isCurrentUser = message.senderId == currentUserId
+                        isCurrentUser = message.senderId == currentUserId,
+                        onImageClick = { urls, index ->
+                            fullScreenImageUrls = urls
+                            fullScreenImageIndex = index
+                            showFullScreenImage = true
+                        }
                     )
                 }
             }
@@ -292,6 +300,7 @@ fun ChatBody(
             onSend = { imagesToSend ->
                 isUploading = true
                 val commonRepo = CommonRepoImpl()
+                val uploadedUrls = mutableListOf<String>()
                 var uploadedCount = 0
                 val totalImages = imagesToSend.size
                 
@@ -299,26 +308,37 @@ fun ChatBody(
                     commonRepo.uploadImage(context, imageUri) { imageUrl ->
                         uploadedCount++
                         if (imageUrl != null) {
-                            val message = MessageModel(
-                                chatId = chatId,
-                                senderId = currentUserId,
-                                text = "",
-                                imageUrl = imageUrl,
-                                timestamp = System.currentTimeMillis()
-                            )
-                            chatViewModel.sendMessage(chatId, message) { _, _ -> }
+                            uploadedUrls.add(imageUrl)
                         }
                         
                         if (uploadedCount == totalImages) {
+                            if (uploadedUrls.isNotEmpty()) {
+                                val message = MessageModel(
+                                    chatId = chatId,
+                                    senderId = currentUserId,
+                                    text = "",
+                                    imageUrls = uploadedUrls,
+                                    timestamp = System.currentTimeMillis()
+                                )
+                                chatViewModel.sendMessage(chatId, message) { _, _ -> }
+                            }
                             isUploading = false
                             onImagesSent()
-                            if (uploadedCount != imagesToSend.size) {
+                            if (uploadedUrls.size != imagesToSend.size) {
                                 android.widget.Toast.makeText(context, "Some images failed to upload", android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 }
             }
+        )
+    }
+    
+    if (showFullScreenImage && fullScreenImageUrls.isNotEmpty()) {
+        FullScreenImageDialog(
+            imageUrls = fullScreenImageUrls,
+            initialIndex = fullScreenImageIndex,
+            onDismiss = { showFullScreenImage = false }
         )
     }
 }
@@ -346,7 +366,7 @@ fun ImagePreviewDialog(
                 ) {
                     Text(
                         text = "Selected ${selectedImageList.size} photo${if (selectedImageList.size > 1) "s" else ""}",
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Black
                     )
@@ -460,7 +480,111 @@ fun ImagePreviewDialog(
 }
 
 @Composable
-fun MessageBubble(message: MessageModel, isCurrentUser: Boolean) {
+fun FullScreenImageDialog(
+    imageUrls: List<String>,
+    initialIndex: Int,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Black)
+        ) {
+            val context = LocalContext.current
+            val screenWidth = context.resources.displayMetrics.widthPixels
+            val scrollState = rememberScrollState()
+            var currentIndex by remember { mutableStateOf(initialIndex) }
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .horizontalScroll(scrollState)
+            ) {
+                imageUrls.forEachIndexed { index, url ->
+                    Box(
+                        modifier = Modifier
+                            .width((screenWidth / context.resources.displayMetrics.density).dp)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = url,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                }
+            }
+            
+            LaunchedEffect(scrollState.value) {
+                val itemWidth = screenWidth / context.resources.displayMetrics.density
+                currentIndex = (scrollState.value / itemWidth).toInt().coerceIn(0, imageUrls.size - 1)
+            }
+            
+            if (imageUrls.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    imageUrls.forEachIndexed { index, _ ->
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (index == currentIndex) White else White.copy(alpha = 0.5f))
+                        )
+                    }
+                }
+            }
+            
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_close_24),
+                    contentDescription = null,
+                    tint = White
+                )
+            }
+        }
+    }
+}
+
+fun getRelativeTime(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    
+    return when {
+        seconds < 60 -> "Just now"
+        minutes < 60 -> "${minutes}m ago"
+        hours < 24 -> "${hours}h ago"
+        days < 7 -> "${days}d ago"
+        else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(timestamp))
+    }
+}
+
+@Composable
+fun MessageBubble(
+    message: MessageModel,
+    isCurrentUser: Boolean,
+    onImageClick: (List<String>, Int) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -471,15 +595,102 @@ fun MessageBubble(message: MessageModel, isCurrentUser: Boolean) {
             horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start,
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
-            if (message.imageUrl.isNotEmpty()) {
-                AsyncImage(
-                    model = message.imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .heightIn(max = 300.dp),
-                    contentScale = ContentScale.Crop
-                )
+            val images = if (message.imageUrls.isNotEmpty()) message.imageUrls else if (message.imageUrl.isNotEmpty()) listOf(message.imageUrl) else emptyList()
+            
+            if (images.isNotEmpty()) {
+                when (images.size) {
+                    1 -> {
+                        AsyncImage(
+                            model = images[0],
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .heightIn(max = 300.dp)
+                                .clickable { onImageClick(images, 0) },
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    2 -> {
+                        Row(
+                            modifier = Modifier.width(280.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            images.forEachIndexed { index, url ->
+                                AsyncImage(
+                                    model = url,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { onImageClick(images, index) },
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                    else -> {
+                        Column(
+                            modifier = Modifier.width(280.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                images.take(2).forEachIndexed { index, url ->
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(140.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { onImageClick(images, index) },
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                            if (images.size > 2) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    images.drop(2).take(2).forEachIndexed { idx, url ->
+                                        Box(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            AsyncImage(
+                                                model = url,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(140.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .clickable { onImageClick(images, idx + 2) },
+                                                contentScale = ContentScale.Crop
+                                            )
+                                            if (idx == 1 && images.size > 4) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .matchParentSize()
+                                                        .background(Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                                                        .clickable { onImageClick(images, 3) },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = "+${images.size - 4}",
+                                                        color = White,
+                                                        fontSize = 24.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(4.dp))
             }
             
@@ -506,7 +717,7 @@ fun MessageBubble(message: MessageModel, isCurrentUser: Boolean) {
             }
             
             Text(
-                text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestamp)),
+                text = getRelativeTime(message.timestamp),
                 fontSize = 11.sp,
                 color = Grey,
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
