@@ -1,6 +1,7 @@
 package com.example.closetly
 
 import ImageUtils
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -131,7 +133,20 @@ fun ChatBody(
             TopAppBar(
                 title = {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                val intent = Intent(context, PostActivity::class.java).apply {
+                                    putExtra("userId", otherUserId)
+                                    putExtra("username", otherUserName)
+                                }
+                                context.startActivity(intent)
+                            }
+                            .padding(end = 48.dp)
                     ) {
                         Box(
                             modifier = Modifier
