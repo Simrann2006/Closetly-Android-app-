@@ -24,6 +24,11 @@ class CommentViewModel(
     private val _commentText = MutableStateFlow("")
     val commentText: StateFlow<String> = _commentText.asStateFlow()
     
+    private val _showDeleteDialog = MutableStateFlow<String?>(null)
+    val showDeleteDialog: StateFlow<String?> = _showDeleteDialog.asStateFlow()
+    
+    private val currentUserId = "current_user_id"
+    
     fun loadComments(postId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -45,7 +50,7 @@ class CommentViewModel(
             val comment = Comment(
                 id = UUID.randomUUID().toString(),
                 postId = postId,
-                userId = "current_user_id",
+                userId = currentUserId,
                 userName = userName,
                 userProfileImage = userProfileImage,
                 commentText = _commentText.value,
@@ -66,4 +71,26 @@ class CommentViewModel(
             }
         }
     }
+    
+    fun showDeleteConfirmation(commentId: String) {
+        _showDeleteDialog.value = commentId
+    }
+    
+    fun dismissDeleteDialog() {
+        _showDeleteDialog.value = null
+    }
+    
+    fun deleteComment(commentId: String, postId: String) {
+        viewModelScope.launch {
+            repository.deleteComment(commentId).onSuccess {
+                _showDeleteDialog.value = null
+                loadComments(postId)
+            }
+        }
+    }
+    
+    fun isCurrentUserComment(userId: String): Boolean {
+        return userId == currentUserId
+    }
 }
+

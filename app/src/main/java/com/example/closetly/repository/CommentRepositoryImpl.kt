@@ -40,4 +40,14 @@ class CommentRepositoryImpl : CommentRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun deleteComment(commentId: String): Result<Boolean> {
+        return try {
+            delay(200)
+            val removed = comments.removeIf { it.id == commentId }
+            Result.success(removed)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

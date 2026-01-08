@@ -7,4 +7,5 @@ interface CommentRepository {
     fun getComments(postId: String): Flow<List<Comment>>
     suspend fun addComment(comment: Comment): Result<Comment>
     suspend fun likeComment(commentId: String): Result<Boolean>
+    suspend fun deleteComment(commentId: String): Result<Boolean>
 }

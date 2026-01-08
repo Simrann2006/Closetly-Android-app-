@@ -66,18 +66,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
     val context = LocalContext.current
 
-    // Like states for posts
     var isPost1Liked by remember { mutableStateOf(false) }
     var post1LikeCount by remember { mutableStateOf(1143) }
 
     var isPost2Liked by remember { mutableStateOf(false) }
     var post2LikeCount by remember { mutableStateOf(509) }
 
-    // Save states for posts
     var isPost1Saved by remember { mutableStateOf(false) }
     var isPost2Saved by remember { mutableStateOf(false) }
 
-    // Follow states for posts
     var isPost1Following by remember { mutableStateOf(false) }
     var isPost2Following by remember { mutableStateOf(false) }
 
@@ -346,6 +343,10 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                             Row(
                                 modifier = Modifier.clickable {
+                                    val intent = Intent(context, CommentActivity::class.java).apply {
+                                        putExtra("POST_ID", "post_1")
+                                    }
+                                    context.startActivity(intent)
                                 },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -408,7 +409,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
             }
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Second Post Card
             Card(
                 contentColor = Color.Transparent
             ) {
@@ -512,6 +512,10 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                             Row(
                                 modifier = Modifier.clickable {
+                                    val intent = Intent(context, CommentActivity::class.java).apply {
+                                        putExtra("POST_ID", "post_2")
+                                    }
+                                    context.startActivity(intent)
                                 },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

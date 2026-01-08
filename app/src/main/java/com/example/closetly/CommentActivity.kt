@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,17 +16,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,12 +43,16 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,15 +96,34 @@ fun CommentScreen(
     val comments by viewModel.comments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()
+    val showDeleteDialog by viewModel.showDeleteDialog.collectAsState()
+    val listState = rememberLazyListState()
 
     LaunchedEffect(postId) {
         viewModel.loadComments(postId)
     }
 
+    // Delete confirmation dialog
+    if (showDeleteDialog != null) {
+        DeleteConfirmationDialog(
+            onConfirm = {
+                viewModel.deleteComment(showDeleteDialog!!, postId)
+            },
+            onDismiss = {
+                viewModel.dismissDeleteDialog()
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Comments", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Comments",
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, "Back")
@@ -129,7 +160,9 @@ fun CommentScreen(
                 )
             } else if (comments.isEmpty()) {
                 Column(
-                    modifier = Modifier.align(Alignment.Center),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .imePadding(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -151,12 +184,23 @@ fun CommentScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 8.dp, top = 8.dp)
                 ) {
-                    items(comments) { comment ->
+                    items(
+                        items = comments,
+                        key = { it.id }
+                    ) { comment ->
                         CommentItem(
                             comment = comment,
+                            isCurrentUser = viewModel.isCurrentUserComment(comment.userId),
+                            onCommentClick = {
+                                if (viewModel.isCurrentUserComment(comment.userId)) {
+                                    viewModel.showDeleteConfirmation(comment.id)
+                                }
+                            },
                             onLikeClick = {
                                 viewModel.likeComment(comment.id, postId)
                             }
@@ -171,14 +215,18 @@ fun CommentScreen(
 @Composable
 fun CommentItem(
     comment: Comment,
+    isCurrentUser: Boolean,
+    onCommentClick: () -> Unit,
     onLikeClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .clickable { onCommentClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Profile Image
         AsyncImage(
             model = comment.userProfileImage,
             contentDescription = null,
@@ -189,9 +237,11 @@ fun CommentItem(
                 .border(1.dp, Color.LightGray, CircleShape)
         )
 
+        // Comment Content
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            // Username and Timestamp
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -212,38 +262,46 @@ fun CommentItem(
                 )
             }
 
+            // Comment Text
             Text(
                 comment.commentText,
                 style = TextStyle(
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = Color.Black,
+                    lineHeight = 20.sp
                 ),
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
             )
-
-            if (comment.likesCount > 0) {
-                Text(
-                    "${comment.likesCount} likes",
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Gray
-                    ),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
         }
 
-        IconButton(
-            onClick = onLikeClick,
-            modifier = Modifier.size(24.dp)
+        // Like Button with Count
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (comment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = "Like",
-                tint = if (comment.isLiked) Color.Red else Color.Gray,
-                modifier = Modifier.size(18.dp)
-            )
+            IconButton(
+                onClick = onLikeClick,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = if (comment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = if (comment.isLiked) Color.Red else Color.Gray,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            
+            // Like Count beside icon
+            if (comment.likesCount > 0) {
+                Text(
+                    "${comment.likesCount}",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (comment.isLiked) Color.Red else Color.Gray
+                    )
+                )
+            }
         }
     }
 }
@@ -255,7 +313,9 @@ fun CommentInputSection(
     onSendClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding(),
         color = Color.White,
         shadowElevation = 8.dp
     ) {
@@ -273,32 +333,89 @@ fun CommentInputSection(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
+                    .border(1.dp, Color.LightGray, CircleShape)
             )
 
             OutlinedTextField(
                 value = commentText,
                 onValueChange = onCommentChange,
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Add a comment...") },
+                placeholder = { 
+                    Text(
+                        "Add a comment...",
+                        style = TextStyle(fontSize = 14.sp)
+                    ) 
+                },
+                textStyle = TextStyle(fontSize = 14.sp),
                 shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray
-                )
+                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                ),
+                maxLines = 4
             )
 
             IconButton(
-                onClick = onSendClick,
+                onClick = {
+                    if (commentText.isNotBlank()) {
+                        onSendClick()
+                    }
+                },
                 enabled = commentText.isNotBlank()
             ) {
                 Icon(
                     Icons.Default.Send,
                     contentDescription = "Send",
-                    tint = if (commentText.isNotBlank()) androidx.compose.material3.MaterialTheme.colorScheme.primary else Color.Gray
+                    tint = if (commentText.isNotBlank()) 
+                        androidx.compose.material3.MaterialTheme.colorScheme.primary 
+                    else 
+                        Color.Gray
                 )
             }
         }
     }
+}
+
+@Composable
+fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Delete Comment",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+        },
+        text = {
+            Text(
+                "Are you sure you want to delete this comment? This action cannot be undone.",
+                style = TextStyle(fontSize = 14.sp)
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red
+                )
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(16.dp)
+    )
 }
 
 fun getTimeAgo(timestamp: Long): String {
