@@ -1,7 +1,6 @@
 package com.example.closetly
 
 import android.content.Intent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -26,13 +25,13 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,9 +65,6 @@ import kotlinx.coroutines.delay
 fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
     val context = LocalContext.current
-    var showBottomSheet by remember { mutableStateOf(false) }
-    var selectedPostImage by remember { mutableStateOf<Int?>(null) }
-    val sheetState = rememberModalBottomSheetState()
 
     // Like states for posts
     var isPost1Liked by remember { mutableStateOf(false) }
@@ -76,6 +72,10 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
     var isPost2Liked by remember { mutableStateOf(false) }
     var post2LikeCount by remember { mutableStateOf(509) }
+
+    // Save states for posts
+    var isPost1Saved by remember { mutableStateOf(false) }
+    var isPost2Saved by remember { mutableStateOf(false) }
 
     // Follow states for posts
     var isPost1Following by remember { mutableStateOf(false) }
@@ -271,7 +271,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 fontWeight = FontWeight.Bold
                             )
                         )
-                        Spacer(modifier = Modifier.width(160.dp))
+                        Spacer(modifier = Modifier.weight(1f))
 
                         androidx.compose.material3.Button(
                             onClick = {
@@ -293,18 +293,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 )
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Icon(
-                            painter = painterResource(R.drawable.edit),
-                            null,
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    selectedPostImage = R.drawable.lu
-                                    showBottomSheet = true
-                                }
-                        )
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -317,75 +305,86 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 .fillMaxSize()
                         )
                     }
-                    Spacer(modifier = Modifier.width(20.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 10.dp),
-                        horizontalArrangement = Arrangement.Start,
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        isPost1Liked = !isPost1Liked
+                                        post1LikeCount = if (isPost1Liked) post1LikeCount + 1 else post1LikeCount - 1
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPost1Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = "Like",
+                                        tint = if (isPost1Liked) Color.Red else Color.Black,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "$post1LikeCount", style = TextStyle(
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.clickable {
+                                },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.chat),
+                                    contentDescription = "Comment",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "59", style = TextStyle(
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+                        }
+
                         IconButton(
                             onClick = {
-                                isPost1Liked = !isPost1Liked
-                                post1LikeCount = if (isPost1Liked) post1LikeCount + 1 else post1LikeCount - 1
+                                isPost1Saved = !isPost1Saved
                             },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = if (isPost1Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Like",
-                                tint = if (isPost1Liked) Color.Red else Color.Black,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = if (isPost1Saved)
+                                    Icons.Default.Bookmark
+                                else
+                                    Icons.Default.BookmarkBorder,
+                                contentDescription = "Save",
+                                tint = Color.Black,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            "$post1LikeCount", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
-
-                        Row(
-                            modifier = Modifier.clickable {
-                            },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.chat),
-                                null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                "59", style = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Icon(
-                            painter = painterResource(R.drawable.share),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            "34", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 10.dp)
+                            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
                     ) {
                         Text(
                             "Eco-friendly, wallet-friendly.", style = TextStyle(
@@ -395,12 +394,12 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                         )
                     }
                     Row(
-                        modifier = Modifier.padding(start = 10.dp)
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp)
                     ) {
                         Text(
                             "22 hours ago", style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Normal,
                                 color = Color.Gray
                             )
                         )
@@ -438,7 +437,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 fontWeight = FontWeight.Bold
                             )
                         )
-                        Spacer(modifier = Modifier.width(150.dp))
+                        Spacer(modifier = Modifier.weight(1f))
 
                         androidx.compose.material3.Button(
                             onClick = {
@@ -460,18 +459,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 )
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Icon(
-                            painter = painterResource(R.drawable.edit),
-                            null,
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    selectedPostImage = R.drawable.jacket
-                                    showBottomSheet = true
-                                }
-                        )
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -484,75 +471,86 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 .fillMaxSize()
                         )
                     }
-                    Spacer(modifier = Modifier.width(20.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 10.dp),
-                        horizontalArrangement = Arrangement.Start,
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        isPost2Liked = !isPost2Liked
+                                        post2LikeCount = if (isPost2Liked) post2LikeCount + 1 else post2LikeCount - 1
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPost2Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        contentDescription = "Like",
+                                        tint = if (isPost2Liked) Color.Red else Color.Black,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "$post2LikeCount", style = TextStyle(
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.clickable {
+                                },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.chat),
+                                    contentDescription = "Comment",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "32", style = TextStyle(
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                )
+                            }
+                        }
+
                         IconButton(
                             onClick = {
-                                isPost2Liked = !isPost2Liked
-                                post2LikeCount = if (isPost2Liked) post2LikeCount + 1 else post2LikeCount - 1
+                                isPost2Saved = !isPost2Saved
                             },
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = if (isPost2Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Like",
-                                tint = if (isPost2Liked) Color.Red else Color.Black,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = if (isPost2Saved)
+                                    Icons.Default.Bookmark
+                                else
+                                    Icons.Default.BookmarkBorder,
+                                contentDescription = "Save",
+                                tint = Color.Black,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            "$post2LikeCount", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
-
-                        Row(
-                            modifier = Modifier.clickable {
-                            },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.chat),
-                                null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                "32", style = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Icon(
-                            painter = painterResource(R.drawable.share),
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            "3", style = TextStyle(
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 10.dp)
+                            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
                     ) {
                         Text(
                             "Style that tells a story", style = TextStyle(
@@ -561,15 +559,14 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             )
                         )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
 
                     Row(
-                        modifier = Modifier.padding(start = 10.dp)
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp)
                     ) {
                         Text(
                             "5 days ago", style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Normal,
                                 color = Color.Gray
                             )
                         )
@@ -577,101 +574,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                 }
             }
         }
-    }
-
-    // Bottom Sheet Popup
-    if (showBottomSheet && selectedPostImage != null) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            sheetState = sheetState,
-            containerColor = Color(0xFF2D2D2D)
-        ) {
-            BottomSheetContent(
-                imageRes = selectedPostImage!!,
-                onDismiss = { showBottomSheet = false }
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomSheetContent(imageRes: Int, onDismiss: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Save Button
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF404040))
-                .clickable {
-                    // Handle save action
-                    onDismiss()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.edit),
-                    contentDescription = "Save",
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "Save",
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // About this account
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    // Handle about this account action
-                },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF404040)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.edit),
-                    contentDescription = "Account",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                "About this account",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

@@ -70,4 +70,6 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager:0.36.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.36.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation ("androidx.compose.material:material-icons-extended")
+
 }
