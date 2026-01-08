@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -46,17 +48,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.closetly.data.model.Comment
 import com.example.closetly.viewmodel.CommentViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,23 +102,63 @@ fun CommentScreen(
     val comments by viewModel.comments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()
-    val showDeleteDialog by viewModel.showDeleteDialog.collectAsState()
     val listState = rememberLazyListState()
+    
+    var selectedCommentForDelete by remember { mutableStateOf<Comment?>(null) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(postId) {
         viewModel.loadComments(postId)
     }
 
-    // Delete confirmation dialog
-    if (showDeleteDialog != null) {
-        DeleteConfirmationDialog(
-            onConfirm = {
-                viewModel.deleteComment(showDeleteDialog!!, postId)
-            },
-            onDismiss = {
-                viewModel.dismissDeleteDialog()
+    // Bottom Sheet for Delete Option
+    if (selectedCommentForDelete != null) {
+        ModalBottomSheet(
+            onDismissRequest = { selectedCommentForDelete = null },
+            sheetState = sheetState,
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                // Delete Option
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            scope.launch {
+                                selectedCommentForDelete?.let { comment ->
+                                    viewModel.deleteComment(comment.id, postId)
+                                    selectedCommentForDelete = null
+                                    sheetState.hide()
+                                }
+                            }
+                        }
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.Red,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Delete Comment",
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Red
+                        )
+                    )
+                }
             }
-        )
+        }
     }
 
     Scaffold(
@@ -161,8 +207,7 @@ fun CommentScreen(
             } else if (comments.isEmpty()) {
                 Column(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .imePadding(),
+                        .align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -185,8 +230,7 @@ fun CommentScreen(
             } else {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 8.dp, top = 8.dp)
                 ) {
                     items(
@@ -196,9 +240,9 @@ fun CommentScreen(
                         CommentItem(
                             comment = comment,
                             isCurrentUser = viewModel.isCurrentUserComment(comment.userId),
-                            onCommentClick = {
+                            onCommentLongPress = {
                                 if (viewModel.isCurrentUserComment(comment.userId)) {
-                                    viewModel.showDeleteConfirmation(comment.id)
+                                    selectedCommentForDelete = comment
                                 }
                             },
                             onLikeClick = {
@@ -216,13 +260,26 @@ fun CommentScreen(
 fun CommentItem(
     comment: Comment,
     isCurrentUser: Boolean,
-    onCommentClick: () -> Unit,
+    onCommentLongPress: () -> Unit,
     onLikeClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCommentClick() }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = {
+                        if (isCurrentUser) {
+                            onCommentLongPress()
+                        }
+                    },
+                    onTap = {
+                        if (isCurrentUser) {
+                            onCommentLongPress()
+                        }
+                    }
+                )
+            }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
