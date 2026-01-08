@@ -124,11 +124,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                         0 -> {
                                             putExtra("USER_NAME", "Kendall")
                                             putExtra("USER_HANDLE", "k2")
-                                            putExtra("USER_BIO", "Sustainable style for every soul.")
+                                            putExtra(
+                                                "USER_BIO",
+                                                "Sustainable style for every soul."
+                                            )
                                             putExtra("POSTS_COUNT", 3)
                                             putExtra("FOLLOWERS_COUNT", 1456)
                                             putExtra("FOLLOWING_COUNT", 11)
                                         }
+
                                         1 -> {
                                             putExtra("USER_NAME", "Emily")
                                             putExtra("USER_HANDLE", "emily_style")
@@ -137,6 +141,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                             putExtra("FOLLOWERS_COUNT", 2340)
                                             putExtra("FOLLOWING_COUNT", 156)
                                         }
+
                                         2 -> {
                                             putExtra("USER_NAME", "Sophia")
                                             putExtra("USER_HANDLE", "sophia_fashion")
@@ -145,6 +150,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                             putExtra("FOLLOWERS_COUNT", 3890)
                                             putExtra("FOLLOWING_COUNT", 234)
                                         }
+
                                         3 -> {
                                             putExtra("USER_NAME", "Olivia")
                                             putExtra("USER_HANDLE", "liv_closet")
@@ -239,7 +245,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
             Spacer(Modifier.height(16.dp))
 
-            // First Post Card
             Card(
                 contentColor = Color.Transparent
             ) {
