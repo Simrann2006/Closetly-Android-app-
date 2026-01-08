@@ -273,7 +273,11 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 fontWeight = FontWeight.Bold
                             )
                         )
+<<<<<<< Updated upstream
                         Spacer(modifier = Modifier.weight(1f))
+=======
+                        Spacer(modifier = Modifier.width(130.dp))
+>>>>>>> Stashed changes
 
                         androidx.compose.material3.Button(
                             onClick = {
@@ -295,6 +299,21 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 )
                             )
                         }
+<<<<<<< Updated upstream
+=======
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.edit),
+                            null,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    selectedPostImage = R.drawable.lu
+                                    showBottomSheet = true
+                                }
+                        )
+>>>>>>> Stashed changes
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -442,7 +461,11 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 fontWeight = FontWeight.Bold
                             )
                         )
+<<<<<<< Updated upstream
                         Spacer(modifier = Modifier.weight(1f))
+=======
+                        Spacer(modifier = Modifier.width(130.dp))
+>>>>>>> Stashed changes
 
                         androidx.compose.material3.Button(
                             onClick = {
@@ -464,6 +487,21 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                 )
                             )
                         }
+<<<<<<< Updated upstream
+=======
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            painter = painterResource(R.drawable.edit),
+                            null,
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    selectedPostImage = R.drawable.jacket
+                                    showBottomSheet = true
+                                }
+                        )
+>>>>>>> Stashed changes
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
