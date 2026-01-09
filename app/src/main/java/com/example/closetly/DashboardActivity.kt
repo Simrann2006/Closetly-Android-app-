@@ -1,11 +1,13 @@
 package com.example.closetly
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,14 +31,15 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,10 +61,11 @@ class DashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardBody(){
-    data class NavItem(val label : String, val image : Int)
+fun DashboardBody() {
+    data class NavItem(val label: String, val image: Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
+    var unreadNotifications by remember { mutableStateOf(3) } // example unread notifications
 
     val listItem = listOf(
         NavItem(label = "Home", image = R.drawable.home),
@@ -71,7 +75,9 @@ fun DashboardBody(){
         NavItem(label = "Profile", image = R.drawable.profile)
     )
 
-    Scaffold (
+    val context = LocalContext.current
+
+    Scaffold(
         topBar = {
             if (selectedIndex == 4) {
                 CenterAlignedTopAppBar(
@@ -122,7 +128,7 @@ fun DashboardBody(){
                     ),
                     title = {
                         Text(
-                            when(selectedIndex) {
+                            when (selectedIndex) {
                                 0 -> "Closetly"
                                 1 -> "Marketplace"
                                 2 -> "My Closet"
@@ -135,20 +141,35 @@ fun DashboardBody(){
                         )
                     },
                     actions = {
-                        when(selectedIndex) {
+                        when (selectedIndex) {
                             0 -> {
-                                IconButton(onClick = {}) {
-                                    Image(painter = painterResource(R.drawable.notification),
-                                        contentDescription = "Notifications",
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                    )
+                                // 🔔 Notification Bell with Red Dot
+                                IconButton(onClick = {
+                                    context.startActivity(Intent(context, NotificationActivity::class.java))
+                                    unreadNotifications = 0 // optional: clear unread on click
+                                }) {
+                                    Box {
+                                        Image(
+                                            painter = painterResource(R.drawable.notification),
+                                            contentDescription = "Notifications",
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        if (unreadNotifications > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(Color.Red, shape = RoundedCornerShape(4.dp))
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 6.dp, y = (-2).dp)
+                                            )
+                                        }
+                                    }
                                 }
                                 IconButton(onClick = {}) {
-                                    Image(painter = painterResource(R.drawable.chat),
+                                    Image(
+                                        painter = painterResource(R.drawable.chat),
                                         contentDescription = "Messages",
-                                        modifier = Modifier
-                                            .size(22.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
                             }
@@ -236,13 +257,13 @@ fun DashboardBody(){
                 }
             }
         }
-    ){ padding ->
-        Box (
+    ) { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-        ){
-            when(selectedIndex){
+        ) {
+            when (selectedIndex) {
                 0 -> HomeScreen()
                 1 -> MarketplaceScreen()
                 2 -> ClosetScreen()
