@@ -1,6 +1,7 @@
 package com.example.closetly
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,6 +72,14 @@ import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Red
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.UserViewModel
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import androidx.credentials.CustomCredential
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,6 +112,19 @@ fun LoginBody(){
     var isError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
+    val sharedPreferences = context.getSharedPreferences("ClosetlyPrefs", Context.MODE_PRIVATE)
+    LaunchedEffect(Unit) {
+        val savedEmail = sharedPreferences.getString("email", "")?: ""
+        val savedPassword = sharedPreferences.getString("password", "")?:""
+        val rememberMe = sharedPreferences.getBoolean("rememberMe", false)
+
+        if (rememberMe && savedEmail.isNotEmpty() && savedPassword.isNotEmpty()) {
+            email = savedEmail
+            password = savedPassword
+            terms = true
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ){
@@ -118,15 +142,15 @@ fun LoginBody(){
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
-        ){
-            Spacer(Modifier.height(340.dp))
+        ) {
+            Spacer(Modifier.height(345.dp))
 
             Text(
                 "Log in",
                 modifier = Modifier.fillMaxWidth(),
                 style = TextStyle(
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                    fontSize = 52.sp,
+                    fontSize = 37.sp,
                     fontWeight = FontWeight.Bold,
                     color = Brown,
                     textAlign = TextAlign.Center
@@ -172,8 +196,8 @@ fun LoginBody(){
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
                     unfocusedContainerColor = White,
-                    focusedIndicatorColor = if(isError) Red else Brown,
-                    unfocusedIndicatorColor = if(isError) Red else Light_brown,
+                    focusedIndicatorColor = if (isError) Red else Brown,
+                    unfocusedIndicatorColor = if (isError) Red else Light_brown,
                     errorContainerColor = White,
                     errorIndicatorColor = Red
                 )
@@ -190,7 +214,7 @@ fun LoginBody(){
                         errorMessage = ""
                     }
                 },
-                visualTransformation = if(visibility) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (visibility) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = {
                         visibility = !visibility
@@ -229,8 +253,8 @@ fun LoginBody(){
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
                     unfocusedContainerColor = White,
-                    focusedIndicatorColor = if(isError) Red else Brown,
-                    unfocusedIndicatorColor = if(isError) Red else Light_brown,
+                    focusedIndicatorColor = if (isError) Red else Brown,
+                    unfocusedIndicatorColor = if (isError) Red else Light_brown,
                     errorContainerColor = White,
                     errorIndicatorColor = Red
                 )
@@ -299,7 +323,7 @@ fun LoginBody(){
                     Text(
                         "Forgot Password?",
                         style = TextStyle(
-                            color = if(isforgotClicked) Blue else Brown,
+                            color = if (isforgotClicked) Blue else Brown,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -316,10 +340,25 @@ fun LoginBody(){
                             isError = true
                             errorMessage = "Please fill all fields"
                         }
+
                         else -> {
                             userViewModel.login(email, password) { success, message ->
                                 if (success) {
-                                    Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                                    if (terms) {
+                                        sharedPreferences.edit().apply() {
+                                            putString("email", email)
+                                            putString("password", password)
+                                            putBoolean("rememberMe", true)
+                                            apply()
+                                        }
+                                    } else {
+                                        sharedPreferences.edit().clear().apply()
+                                    }
+                                    Toast.makeText(
+                                        context,
+                                        "Login successful",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     val intent = Intent(context, DashboardActivity::class.java)
                                     context.startActivity(intent)
                                     activity.finish()
@@ -354,7 +393,7 @@ fun LoginBody(){
                     .fillMaxWidth()
                     .padding(vertical = 15.dp, horizontal = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
-            ){
+            ) {
                 HorizontalDivider(Modifier.weight(1f), color = Black)
                 Text(
                     "or sign in with",
@@ -370,7 +409,40 @@ fun LoginBody(){
             Spacer(Modifier.height(1.dp))
 
             OutlinedButton(
-                onClick = {},
+                onClick = {
+                    val credentialManager = CredentialManager.create(context)
+                    val googleIdOption = GetGoogleIdOption.Builder()
+                        .setFilterByAuthorizedAccounts(false)
+                        .setServerClientId("233120554772-kh29l4pko3gl9e6k46kf29v5t6v39974.apps.googleusercontent.com")
+                        .build()
+                    
+                    val request = GetCredentialRequest.Builder()
+                        .addCredentialOption(googleIdOption)
+                        .build()
+                    
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val result = credentialManager.getCredential(context, request)
+                            val credential = result.credential
+
+                            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                val idToken = googleIdTokenCredential.idToken
+
+                                userViewModel.signInWithGoogle(idToken) { success, message ->
+                                    if (success) {
+                                        val intent = Intent(context, DashboardActivity::class.java)
+                                        context.startActivity(intent)
+                                        activity.finish()
+                                    } else {
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                        }
+                    }
+                },
                 modifier = Modifier
                     .width(140.dp)
                     .height(43.dp),
@@ -381,10 +453,10 @@ fun LoginBody(){
                 ),
                 border = BorderStroke(1.dp, Black)
             ) {
-                Row (
+                Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
-                ){
+                ) {
                     Image(
                         painter = painterResource(R.drawable.google),
                         contentDescription = null,
@@ -407,7 +479,7 @@ fun LoginBody(){
             Row(
                 modifier = Modifier.padding(15.dp, vertical = 1.dp),
                 verticalAlignment = Alignment.CenterVertically
-            ){
+            ) {
                 Text(
                     "Don't have an account?",
                     style = TextStyle(
@@ -426,12 +498,12 @@ fun LoginBody(){
                         context.startActivity(intent)
                     },
                     contentPadding = PaddingValues(0.dp)
-                ){
+                ) {
                     Text(
                         "Sign Up",
                         style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            color = if(issignupClicked) Blue else Black,
+                            color = if (issignupClicked) Blue else Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )

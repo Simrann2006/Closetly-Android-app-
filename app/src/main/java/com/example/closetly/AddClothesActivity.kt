@@ -100,7 +100,7 @@ fun AddClothesBody(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(500.dp)
+                    .height(560.dp)
                     .background(Light_grey),
                 contentAlignment = Alignment.Center
             ) {

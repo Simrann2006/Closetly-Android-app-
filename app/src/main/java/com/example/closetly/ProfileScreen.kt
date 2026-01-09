@@ -1,9 +1,7 @@
 package com.example.closetly
 
-import com.example.closetly.viewmodel.ProfileViewModel
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -13,7 +11,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,69 +23,90 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Pink40
-import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
-
-
-
-
-
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
+fun ProfileScreen() {
     val context = LocalContext.current
+    val userRepo = remember { UserRepoImpl() }
+    val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
+    val currentUser = remember { FirebaseAuth.getInstance().currentUser }
+    
+    var name by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var bio by remember { mutableStateOf("") }
+    var profilePicture by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // Image picker launcher
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { viewModel.updateImage(it) }
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.let { user ->
+            userViewModel.getUserById(user.uid) { success, _, userData ->
+                if (success && userData != null) {
+                    name = userData.fullName
+                    username = userData.username
+                    bio = userData.bio
+                    profilePicture = userData.profilePicture
+                }
+                isLoading = false
+            }
+        } ?: run {
+            isLoading = false
+        }
     }
 
-    // EditProfileActivity launcher
     val editProfileLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { data ->
-                viewModel.updateProfile(
-                    newName = data.getStringExtra("name") ?: viewModel.name,
-                    newUsername = data.getStringExtra("username") ?: viewModel.username,
-                    newBio = data.getStringExtra("bio") ?: viewModel.bio
-                )
-                viewModel.updateImage(
-                    data.getStringExtra("imageUri")?.let { Uri.parse(it) }
-                )
+            currentUser?.let { user ->
+                userViewModel.getUserById(user.uid) { success, _, userData ->
+                    if (success && userData != null) {
+                        name = userData.fullName
+                        username = userData.username
+                        bio = userData.bio
+                        profilePicture = userData.profilePicture
+                    }
+                }
             }
         }
     }
 
     val selectedTab = remember { mutableStateOf("Posts") }
+    
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Pink40)
+        }
+        return
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-
-        // Profile Header
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(86.dp)
                     .clip(CircleShape)
-                    .clickable { imagePickerLauncher.launch("image/*") }
             ) {
-                if (viewModel.imageUri != null) {
+                if (profilePicture.isNotEmpty()) {
                     AsyncImage(
-                        model = viewModel.imageUri,
-                        contentDescription = "Profile Picture",
+                        model = profilePicture,
+                        contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -95,20 +114,15 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.LightGray)
+                            .background(Color(0xFFE0E0E0))
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(viewModel.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Text(viewModel.bio, fontSize = 14.sp, color = Color.Gray)
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(24.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 ProfileStat("0", "Posts")
@@ -116,10 +130,37 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
                 ProfileStat("0", "Following")
             }
         }
+        
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(
+                text = name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = Color.Black
+            )
+            
+            Text(
+                text = username,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+            
+            if (bio.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = bio,
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Edit Profile Button
         ProfileButton(
             text = "Edit Profile",
             modifier = Modifier
@@ -129,10 +170,10 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
             onClick = {
                 editProfileLauncher.launch(
                     Intent(context, EditProfileActivity::class.java).apply {
-                        putExtra("name", viewModel.name)
-                        putExtra("username", viewModel.username)
-                        putExtra("bio", viewModel.bio)
-                        putExtra("imageUri", viewModel.imageUri?.toString())
+                        putExtra("name", name)
+                        putExtra("username", username)
+                        putExtra("bio", bio)
+                        putExtra("imageUri", profilePicture)
                     }
                 )
             }
@@ -140,7 +181,6 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Tabs
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -162,7 +202,6 @@ fun ProfileScreen(viewModel: ProfileViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Posts Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             modifier = Modifier.fillMaxSize(),

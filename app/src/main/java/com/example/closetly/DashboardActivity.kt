@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,8 +62,9 @@ class DashboardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardBody() {
-    data class NavItem(val label: String, val image: Int)
+fun DashboardBody(){
+    val context = LocalContext.current
+    data class NavItem(val label : String, val image : Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
     var unreadNotifications by remember { mutableStateOf(3) } // example unread notifications
@@ -75,9 +77,7 @@ fun DashboardBody() {
         NavItem(label = "Profile", image = R.drawable.profile)
     )
 
-    val context = LocalContext.current
-
-    Scaffold(
+    Scaffold (
         topBar = {
             if (selectedIndex == 4) {
                 CenterAlignedTopAppBar(
@@ -166,10 +166,10 @@ fun DashboardBody() {
                                     }
                                 }
                                 IconButton(onClick = {}) {
-                                    Image(
-                                        painter = painterResource(R.drawable.chat),
+                                    Image(painter = painterResource(R.drawable.chat),
                                         contentDescription = "Messages",
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier
+                                            .size(22.dp)
                                     )
                                 }
                             }
@@ -257,13 +257,13 @@ fun DashboardBody() {
                 }
             }
         }
-    ) { padding ->
-        Box(
+    ){ padding ->
+        Box (
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-        ) {
-            when (selectedIndex) {
+        ){
+            when(selectedIndex){
                 0 -> HomeScreen()
                 1 -> MarketplaceScreen()
                 2 -> ClosetScreen()

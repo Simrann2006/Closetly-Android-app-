@@ -71,8 +71,8 @@ fun ClothesDetailsBody(
     var selectedCategoryName by remember { mutableStateOf("") }
     var brand by remember { mutableStateOf("") }
     var season by remember { mutableStateOf("") }
+    var color by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
     var showCategoryDropdown by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
@@ -84,8 +84,7 @@ fun ClothesDetailsBody(
         categoryViewModel.getAllCategories { success, _, data ->
             if (success) {
                 if (data == null || data.isEmpty()) {
-                    val defaultCategories = CategoryPreferences.getCategories(context)
-                        .filter { it != "All" }
+                    val defaultCategories = listOf("Tops", "Bottoms", "Shoes")
                     
                     var addedCount = 0
                     defaultCategories.forEach { categoryName ->
@@ -94,7 +93,6 @@ fun ClothesDetailsBody(
                             if (addSuccess) {
                                 addedCount++
                                 if (addedCount == defaultCategories.size) {
-                                    // All categories added, fetch again
                                     categoryViewModel.getAllCategories { _, _, refreshedData ->
                                         if (refreshedData != null) {
                                             categories = refreshedData
@@ -300,6 +298,20 @@ fun ClothesDetailsBody(
                     value = brand,
                     onValueChange = { brand = it },
                     label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                OutlinedTextField(
+                    value = color,
+                    onValueChange = { color = it },
+                    label = { Text("Color") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(

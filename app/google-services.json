@@ -13,7 +13,20 @@
           "package_name": "com.example.closetly"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "233120554772-a6adfcre1ebsh86erv3eomsj983rhfve.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.closetly",
+            "certificate_hash": "ef23a3d9878ff296b1a8438834b876d19f07fed3"
+          }
+        },
+        {
+          "client_id": "233120554772-kh29l4pko3gl9e6k46kf29v5t6v39974.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCk0-YJRreWNJoVVtRUVCQ3IZjXf_b2gn4"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "233120554772-kh29l4pko3gl9e6k46kf29v5t6v39974.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
