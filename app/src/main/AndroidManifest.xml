@@ -22,9 +22,9 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
-            android:name=".CommentActivity"
+            android:name=".SettingsActivity"
             android:exported="true"
-            android:label="CommentActivity"
+            android:label="@string/title_activity_settings"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
