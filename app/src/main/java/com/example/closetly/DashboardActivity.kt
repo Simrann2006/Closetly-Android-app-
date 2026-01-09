@@ -107,7 +107,10 @@ fun DashboardBody(){
                         )
                     },
                     actions = {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = {
+                            val intent = Intent(context, SettingsActivity::class.java)
+                            context.startActivity(intent)
+                        }) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_menu_24),
                                 contentDescription = "Settings",
