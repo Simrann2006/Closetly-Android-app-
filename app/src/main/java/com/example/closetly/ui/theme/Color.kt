@@ -35,3 +35,7 @@ val DarkGrey = Color(0xFF333333)
 
 val DarkGrey1 = Color(0xFF666666)
 val LightGrey1 = Color(0xFF999999)
+
+val AICardColor1 = Color(0xFFE91E63)
+val AICardColor2 =Color(0xFF9C27B0)
+val AICardColor3 =Color(0xFF673AB7)

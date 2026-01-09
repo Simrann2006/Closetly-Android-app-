@@ -80,6 +80,7 @@ import java.util.Locale
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.example.closetly.utils.OutfitRecommendationHelper
+import com.example.closetly.utils.OutfitRecommendationHelper.aiCache
 import kotlin.math.abs
 
 data class AIRecommendationCache(
@@ -125,7 +126,6 @@ fun CalendarScreen() {
     var aiSelectedClothes by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
     var aiExplanation by remember { mutableStateOf<String?>(null) }
     
-    var aiCache by remember { mutableStateOf<AIRecommendationCache?>(null) }
     
     var refreshTrigger by remember { mutableStateOf(0) }
 
@@ -135,9 +135,25 @@ fun CalendarScreen() {
         hasLocationPermission = isGranted
         if (isGranted) {
             getLocationAndFetchWeather(context, weatherViewModel)
+            refreshTrigger++
         }
     }
-
+    
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        val currentPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (currentPermission) {
+            hasLocationPermission = true
+            getLocationAndFetchWeather(context, weatherViewModel)
+            refreshTrigger++
+        }
+    }
+    
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -146,9 +162,8 @@ fun CalendarScreen() {
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
                 
-                hasLocationPermission = currentPermission
-                
-                if (currentPermission) {
+                if (currentPermission && !hasLocationPermission) {
+                    hasLocationPermission = true
                     getLocationAndFetchWeather(context, weatherViewModel)
                     refreshTrigger++
                 }
@@ -182,22 +197,17 @@ fun CalendarScreen() {
             val currentTemp = weatherData!!.temperature
             val currentCondition = weatherData!!.condition
             val currentClothesCount = allClothes.value.size
-            
+
             val shouldRegenerate = aiCache == null ||
-                                   aiCache!!.date != today || 
-                                   abs(aiCache!!.temperature - currentTemp) > 5.0 ||
-                                   aiCache!!.weatherCondition != currentCondition ||
-                                   aiCache!!.clothesCount != currentClothesCount
-            
+                aiCache!!.date != today ||
+                kotlin.math.abs(aiCache!!.temperature - currentTemp) > 0.01 ||
+                aiCache!!.weatherCondition != currentCondition ||
+                aiCache!!.clothesCount != currentClothesCount ||
+                refreshTrigger > 0 && refreshTrigger != (aiCache?.let { it.clothesCount + it.temperature.toInt() } ?: -1)
+
             if (shouldRegenerate) {
                 aiLoading = true
-                
-                aiRecommendation = OutfitRecommendationHelper.getAIRecommendations(
-                    currentTemp,
-                    currentCondition,
-                    allClothes.value
-                )
-                
+
                 val selection = OutfitRecommendationHelper.getAISelectedOutfits(
                     currentTemp,
                     currentCondition,
@@ -205,7 +215,13 @@ fun CalendarScreen() {
                 )
                 aiSelectedClothes = selection.selectedClothes
                 aiExplanation = selection.explanation
-                
+
+                aiRecommendation = OutfitRecommendationHelper.getAIRecommendations(
+                    currentTemp,
+                    currentCondition,
+                    aiSelectedClothes
+                )
+
                 aiCache = AIRecommendationCache(
                     date = today,
                     temperature = currentTemp,
@@ -215,7 +231,7 @@ fun CalendarScreen() {
                     selectedClothes = aiSelectedClothes,
                     explanation = aiExplanation ?: ""
                 )
-                
+
                 aiLoading = false
             } else {
                 aiRecommendation = aiCache!!.recommendation
@@ -382,8 +398,7 @@ fun CalendarScreen() {
                 },
                 onRequestLocation = {
                     if (hasLocationPermission) {
-                        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                        context.startActivity(intent)
+                        settingsLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
                     } else {
                         permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     }
@@ -410,12 +425,18 @@ fun CalendarScreen() {
             item {
                 Spacer(Modifier.height(16.dp))
 
-                OutfitRecommendationsCard(
-                    weatherData = weatherData!!,
-                    recommendedClothes = aiSelectedClothes,
-                    aiExplanation = aiExplanation,
-                    isAILoading = aiLoading
-                )
+                    val filteredClothes = if (!aiRecommendation.isNullOrBlank()) {
+                        aiSelectedClothes.filter { clothes ->
+                            aiRecommendation!!.contains(clothes.clothesName, ignoreCase = true)
+                        }
+                    } else aiSelectedClothes
+
+                    OutfitRecommendationsCard(
+                        weatherData = weatherData!!,
+                        recommendedClothes = filteredClothes,
+                        aiExplanation = aiExplanation,
+                        isAILoading = aiLoading
+                    )
             }
         }
 
@@ -717,20 +738,12 @@ fun OutfitRecommendationsCard(
                     modifier = Modifier.size(28.dp)
                 )
                 Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "AI Outfit Picks",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
-                    )
-                    Text(
-                        text = aiExplanation ?: "Analyzing your wardrobe...",
-                        fontSize = 13.sp,
-                        color = Grey,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
+                Text(
+                    text = "AI Outfit Picks",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
             }
 
             Spacer(Modifier.height(20.dp))
@@ -787,7 +800,7 @@ fun RecommendedClothesItem(clothes: ClothesModel) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp),
+                .height(125.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = LightBlue),
             elevation = CardDefaults.cardElevation(2.dp)
@@ -801,7 +814,7 @@ fun RecommendedClothesItem(clothes: ClothesModel) {
                     contentDescription = clothes.clothesName,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp)
+                        .height(100.dp)
                         .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                     contentScale = ContentScale.Crop
                 )
@@ -847,9 +860,9 @@ fun AIInsightsCard(
                 .background(
                     Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFE91E63),
-                            Color(0xFF9C27B0),
-                            Color(0xFF673AB7)
+                            AICardColor1,
+                            AICardColor2,
+                            AICardColor3
                         )
                     )
                 )

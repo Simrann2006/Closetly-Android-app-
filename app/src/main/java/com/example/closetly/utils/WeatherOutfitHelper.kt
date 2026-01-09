@@ -1,5 +1,6 @@
 package com.example.closetly.utils
 
+import com.example.closetly.AIRecommendationCache
 import com.example.closetly.BuildConfig
 import com.example.closetly.R
 import com.example.closetly.model.ClothesModel
@@ -45,6 +46,7 @@ interface GroqService {
 }
 
 object OutfitRecommendationHelper {
+    var aiCache: AIRecommendationCache? = null
 
     private val GROQ_API_KEY = BuildConfig.AI_API
     private const val TAG = "OutfitAI"
@@ -92,34 +94,6 @@ object OutfitRecommendationHelper {
         }
     }
     
-    fun getRecommendedOutfits(
-        temperature: Double,
-        condition: String,
-        allClothes: List<ClothesModel>
-    ): List<ClothesModel> {
-        val recommendedSeason = getSeasonByTemperature(temperature)
-        val recommendedCategories = getCategoriesByWeather(temperature, condition)
-        
-        val filtered = allClothes.filter { clothes ->
-            val matchesSeason = clothes.season.equals(recommendedSeason, ignoreCase = true) ||
-                    clothes.season.isEmpty()
-            val matchesCategory = recommendedCategories.any { category ->
-                clothes.categoryName.contains(category, ignoreCase = true)
-            }
-            matchesSeason || matchesCategory
-        }
-        
-        if (filtered.isNotEmpty()) {
-            return filtered.take(6)
-        }
-        
-        return allClothes.filter { clothes ->
-            recommendedCategories.any { category ->
-                clothes.categoryName.contains(category, ignoreCase = true)
-            }
-        }.take(6)
-    }
-    
     fun getSeasonByTemperature(temp: Double): String {
         return when {
             temp < 10 -> "Winter"
@@ -144,28 +118,6 @@ object OutfitRecommendationHelper {
         }
     }
 
-    fun getCategoriesByWeather(temp: Double, condition: String): List<String> {
-        val categories = mutableListOf<String>()
-        
-        when {
-            temp < 10 -> {
-                categories.addAll(listOf("Jacket", "Sweater", "Coat", "Boots", "Outerwear"))
-            }
-            temp < 20 -> {
-                categories.addAll(listOf("Tops", "Jeans", "Pants", "Shoes", "Shirt"))
-            }
-            else -> {
-                categories.addAll(listOf("Tops", "Shorts", "Dress", "Sandals", "T-shirt"))
-            }
-        }
-        
-        if (condition.contains("rain", ignoreCase = true) ||
-            condition.contains("drizzle", ignoreCase = true)) {
-            categories.addAll(listOf("Jacket", "Boots", "Coat"))
-        }
-        
-        return categories.distinct()
-    }
 
     fun formatTemperature(temp: Double): String {
         return "${temp.roundToInt()}°C"
@@ -175,15 +127,17 @@ object OutfitRecommendationHelper {
         val fahrenheit = (temp * 9/5) + 32
         return "${fahrenheit.roundToInt()}°F"
     }
-    
+
     suspend fun getAIRecommendations(
         temperature: Double,
         weatherCondition: String,
-        allClothes: List<ClothesModel>
+        selectedClothes: List<ClothesModel>
     ): String = withContext(Dispatchers.IO) {
-        val colorCount = allClothes.groupingBy { it.color }.eachCount()
-        val topColors = colorCount.entries.sortedByDescending { it.value }.take(3)
-        val colorSummary = topColors.joinToString(", ") { "${it.key}(${it.value})" }
+        if (selectedClothes.isEmpty()) {
+            return@withContext "Add some clothes to your closet for outfit recommendations!"
+        }
+        
+        val clothesList = selectedClothes.take(6).joinToString(", ") { it.clothesName }
         
         val weatherCategory = when {
             temperature < 10 -> "cold (layering needed)"
@@ -194,18 +148,17 @@ object OutfitRecommendationHelper {
         
         try {
             val prompt = """
-                You're a fashion stylist. Be brief (2-3 sentences).
+                You're a fashion stylist. Create a brief outfit recommendation (2-3 sentences).
                 
-                Wardrobe colors: $colorSummary
-                Weather: ${temperature}°C, $weatherCondition ($weatherCategory)
+                For ${temperature}°C, $weatherCondition ($weatherCategory) weather, recommend an outfit using THESE specific clothes:
+                $clothesList
                 
-                Give: 1) Color suggestion (what's missing), 2) Style tip for weather. Add one emoji.
+                Explain how to combine them and why they work for this weather. Mention the clothes by name. Add one emoji.
             """.trimIndent()
             
             return@withContext callGroqAI(prompt)
         } catch (e: Exception) {
-            val dominantColor = topColors.firstOrNull()?.key ?: "neutral"
-            "Try adding warmer tones to complement your $dominantColor pieces! Perfect for ${temperature}°C weather."
+            "Layer $clothesList for the perfect ${temperature.roundToInt()}°C outfit! 👔"
         }
     }
     
@@ -220,16 +173,12 @@ object OutfitRecommendationHelper {
         allClothes: List<ClothesModel>
     ): AIOutfitSelection = withContext(Dispatchers.IO) {
         val season = getSeasonByTemperature(temperature)
-        val categories = getCategoriesByWeather(temperature, weatherCondition)
-        
         val scoredClothes = allClothes.map { clothes ->
             var score = 0
             
             if (clothes.season.equals(season, ignoreCase = true)) score += 10
             if (clothes.season.isEmpty()) score += 5
-            
-            if (categories.any { clothes.categoryName.contains(it, ignoreCase = true) }) score += 8
-            
+
             if (weatherCondition.contains("rain", ignoreCase = true)) {
                 if (clothes.categoryName.contains("jacket", ignoreCase = true) || 
                     clothes.categoryName.contains("boots", ignoreCase = true)) score += 5
@@ -257,9 +206,9 @@ object OutfitRecommendationHelper {
         }
         
         val explanation = try {
-            val clothesList = selected.take(4).joinToString(", ") { it.clothesName }
+            val clothesList = selected.take(4).joinToString(", ") { "${it.clothesName} (${it.categoryName})" }
             val prompt = """
-                Briefly explain (1 sentence) why these clothes work for ${temperature}°C, $weatherCondition:
+                Briefly explain (1 sentence) why these specific clothes from the user's closet work well together for ${temperature}°C, $weatherCondition:
                 $clothesList
                 Add one emoji.
             """.trimIndent()
@@ -272,7 +221,7 @@ object OutfitRecommendationHelper {
                 temperature < 28 -> "warm"
                 else -> "hot"
             }
-            "Perfect combo for ${tempDesc} ${temperature.roundToInt()}°C weather!"
+            "Perfect combo from your closet for ${tempDesc} ${temperature.roundToInt()}°C weather!"
         }
         
         AIOutfitSelection(
