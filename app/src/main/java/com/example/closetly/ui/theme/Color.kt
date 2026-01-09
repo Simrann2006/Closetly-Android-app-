@@ -23,3 +23,15 @@ val Black = Color(0xFF000000)
 val Skin = Color(0xFFC59D9B)
 
 val Red = Color(0xFFD50B00)
+
+val WeatherBlue = Color(0xFF6BA4E8)
+val LightBlue = Color(0xFFE3F2FD)
+val SkyBlue = Color(0xFF87CEEB)
+
+val CalendarPurple = Color(0xFF8B5FBF)
+val CalendarBlue = Color(0xFF4A6FDC)
+
+val DarkGrey = Color(0xFF333333)
+
+val DarkGrey1 = Color(0xFF666666)
+val LightGrey1 = Color(0xFF999999)
