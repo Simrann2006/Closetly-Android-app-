@@ -112,7 +112,6 @@ fun CommentScreen(
         viewModel.loadComments(postId)
     }
 
-    // Bottom Sheet for Delete Option
     if (selectedCommentForDelete != null) {
         ModalBottomSheet(
             onDismissRequest = { selectedCommentForDelete = null },
@@ -125,7 +124,6 @@ fun CommentScreen(
                     .fillMaxWidth()
                     .padding(bottom = 32.dp)
             ) {
-                // Delete Option
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -283,7 +281,6 @@ fun CommentItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Profile Image
         AsyncImage(
             model = comment.userProfileImage,
             contentDescription = null,
@@ -294,7 +291,6 @@ fun CommentItem(
                 .border(1.dp, Color.LightGray, CircleShape)
         )
 
-        // Comment Content
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -319,7 +315,6 @@ fun CommentItem(
                 )
             }
 
-            // Comment Text
             Text(
                 comment.commentText,
                 style = TextStyle(
@@ -331,7 +326,6 @@ fun CommentItem(
             )
         }
 
-        // Like Button with Count
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
