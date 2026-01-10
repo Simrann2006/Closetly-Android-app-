@@ -36,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,10 +53,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
+import com.example.closetly.viewmodel.ChatViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,11 +74,13 @@ class DashboardActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardBody(){
+
     val context = LocalContext.current
     data class NavItem(val label : String, val image : Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var unreadNotifications by remember { mutableStateOf(3) }
+    var unreadNotifications by remember { mutableStateOf(0) }
+    var unreadMessages by remember { mutableStateOf(0) }
 
     val sheetState = rememberModalBottomSheetState()
     val coroutineScope = rememberCoroutineScope()
@@ -87,6 +93,22 @@ fun DashboardBody(){
         NavItem(label = "Calender", image = R.drawable.calendar),
         NavItem(label = "Profile", image = R.drawable.profile)
     )
+
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    val chatViewModel = remember { ChatViewModel(ChatRepoImpl()) }
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            chatViewModel.getUserChats(currentUserId) { success, _, chatList ->
+                if (success) {
+                    val totalUnread = chatList.sumOf { (chat, _) ->
+                        chat.unreadCount[currentUserId] ?: 0
+                    }
+                    unreadMessages = totalUnread
+                }
+            }
+        }
+    }
 
     Scaffold (
         topBar = {
@@ -105,7 +127,7 @@ fun DashboardBody(){
                         }) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_add_24),
-                                contentDescription = "Add",
+                                contentDescription = null,
                                 modifier = Modifier.size(22.dp),
                                 tint = Black
                             )
@@ -126,7 +148,7 @@ fun DashboardBody(){
                         }) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_menu_24),
-                                contentDescription = "Settings",
+                                contentDescription = null,
                                 modifier = Modifier.size(22.dp),
                                 tint = Black
                             )
@@ -161,12 +183,11 @@ fun DashboardBody(){
                             0 -> {
                                 IconButton(onClick = {
                                     context.startActivity(Intent(context, NotificationActivity::class.java))
-                                    unreadNotifications = 0
                                 }) {
                                     Box {
                                         Image(
                                             painter = painterResource(R.drawable.notification),
-                                            contentDescription = "Notifications",
+                                            contentDescription = null,
                                             modifier = Modifier.size(22.dp)
                                         )
                                         if (unreadNotifications > 0) {
@@ -180,19 +201,33 @@ fun DashboardBody(){
                                         }
                                     }
                                 }
-                                IconButton(onClick = {}) {
-                                    Image(painter = painterResource(R.drawable.chat),
-                                        contentDescription = "Messages",
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                    )
+                                IconButton(onClick = {
+                                    val intent = Intent(context, MessageActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
+                                    Box{
+                                        Image(painter = painterResource(R.drawable.chat),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(22.dp)
+                                        )
+                                        if (unreadMessages > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(Color.Red, shape = RoundedCornerShape(4.dp))
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 6.dp, y = (-2).dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             1 -> {
                                 IconButton(onClick = {}) {
                                     Icon(
                                         painter = painterResource(R.drawable.chat),
-                                        contentDescription = "Filter",
+                                        contentDescription = null,
                                         modifier = Modifier.size(22.dp),
                                         tint = Black
                                     )
@@ -202,7 +237,7 @@ fun DashboardBody(){
                                 IconButton(onClick = {}) {
                                     Icon(
                                         painter = painterResource(R.drawable.chat),
-                                        contentDescription = "Add Clothes",
+                                        contentDescription = null,
                                         modifier = Modifier.size(22.dp),
                                         tint = Black
                                     )
@@ -212,7 +247,7 @@ fun DashboardBody(){
                                 IconButton(onClick = {}) {
                                     Icon(
                                         painter = painterResource(R.drawable.chat),
-                                        contentDescription = "Today",
+                                        contentDescription = null,
                                         modifier = Modifier.size(22.dp),
                                         tint = Black
                                     )

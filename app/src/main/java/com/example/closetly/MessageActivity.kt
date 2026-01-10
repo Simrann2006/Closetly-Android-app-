@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -256,7 +257,6 @@ fun MessageBody() {
                 showDeleteConfirmation = true
                 selectedChatForAction = null
             },
-            onPin = { }
         )
     }
 
@@ -627,60 +627,40 @@ fun UserListItem(user: UserModel, onClick: () -> Unit) {
 fun ChatActionDialog(
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onPin: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},
         text = {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(0.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                    .height(34.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                TextButton(
-                    onClick = {
-                        onPin()
-                        onDismiss()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Pin", color = Black, fontSize = 14.sp)
-                    }
-                }
-
                 TextButton(
                     onClick = {
                         onDelete()
                         onDismiss()
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Delete", color = Red, fontSize = 14.sp)
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_delete_24),
+                            contentDescription = null,
+                            tint = Red,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Delete", color = Red, fontSize = 17.sp)
                     }
                 }
             }
         },
         containerColor = White,
         tonalElevation = 2.dp,
-        modifier = Modifier.padding(horizontal = 8.dp)
     )
 }
 
