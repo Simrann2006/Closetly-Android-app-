@@ -24,6 +24,39 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
+            android:name=".ListingDetailsActivity"
+            android:exported="true"
+            android:label="ListingDetailsActivity"
+            android:theme="@style/Theme.Closetly">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".PostCreationActivity"
+            android:exported="true"
+            android:label="@string/title_activity_post_cration"
+            android:theme="@style/Theme.Closetly">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.closetly.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
             android:name=".SettingsActivity"
             android:exported="true"
             android:label="SettingsActivity"
@@ -84,9 +117,9 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AddClothesActivity"
+            android:name=".AddActivity"
             android:exported="true"
-            android:label="@string/title_activity_add_clothes"
+            android:label="AddActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -171,16 +204,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
     </application>
 
 </manifest>

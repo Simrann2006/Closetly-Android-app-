@@ -1,13 +1,11 @@
 package com.example.closetly
 
-import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -143,12 +140,24 @@ fun ClosetScreen() {
         }
     }
 
-    val filteredClothes = remember(selectedCategory, allClothes) {
-        if (selectedCategory == "All") {
+    val filteredClothes = remember(selectedCategory, allClothes, searchText) {
+        var clothes = if (selectedCategory == "All") {
             allClothes
         } else {
             allClothes.filter { it.categoryName == selectedCategory }
         }
+
+        if (searchText.isNotEmpty()) {
+            clothes = clothes.filter { item ->
+                item.clothesName.contains(searchText, ignoreCase = true) ||
+                        item.brand.contains(searchText, ignoreCase = true) ||
+                        item.color.contains(searchText, ignoreCase = true) ||
+                        item.categoryName.contains(searchText, ignoreCase = true) ||
+                        item.season.contains(searchText, ignoreCase = true)
+            }
+        }
+
+        clothes
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -199,7 +208,9 @@ fun ClosetScreen() {
 
                 FloatingActionButton(
                     onClick = {
-                        context.startActivity(Intent(context, AddClothesActivity::class.java))
+                        val intent = Intent(context, AddActivity::class.java)
+                        intent.putExtra("FLOW_TYPE", AddFlow.CLOSET)
+                        context.startActivity(intent)
                     },
                     containerColor = Skin,
                     modifier = Modifier.size(46.dp)
@@ -473,10 +484,11 @@ fun ClothesDetailsDialog(
                 )
                 
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                DetailRow(label = "Brand", value = clothes.brand)
-                DetailRow(label = "Color", value = clothes.color)
+
                 DetailRow(label = "Category", value = clothes.categoryName)
+                DetailRow(label = "Brand", value = clothes.brand)
+                DetailRow(label = "Price", value = clothes.price)
+                DetailRow(label = "Color", value = clothes.color)
                 DetailRow(label = "Season", value = clothes.season)
                 
                 if (clothes.notes.isNotEmpty()) {

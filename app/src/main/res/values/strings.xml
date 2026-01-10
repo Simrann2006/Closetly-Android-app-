@@ -13,4 +13,6 @@
     <string name="title_activity_analysis">AnalysisActivity</string>
     <string name="title_activity_post">PostActivity</string>
     <string name="title_activity_setting">SettingActivity</string>
+    <string name="title_activity_post_cration">PostCrationActivity</string>
+    <string name="title_activity_listing">ListingActivity</string>
 </resources>

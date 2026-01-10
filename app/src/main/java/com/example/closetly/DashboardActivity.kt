@@ -9,18 +9,24 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -28,11 +34,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +48,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,7 +74,11 @@ fun DashboardBody(){
     data class NavItem(val label : String, val image : Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var unreadNotifications by remember { mutableStateOf(3) } // example unread notifications
+    var unreadNotifications by remember { mutableStateOf(3) }
+
+    val sheetState = rememberModalBottomSheetState()
+    val coroutineScope = rememberCoroutineScope()
+    var showSheet by remember { mutableStateOf(false) }
 
     val listItem = listOf(
         NavItem(label = "Home", image = R.drawable.home),
@@ -89,7 +100,9 @@ fun DashboardBody(){
                         navigationIconContentColor = Black
                     ),
                     navigationIcon = {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = {
+                            showSheet = true
+                        }) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_add_24),
                                 contentDescription = "Add",
@@ -146,10 +159,9 @@ fun DashboardBody(){
                     actions = {
                         when (selectedIndex) {
                             0 -> {
-                                // 🔔 Notification Bell with Red Dot
                                 IconButton(onClick = {
                                     context.startActivity(Intent(context, NotificationActivity::class.java))
-                                    unreadNotifications = 0 // optional: clear unread on click
+                                    unreadNotifications = 0
                                 }) {
                                     Box {
                                         Image(
@@ -274,7 +286,61 @@ fun DashboardBody(){
                 4 -> ProfileScreen()
                 else -> HomeScreen()
             }
+
+            if (showSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showSheet = false },
+                    sheetState = sheetState,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    containerColor = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp, bottom = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Create",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Black,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        SheetOption(icon = R.drawable.baseline_add_24, label = "Post") {
+                            val intent = Intent(context, AddActivity::class.java)
+                            intent.putExtra("FLOW_TYPE", AddFlow.POST)
+                            context.startActivity(intent)
+                        }
+                        SheetOption(icon = R.drawable.baseline_add_shopping_cart_24, label = "Listing") {
+                            val intent = Intent(context, AddActivity::class.java)
+                            intent.putExtra("FLOW_TYPE", AddFlow.LISTING)
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun SheetOption(icon: Int, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 16.dp, horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = label,
+            modifier = Modifier.size(28.dp),
+            tint = Black
+        )
+        Spacer(modifier = Modifier.width(20.dp))
+        Text(label, fontSize = 18.sp, color = Black)
     }
 }
 

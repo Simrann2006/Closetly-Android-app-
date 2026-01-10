@@ -72,6 +72,7 @@ fun ClothesDetailsBody(
     var brand by remember { mutableStateOf("") }
     var season by remember { mutableStateOf("") }
     var color by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
     var showCategoryDropdown by remember { mutableStateOf(false) }
@@ -164,7 +165,7 @@ fun ClothesDetailsBody(
                     ) {
                         Text(
                             "Save",
-                            color = if (clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null)
+                            color = if (clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null && color.isNotBlank() && price.isNotBlank())
                                 Brown else Grey,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -295,9 +296,9 @@ fun ClothesDetailsBody(
                 }
 
                 OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Brand") },
+                    value = color,
+                    onValueChange = { color = it },
+                    label = { Text("Color *") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -309,9 +310,9 @@ fun ClothesDetailsBody(
                 )
 
                 OutlinedTextField(
-                    value = color,
-                    onValueChange = { color = it },
-                    label = { Text("Color") },
+                    value = price,
+                    onValueChange = { price = it },
+                    label = { Text("Price *") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -326,6 +327,20 @@ fun ClothesDetailsBody(
                     value = season,
                     onValueChange = { season = it },
                     label = { Text("Season") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
