@@ -8,7 +8,8 @@ data class UserModel(
     val selectedCountry : String = "",
     val profilePicture : String = "",
     val username : String = "",
-    val bio : String = ""
+    val bio : String = "",
+    val fcmToken: String = ""
 ) {
     fun toMap() : Map<String, Any?>{
         return mapOf(
@@ -19,7 +20,8 @@ data class UserModel(
             "selectedCountry" to selectedCountry,
             "profilePicture" to profilePicture,
             "username" to username,
-            "bio" to bio
+            "bio" to bio,
+            "fcmToken" to fcmToken
         )
     }
 }

@@ -99,4 +99,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation ("androidx.compose.material:material-icons-extended")
 
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
 }

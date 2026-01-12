@@ -354,6 +354,19 @@ fun LoginBody(){
                                     } else {
                                         sharedPreferences.edit().clear().apply()
                                     }
+
+                                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            val token = task.result
+                                            val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                            if (userId != null && token != null) {
+                                                val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
+                                                    .getReference("Users").child(userId)
+                                                userRef.child("fcmToken").setValue(token)
+                                            }
+                                        }
+                                    }
+
                                     Toast.makeText(
                                         context,
                                         "Login successful",
@@ -431,6 +444,17 @@ fun LoginBody(){
 
                                 userViewModel.signInWithGoogle(idToken) { success, message ->
                                     if (success) {
+                                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                val token = task.result
+                                                val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                                if (userId != null && token != null) {
+                                                    val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
+                                                        .getReference("Users").child(userId)
+                                                    userRef.child("fcmToken").setValue(token)
+                                                }
+                                            }
+                                        }
                                         val intent = Intent(context, DashboardActivity::class.java)
                                         context.startActivity(intent)
                                         activity.finish()
