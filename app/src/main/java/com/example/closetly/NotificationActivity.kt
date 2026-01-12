@@ -80,25 +80,21 @@ fun NotificationScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    Box(
-                        Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.TopStart
-                    ) {
-                        Text(
-                            "Notifications",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Cursive,
-                            color = Black
-                        )
-                    }
+                    Text(
+                        "Notifications",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Cursive,
+                        color = Black
+                    )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White
                 )
             )
+
         }
     ) { padding ->
         Box(

@@ -67,7 +67,7 @@ fun DashboardBody(){
     data class NavItem(val label : String, val image : Int)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var unreadNotifications by remember { mutableStateOf(3) } // example unread notifications
+    var unreadNotifications by remember { mutableStateOf(3) }
 
     val listItem = listOf(
         NavItem(label = "Home", image = R.drawable.home),
@@ -146,7 +146,7 @@ fun DashboardBody(){
                     actions = {
                         when (selectedIndex) {
                             0 -> {
-                                // 🔔 Notification Bell with Red Dot
+
                                 IconButton(onClick = {
                                     context.startActivity(Intent(context, NotificationActivity::class.java))
                                     unreadNotifications = 0 // optional: clear unread on click
