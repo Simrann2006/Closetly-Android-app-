@@ -9,8 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,19 +21,35 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.closetly.repository.UserRepoImpl
+import com.example.closetly.repository.ProductRepoImpl
+import com.example.closetly.viewmodel.ProductViewModel
+import com.example.closetly.model.ProductModel
+import com.example.closetly.model.ListingType
 import com.example.closetly.ui.theme.Pink40
+import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.White
+import com.example.closetly.ui.theme.Black
+import com.example.closetly.ui.theme.Grey
 import com.google.firebase.auth.FirebaseAuth
+import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current
     val userRepo = remember { UserRepoImpl() }
     val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
+    val productRepo = remember { ProductRepoImpl() }
+    val productViewModel = remember { ProductViewModel(productRepo) }
     val currentUser = remember { FirebaseAuth.getInstance().currentUser }
     
     var name by remember { mutableStateOf("") }
@@ -39,6 +57,7 @@ fun ProfileScreen() {
     var bio by remember { mutableStateOf("") }
     var profilePicture by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
+    var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.let { user ->
@@ -50,6 +69,9 @@ fun ProfileScreen() {
                     profilePicture = userData.profilePicture
                 }
                 isLoading = false
+            }
+            productViewModel.getUserProducts(user.uid) { listings ->
+                userListings = listings
             }
         } ?: run {
             isLoading = false
@@ -68,6 +90,9 @@ fun ProfileScreen() {
                         bio = userData.bio
                         profilePicture = userData.profilePicture
                     }
+                }
+                productViewModel.getUserProducts(user.uid) { listings ->
+                    userListings = listings
                 }
             }
         }
@@ -200,21 +225,58 @@ fun ProfileScreen() {
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(1.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            items(5) {
+        when (selectedTab.value) {
+            "Posts" -> {
                 Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .background(Color.LightGray)
-                )
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No posts yet",
+                        fontSize = 16.sp,
+                        color = Grey
+                    )
+                }
+            }
+            "Listings" -> {
+                if (userListings.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No listings yet",
+                            fontSize = 16.sp,
+                            color = Grey
+                        )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 1.dp),
+                        contentPadding = PaddingValues(1.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        items(userListings.size) { index ->
+                            val listing = userListings[index]
+                            ProfileListingCard(
+                                product = listing,
+                                onRefresh = {
+                                    currentUser?.let { user ->
+                                        productViewModel.getUserProducts(user.uid) { listings ->
+                                            userListings = listings
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -268,4 +330,646 @@ fun ProfileButton(
             fontWeight = FontWeight.Bold
         )
     }
+}
+
+@Composable
+fun ProfileListingCard(
+    product: ProductModel,
+    onRefresh: () -> Unit
+) {
+    var showPostViewer by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable { showPostViewer = true },
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = White)
+    ) {
+        AsyncImage(
+            model = product.imageUrl,
+            contentDescription = product.title,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    }
+    
+    if (showPostViewer) {
+        ListingViewer(
+            product = product,
+            onDismiss = { showPostViewer = false },
+            onRefresh = onRefresh
+        )
+    }
+}
+
+@Composable
+fun ListingViewer(
+    product: ProductModel,
+    onDismiss: () -> Unit,
+    onRefresh: () -> Unit
+) {
+    val context = LocalContext.current
+    val productRepo = remember { ProductRepoImpl() }
+    val productViewModel = remember { ProductViewModel(productRepo) }
+    
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                ) {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .background(White.copy(alpha = 0.9f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = null,
+                            tint = Black
+                        )
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = { showMenu = !showMenu },
+                            modifier = Modifier
+                                .background(White.copy(alpha = 0.9f), CircleShape)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_more_vert_24),
+                                contentDescription = null,
+                                tint = Black
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(White)
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit", color = Black) },
+                                onClick = {
+                                    showMenu = false
+                                    showEditDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.baseline_edit_24),
+                                        contentDescription = null,
+                                        tint = Black
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = Black,
+                                    leadingIconColor = Black
+                                )
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete", color = Black) },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.baseline_delete_24),
+                                        contentDescription = null,
+                                        tint = Black
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = Black,
+                                    leadingIconColor = Black
+                                )
+                            )
+                        }
+                    }
+                    
+                    if (product.status != "Available") {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(12.dp),
+                            color = when (product.status) {
+                                "Sold Out" -> Color.Red
+                                "On Rent" -> Color(0xFFFFA500)
+                                else -> Grey
+                            },
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = product.status.uppercase(),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
+                        }
+                    }
+                }
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = product.title,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Text(
+                            text = if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
+                                "$${product.rentPricePerDay}/day"
+                            } else {
+                                "$${product.price}"
+                            },
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Brown
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = product.listingType.name,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Grey
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    if (product.description.isNotEmpty()) {
+                        Text(
+                            text = product.description,
+                            fontSize = 14.sp,
+                            color = Black,
+                            lineHeight = 20.sp
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    
+                    Divider(color = Grey.copy(alpha = 0.3f))
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "Details",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Black
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    ListingDetailRow(label = "Condition", value = product.condition)
+                    if (product.brand.isNotEmpty()) {
+                        ListingDetailRow(label = "Brand", value = product.brand)
+                    }
+                    if (product.size.isNotEmpty()) {
+                        ListingDetailRow(label = "Size", value = product.size)
+                    }
+                    ListingDetailRow(label = "Status", value = product.status)
+                    ListingDetailRow(label = "Posted", value = getTimeAgoListing(product.timestamp))
+                }
+            }
+        }
+    }
+    
+    if (showEditDialog) {
+        EditListingDialog(
+            product = product,
+            productViewModel = productViewModel,
+            onDismiss = { showEditDialog = false },
+            onSaved = {
+                showEditDialog = false
+                onDismiss()
+                onRefresh()
+                Toast.makeText(context, "Listing updated", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+    
+    if (showDeleteDialog) {
+        ListingDeleteConfirmationDialog(
+            listingTitle = product.title,
+            onConfirm = {
+                productViewModel.deleteProduct(product.id) { success, message ->
+                    if (success) {
+                        Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                        onRefresh()
+                    } else {
+                        Toast.makeText(context, "Failed: $message", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                showDeleteDialog = false
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+}
+
+@Composable
+fun EditListingDialog(
+    product: ProductModel,
+    productViewModel: ProductViewModel,
+    onDismiss: () -> Unit,
+    onSaved: () -> Unit
+) {
+    var title by remember { mutableStateOf(product.title) }
+    var description by remember { mutableStateOf(product.description) }
+    var price by remember { mutableStateOf(product.price.toString()) }
+    var rentPrice by remember { mutableStateOf(product.rentPricePerDay?.toString() ?: "") }
+    var brand by remember { mutableStateOf(product.brand) }
+    var size by remember { mutableStateOf(product.size) }
+    var condition by remember { mutableStateOf(product.condition) }
+    var status by remember { mutableStateOf(product.status) }
+    
+    var expandedCondition by remember { mutableStateOf(false) }
+    var expandedStatus by remember { mutableStateOf(false) }
+    
+    val conditions = listOf("New", "Like New", "Good", "Fair", "Poor")
+    val statusOptions = if (product.listingType == ListingType.THRIFT) {
+        listOf("Available", "Sold Out")
+    } else {
+        listOf("Available", "On Rent")
+    }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Edit Listing",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    ),
+                    maxLines = 4
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = { Text("Price") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                if (product.listingType == ListingType.RENT) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = rentPrice,
+                        onValueChange = { rentPrice = it },
+                        label = { Text("Rent Price per Day") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Brown,
+                            unfocusedBorderColor = Grey
+                        )
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedTextField(
+                    value = size,
+                    onValueChange = { size = it },
+                    label = { Text("Size") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = condition,
+                        onValueChange = { },
+                        label = { Text("Condition") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        enabled = false,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = Grey,
+                            disabledTextColor = Black
+                        ),
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                contentDescription = null
+                            )
+                        }
+                    )
+                    
+                    DropdownMenu(
+                        expanded = expandedCondition,
+                        onDismissRequest = { expandedCondition = false },
+                        modifier = Modifier.background(White)
+                    ) {
+                        conditions.forEach { cond ->
+                            DropdownMenuItem(
+                                text = { Text(cond) },
+                                onClick = {
+                                    condition = cond
+                                    expandedCondition = false
+                                }
+                            )
+                        }
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { expandedCondition = true }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = status,
+                        onValueChange = { },
+                        label = { Text(if (product.listingType == ListingType.THRIFT) "Availability" else "Rental Status") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        enabled = false,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledBorderColor = when (status) {
+                                "Sold Out" -> Color.Red
+                                "On Rent" -> Color(0xFFFFA500)
+                                else -> Grey
+                            },
+                            disabledTextColor = when (status) {
+                                "Sold Out" -> Color.Red
+                                "On Rent" -> Color(0xFFFFA500)
+                                else -> Black
+                            }
+                        ),
+                        trailingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                contentDescription = null,
+                                tint = when (status) {
+                                    "Sold Out" -> Color.Red
+                                    "On Rent" -> Color(0xFFFFA500)
+                                    else -> Grey
+                                }
+                            )
+                        }
+                    )
+                    
+                    DropdownMenu(
+                        expanded = expandedStatus,
+                        onDismissRequest = { expandedStatus = false },
+                        modifier = Modifier.background(White)
+                    ) {
+                        statusOptions.forEach { stat ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        stat,
+                                        color = when (stat) {
+                                            "Sold Out" -> Color.Red
+                                            "On Rent" -> Color(0xFFFFA500)
+                                            else -> Black
+                                        },
+                                        fontWeight = if (stat != "Available") FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                onClick = {
+                                    status = stat
+                                    expandedStatus = false
+                                }
+                            )
+                        }
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { expandedStatus = true }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Grey
+                        )
+                    ) {
+                        Text("Cancel")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val updatedProduct = product.copy(
+                                title = title,
+                                description = description,
+                                price = price.toDoubleOrNull() ?: product.price,
+                                rentPricePerDay = rentPrice.toDoubleOrNull(),
+                                brand = brand,
+                                size = size,
+                                condition = condition,
+                                status = status
+                            )
+                            productViewModel.editProduct(updatedProduct) { success, _ ->
+                                if (success) {
+                                    onSaved()
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brown
+                        )
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ListingDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "$label:",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Grey
+        )
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = Black
+        )
+    }
+}
+
+@Composable
+fun ListingDeleteConfirmationDialog(
+    listingTitle: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Delete Listing",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text("Are you sure you want to delete \"$listingTitle\"? This action cannot be undone.")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        containerColor = White
+    )
 }

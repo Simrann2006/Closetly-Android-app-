@@ -1,5 +1,6 @@
 package com.example.closetly.repository
 
+import android.util.Log
 import com.example.closetly.model.ChatModel
 import com.example.closetly.model.MessageModel
 import com.example.closetly.model.UserModel
@@ -120,9 +121,18 @@ class ChatRepoImpl : ChatRepo {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val chatList = mutableListOf<Pair<ChatModel, UserModel>>()
                     var processedCount = 0
-                    val totalChats = snapshot.children.filter { chatSnapshot ->
-                        val chat = chatSnapshot.getValue(ChatModel::class.java)
-                        chat?.participants?.contains(userId) == true
+                    val totalChats = snapshot.children.mapNotNull { chatSnapshot ->
+                        try {
+                            if (chatSnapshot.value !is Map<*, *>) {
+                                Log.w("ChatRepoImpl", "Skipping non-object entry at key '${chatSnapshot.key}'")
+                                return@mapNotNull null
+                            }
+                            
+                            val chat = chatSnapshot.getValue(ChatModel::class.java)
+                            if (chat?.participants?.contains(userId) == true) chat else null
+                        } catch (e: Exception) {
+                            null
+                        }
                     }.count()
 
                     if (totalChats == 0) {
@@ -131,8 +141,13 @@ class ChatRepoImpl : ChatRepo {
                     }
 
                     snapshot.children.forEach { chatSnapshot ->
-                        val chat = chatSnapshot.getValue(ChatModel::class.java)
-                        if (chat != null && chat.participants.contains(userId)) {
+                        try {
+                            if (chatSnapshot.value !is Map<*, *>) {
+                                return@forEach
+                            }
+                            
+                            val chat = chatSnapshot.getValue(ChatModel::class.java)
+                            if (chat != null && chat.participants.contains(userId)) {
                             val otherUserId = chat.participants.firstOrNull { it != userId } ?: return@forEach
                             
                             usersRef.child(otherUserId).addListenerForSingleValueEvent(object : ValueEventListener {
@@ -156,6 +171,14 @@ class ChatRepoImpl : ChatRepo {
                                     }
                                 }
                             })
+                        }
+                        } catch (e: Exception) {
+                            Log.e("ChatRepoImpl", "Error processing chat at key '${chatSnapshot.key}': ${e.message}")
+                            processedCount++
+                            if (processedCount == totalChats) {
+                                val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                callback(true, "Chats retrieved", sortedList)
+                            }
                         }
                     }
                 }
