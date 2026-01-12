@@ -66,9 +66,20 @@ class CommentViewModel(
     
     fun likeComment(commentId: String, postId: String) {
         viewModelScope.launch {
-            repository.likeComment(commentId).onSuccess {
-                loadComments(postId)
+            // Optimistically update UI immediately
+            val updatedComments = _comments.value.map { comment ->
+                if (comment.id == commentId) {
+                    comment.copy(
+                        isLiked = !comment.isLiked,
+                        likesCount = if (comment.isLiked) comment.likesCount - 1 else comment.likesCount + 1
+                    )
+                } else {
+                    comment
+                }
             }
+            _comments.value = updatedComments
+            
+            repository.likeComment(commentId)
         }
     }
     
@@ -82,9 +93,12 @@ class CommentViewModel(
     
     fun deleteComment(commentId: String, postId: String) {
         viewModelScope.launch {
+            // Optimistically remove from UI immediately
+            _comments.value = _comments.value.filter { it.id != commentId }
+            
+            // Update repository in background
             repository.deleteComment(commentId).onSuccess {
                 _showDeleteDialog.value = null
-                loadComments(postId)
             }
         }
     }
