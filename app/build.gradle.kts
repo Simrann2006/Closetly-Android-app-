@@ -19,6 +19,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        //API KEYS
+        buildConfigField(
+            "String",
+            "WEATHER_API",
+            "\"${System.getenv("WEATHER_API")}\""
+        )
+
+        buildConfigField(
+            "String",
+            "AI_API",
+            "\"${System.getenv("AI_API")}\""
+        )
     }
 
     buildTypes {
@@ -39,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -54,10 +68,17 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
+    implementation("com.google.firebase:firebase-storage:20.3.0")
     implementation("androidx.compose.material3:material3:1.3.1")
     implementation("com.googlecode.libphonenumber:libphonenumber:8.13.26")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.cloudinary:cloudinary-android:2.1.0")
+
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.google.android.gms:play-services-auth-api-phone:18.1.0")
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -70,4 +91,16 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager:0.36.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.36.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("androidx.compose.material:material-icons-extended")
+
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
 }

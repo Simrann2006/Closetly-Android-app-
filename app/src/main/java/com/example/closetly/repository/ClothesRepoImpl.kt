@@ -1,6 +1,7 @@
 package com.example.closetly.repository
 
 import com.example.closetly.model.ClothesModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -11,18 +12,25 @@ import kotlin.collections.toMap
 class ClothesRepoImpl : ClothesRepo {
 
     val database : FirebaseDatabase = FirebaseDatabase.getInstance()
-
     val ref : DatabaseReference = database.getReference("Clothess")
+    val auth : FirebaseAuth = FirebaseAuth.getInstance()
 
     override fun addClothes(
         model: ClothesModel,
         callback: (Boolean, String) -> Unit
     ) {
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            callback(false, "User not authenticated")
+            return
+        }
+        
         val id = ref.push().key.toString()
         model.clothesId = id
+        model.userId = currentUserId
         ref.child(id).setValue(model).addOnCompleteListener {
             if(it.isSuccessful){
-                callback(true,"Clothes added successfully")
+                callback(true,"Item added successfully")
             }else{
                 callback(false,"${it.exception?.message}")
             }
@@ -75,25 +83,34 @@ class ClothesRepoImpl : ClothesRepo {
     }
 
     override fun getAllClothes(callback: (Boolean, String, List<ClothesModel>?) -> Unit) {
-        ref.addValueEventListener(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if(snapshot.exists()){
-                    var allClothes = mutableListOf<ClothesModel>()
-                    for(data in snapshot.children){
-                        var clothes = data.getValue(ClothesModel::class.java)
-                        if(clothes != null){
-                            allClothes.add(clothes)
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            callback(false, "User not authenticated", null)
+            return
+        }
+        
+        ref.orderByChild("userId").equalTo(currentUserId)
+            .addValueEventListener(object : ValueEventListener{
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if(snapshot.exists()){
+                        var allClothes = mutableListOf<ClothesModel>()
+                        for(data in snapshot.children){
+                            var clothes = data.getValue(ClothesModel::class.java)
+                            if(clothes != null){
+                                allClothes.add(clothes)
+                            }
                         }
+
+                        callback(true,"Clothes fetched",allClothes)
+                    } else {
+                        callback(true,"No clothes found",emptyList())
                     }
-
-                    callback(true,"Clothes fetched",allClothes)
                 }
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                callback(false,error.message,null)
-            }
-        })
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false,error.message,null)
+                }
+            })
     }
 
     override fun getClothesByCategory(

@@ -1,10 +1,11 @@
 package com.example.closetly
 
-import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,35 +58,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.model.CategoryModel
 import com.example.closetly.model.ClothesModel
 import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
-import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Skin
 import com.example.closetly.repository.CategoryRepoImpl
 import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.ClothesViewModel
-
-object CategoryPreferences {
-    private const val PREFS_NAME = "closetly_categories"
-    private const val KEY_CATEGORIES = "categories"
-    private const val DEFAULT_CATEGORIES = "All,Tops,Bottoms,Shoes"
-
-    fun getCategories(context: Context): List<String> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val categoriesString = prefs.getString(KEY_CATEGORIES, DEFAULT_CATEGORIES) ?: DEFAULT_CATEGORIES
-        return categoriesString.split(",")
-    }
-
-    private fun saveCategories(context: Context, categories: List<String>) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_CATEGORIES, categories.joinToString(",")).apply()
-    }
-}
+import androidx.compose.material3.CircularProgressIndicator
 
 @Composable
 fun ClosetScreen() {
@@ -101,12 +86,41 @@ fun ClosetScreen() {
 
     var categories by remember { mutableStateOf(listOf("All")) }
     var allClothes by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var categoriesLoaded by remember { mutableStateOf(false) }
+    var clothesLoaded by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var categoryToDelete by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         categoryViewModel.getAllCategories { success, _, data ->
-            if (success && data != null) {
-                val categoryNames = listOf("All") + data.map { it.categoryName }
-                categories = categoryNames
+            if (success) {
+                if (data == null || data.isEmpty()) {
+                    val defaultCategories = listOf("Tops", "Bottoms", "Shoes")
+                    var addedCount = 0
+                    
+                    defaultCategories.forEach { categoryName ->
+                        val newCategory = CategoryModel(categoryName = categoryName)
+                        categoryViewModel.addCategory(newCategory) { addSuccess, _ ->
+                            if (addSuccess) {
+                                addedCount++
+                                if (addedCount == defaultCategories.size) {
+                                    categoryViewModel.getAllCategories { _, _, refreshedData ->
+                                        if (refreshedData != null) {
+                                            val categoryNames = listOf("All") + refreshedData.map { it.categoryName }
+                                            categories = categoryNames
+                                            categoriesLoaded = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    val categoryNames = listOf("All") + data.map { it.categoryName }
+                    categories = categoryNames
+                    categoriesLoaded = true
+                }
             }
         }
     }
@@ -116,15 +130,34 @@ fun ClosetScreen() {
             if (success && data != null) {
                 allClothes = data
             }
+            clothesLoaded = true
         }
     }
 
-    val filteredClothes = remember(selectedCategory, allClothes) {
-        if (selectedCategory == "All") {
+    LaunchedEffect(categoriesLoaded, clothesLoaded) {
+        if (categoriesLoaded && clothesLoaded) {
+            isLoading = false
+        }
+    }
+
+    val filteredClothes = remember(selectedCategory, allClothes, searchText) {
+        var clothes = if (selectedCategory == "All") {
             allClothes
         } else {
             allClothes.filter { it.categoryName == selectedCategory }
         }
+
+        if (searchText.isNotEmpty()) {
+            clothes = clothes.filter { item ->
+                item.clothesName.contains(searchText, ignoreCase = true) ||
+                        item.brand.contains(searchText, ignoreCase = true) ||
+                        item.color.contains(searchText, ignoreCase = true) ||
+                        item.categoryName.contains(searchText, ignoreCase = true) ||
+                        item.season.contains(searchText, ignoreCase = true)
+            }
+        }
+
+        clothes
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -175,7 +208,9 @@ fun ClosetScreen() {
 
                 FloatingActionButton(
                     onClick = {
-                        context.startActivity(Intent(context, AddClothesActivity::class.java))
+                        val intent = Intent(context, AddActivity::class.java)
+                        intent.putExtra("FLOW_TYPE", AddFlow.CLOSET)
+                        context.startActivity(intent)
                     },
                     containerColor = Skin,
                     modifier = Modifier.size(46.dp)
@@ -228,6 +263,13 @@ fun ClosetScreen() {
                             text = category,
                             isSelected = selectedCategory == category,
                             onClick = { selectedCategory = category },
+                            onLongPress = {
+                                val defaultCategories = listOf("All", "Tops", "Bottoms", "Shoes")
+                                if (!defaultCategories.contains(category)) {
+                                    categoryToDelete = category
+                                    showDeleteDialog = true
+                                }
+                            }
                         )
                     }
                 }
@@ -245,6 +287,83 @@ fun ClosetScreen() {
                     val clothes = filteredClothes[index]
                     ClothesItem(clothes = clothes)
                 }
+            }
+        }
+        
+        if (showDeleteDialog && categoryToDelete != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showDeleteDialog = false
+                    categoryToDelete = null
+                },
+                title = {
+                    Text(
+                        text = "Delete Category",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Are you sure you want to delete '$categoryToDelete'? All items in this category will also be deleted.",
+                        fontSize = 14.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val categoryName = categoryToDelete
+                            val categoryData = allClothes.firstOrNull { it.categoryName == categoryName }
+                            val categoryId = categoryData?.categoryId ?: ""
+                            
+                            if (categoryId.isNotEmpty()) {
+                                categoryViewModel.deleteCategory(categoryId) { success, message ->
+                                    if (success) {
+                                        if (selectedCategory == categoryName) {
+                                            selectedCategory = "All"
+                                        }
+                                        categoryViewModel.getAllCategories { _, _, refreshedData ->
+                                            if (refreshedData != null) {
+                                                categories = listOf("All") + refreshedData.map { it.categoryName }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            showDeleteDialog = false
+                            categoryToDelete = null
+                        }
+                    ) {
+                        Text("Delete", color = Color.Red, fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            categoryToDelete = null
+                        }
+                    ) {
+                        Text("Cancel", color = Grey, fontWeight = FontWeight.SemiBold)
+                    }
+                },
+                containerColor = White,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+        
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = 0.8f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Skin,
+                    modifier = Modifier.size(48.dp),
+                    strokeWidth = 4.dp
+                )
             }
         }
     }
@@ -269,7 +388,6 @@ fun ClothesItem(clothes: ClothesModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(8.dp)
             ) {
                 AsyncImage(
                     model = clothes.image,
@@ -366,9 +484,11 @@ fun ClothesDetailsDialog(
                 )
                 
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                DetailRow(label = "Brand", value = clothes.brand)
+
                 DetailRow(label = "Category", value = clothes.categoryName)
+                DetailRow(label = "Brand", value = clothes.brand)
+                DetailRow(label = "Price", value = clothes.price)
+                DetailRow(label = "Color", value = clothes.color)
                 DetailRow(label = "Season", value = clothes.season)
                 
                 if (clothes.notes.isNotEmpty()) {
@@ -476,6 +596,7 @@ fun EditClothesDialog(
     var clothesName by remember { mutableStateOf(clothes.clothesName) }
     var brand by remember { mutableStateOf(clothes.brand) }
     var season by remember { mutableStateOf(clothes.season) }
+    var color by remember { mutableStateOf(clothes.color) }
     var notes by remember { mutableStateOf(clothes.notes) }
     var selectedCategory by remember { mutableStateOf(clothes.categoryName) }
     var categories by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -515,20 +636,6 @@ fun EditClothesDialog(
                     value = clothesName,
                     onValueChange = { clothesName = it },
                     label = { Text("Clothes Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Brand") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -584,6 +691,34 @@ fun EditClothesDialog(
                             .clickable { expandedCategory = true }
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text("Brand") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = color,
+                    onValueChange = { color = it },
+                    label = { Text("Color") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey
+                    )
+                )
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -703,35 +838,42 @@ fun DeleteConfirmationDialog(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CategoryButton(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
+    onLongPress: () -> Unit = {}
 ) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.height(34.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) White else Light_grey,
-            contentColor = if (isSelected) Brown else Grey
-        ),
+    Surface(
+        modifier = Modifier
+            .height(34.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
+        color = if (isSelected) White else Light_grey,
         shape = RoundedCornerShape(17.dp),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = if (isSelected) 2.dp else 0.dp,
-            pressedElevation = if (isSelected) 4.dp else 1.dp
-        ),
+        shadowElevation = if (isSelected) 2.dp else 0.dp,
         border = if (isSelected) BorderStroke(
             width = 1.5.dp,
             brush = SolidColor(Brown)
-        ) else null,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+        ) else null
     ) {
-        Text(
-            text = text,
-            fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = 13.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (isSelected) Brown else Grey
+            )
+        }
     }
 }
 

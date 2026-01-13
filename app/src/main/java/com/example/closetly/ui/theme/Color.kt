@@ -22,4 +22,23 @@ val Black = Color(0xFF000000)
 
 val Skin = Color(0xFFC59D9B)
 
-val Red = Color(0xFFFF0E00)
+val Red = Color(0xFFD50B00)
+
+val Light_grey1 = Color(0xFFE0E0E0)
+
+val WeatherBlue = Color(0xFF6BA4E8)
+val LightBlue = Color(0xFFE3F2FD)
+val SkyBlue = Color(0xFF87CEEB)
+
+val CalendarPurple = Color(0xFF8B5FBF)
+val CalendarBlue = Color(0xFF4A6FDC)
+
+val DarkGrey = Color(0xFF333333)
+
+val DarkGrey1 = Color(0xFF666666)
+val LightGrey1 = Color(0xFF999999)
+
+val AICardColor1 = Color(0xFFE91E63)
+val AICardColor2 =Color(0xFF9C27B0)
+val AICardColor3 =Color(0xFF673AB7)
+val DarkYellow =Color(0xFFFFA500)

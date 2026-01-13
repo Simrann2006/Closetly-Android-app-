@@ -40,6 +40,16 @@ data class ClosetCategory(
     val color: Color
 )
 
+data class WornColor(
+    val name: String,
+    val color: Color
+)
+
+data class UnderusedItem(
+    val name: String,
+    val imageUrl: String = ""
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalysisScreen(
@@ -51,7 +61,14 @@ fun AnalysisScreen(
         ClosetCategory("Dresses", 20f, Color(0xFFC096A0)),
         ClosetCategory("Outerwear", 12f, Color(0xFFAC8792)),
         ClosetCategory("Accessories", 8f, Color(0xFF987884))
-    )
+    ),
+    mostWornColors: List<WornColor> = listOf(
+        WornColor("White", Color.White),
+        WornColor("Black", Color.Black),
+        WornColor("Yellow", Color(0xFFFDD835))
+    ),
+    underusedItem: UnderusedItem = UnderusedItem("Blue Dress"),
+    onCalculateCPW: () -> Unit = {}
 ) {
     Scaffold(
     ) { paddingValues ->
@@ -68,6 +85,47 @@ fun AnalysisScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             ClosetBreakdownCard(categories = closetCategories)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Most Worn Color and Underused Item Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MostWornColorCard(
+                    colors = mostWornColors,
+                    modifier = Modifier.weight(1f)
+                )
+                UnderusedItemCard(
+                    item = underusedItem,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Calculate CPW Button
+            Button(
+                onClick = onCalculateCPW,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFEFD9DC)
+                )
+            ) {
+                Text(
+                    text = "Calculate CPW",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF6B4F54)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -181,7 +239,6 @@ private fun StatCard(
                     )
                 }
             }
-
         }
     }
 }
@@ -323,6 +380,133 @@ private fun CategoryLegend(categories: List<ClosetCategory>) {
                     color = Color(0xFF6B4F54)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MostWornColorCard(
+    colors: List<WornColor>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(200.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEFD9DC)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Most Worn Color",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF6B4F54)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                colors.forEach { wornColor ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(wornColor.color)
+                                .then(
+                                    if (wornColor.color == Color.White) {
+                                        Modifier.background(Color.White)
+                                    } else Modifier
+                                )
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Text(
+                            text = wornColor.name,
+                            fontSize = 14.sp,
+                            color = Color(0xFF6B4F54)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnderusedItemCard(
+    item: UnderusedItem,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(200.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEFD9DC)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Underused Item",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF6B4F54),
+                modifier = Modifier.align(Alignment.Start)
+            )
+
+            if (item.imageUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = item.imageUrl,
+                    contentDescription = item.name,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFD4A5AE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = item.name,
+                fontSize = 14.sp,
+                color = Color(0xFF6B4F54),
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

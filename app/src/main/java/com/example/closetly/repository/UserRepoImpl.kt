@@ -3,6 +3,7 @@ package com.example.closetly.repository
 import com.example.closetly.model.UserModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -116,6 +117,19 @@ class UserRepoImpl : UserRepo{
         return  auth.currentUser
     }
 
+    override fun signInWithGoogle(idToken: String, callback: (Boolean, String) -> Unit) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val user = auth.currentUser
+                    callback(true, user?.uid ?: "")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
+    }
+
     override fun getUserById(
         userId: String,
         callback: (Boolean, String, UserModel?) -> Unit
@@ -156,5 +170,33 @@ class UserRepoImpl : UserRepo{
                 callback(false,error.message,emptyList())
             }
         })
+    }
+    
+    override fun checkUsernameExists(
+        username: String,
+        currentUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        ref.orderByChild("username").equalTo(username)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (data in snapshot.children) {
+                            val userId = data.key
+                            if (userId != currentUserId) {
+                                callback(true)
+                                return
+                            }
+                        }
+                        callback(false)
+                    } else {
+                        callback(false)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
     }
 }
