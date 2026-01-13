@@ -15,4 +15,5 @@
     <string name="title_activity_setting">SettingActivity</string>
     <string name="title_activity_post_cration">PostCrationActivity</string>
     <string name="title_activity_listing">ListingActivity</string>
+    <string name="title_activity_post_feed">PostFeedActivity</string>
 </resources>

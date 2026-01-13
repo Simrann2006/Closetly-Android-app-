@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,8 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Black
-import com.example.closetly.ui.theme.Grey
-import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Light_grey1
 import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.White
@@ -120,13 +117,13 @@ fun SettingsBody() {
             )
 
             SettingsItem(
-                icon = R.drawable.save,
+                icon = R.drawable.baseline_bookmark_border_24,
                 title = "Saved Posts",
                 onClick = { }
             )
 
             SettingsItem(
-                icon = R.drawable.heart,
+                icon = R.drawable.baseline_favorite_border_24,
                 title = "Liked Posts",
                 onClick = { }
             )

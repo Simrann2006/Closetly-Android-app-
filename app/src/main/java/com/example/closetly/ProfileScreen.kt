@@ -29,8 +29,11 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.repository.ProductRepoImpl
+import com.example.closetly.repository.PostRepoImpl
 import com.example.closetly.viewmodel.ProductViewModel
+import com.example.closetly.viewmodel.PostViewModel
 import com.example.closetly.model.ProductModel
+import com.example.closetly.model.PostModel
 import com.example.closetly.model.ListingType
 import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.Brown
@@ -50,6 +53,8 @@ fun ProfileScreen() {
     val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
     val productRepo = remember { ProductRepoImpl() }
     val productViewModel = remember { ProductViewModel(productRepo) }
+    val postRepo = remember { PostRepoImpl() }
+    val postViewModel = remember { PostViewModel(postRepo) }
     val currentUser = remember { FirebaseAuth.getInstance().currentUser }
     
     var name by remember { mutableStateOf("") }
@@ -58,6 +63,7 @@ fun ProfileScreen() {
     var profilePicture by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
+    var userPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.let { user ->
@@ -72,6 +78,9 @@ fun ProfileScreen() {
             }
             productViewModel.getUserProducts(user.uid) { listings ->
                 userListings = listings
+            }
+            postViewModel.getUserPosts(user.uid) { posts ->
+                userPosts = posts
             }
         } ?: run {
             isLoading = false
@@ -93,6 +102,9 @@ fun ProfileScreen() {
                 }
                 productViewModel.getUserProducts(user.uid) { listings ->
                     userListings = listings
+                }
+                postViewModel.getUserPosts(user.uid) { posts ->
+                    userPosts = posts
                 }
             }
         }
@@ -150,7 +162,7 @@ fun ProfileScreen() {
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                ProfileStat("0", "Posts")
+                ProfileStat("${userPosts.size}", "Posts")
                 ProfileStat("0", "Followers")
                 ProfileStat("0", "Following")
             }
@@ -229,15 +241,47 @@ fun ProfileScreen() {
 
         when (selectedTab.value) {
             "Posts" -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "No posts yet",
-                        fontSize = 16.sp,
-                        color = Grey
-                    )
+                if (userPosts.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No posts yet",
+                            fontSize = 16.sp,
+                            color = Grey
+                        )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 1.dp),
+                        contentPadding = PaddingValues(1.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        items(userPosts.size) { index ->
+                            val post = userPosts[index]
+                            ProfilePostCard(
+                                post = post,
+                                onRefresh = {
+                                    currentUser?.let { user ->
+                                        postViewModel.getUserPosts(user.uid) { posts ->
+                                            userPosts = posts
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    val intent = Intent(context, PostFeedActivity::class.java)
+                                    intent.putExtra("USER_ID", currentUser?.uid)
+                                    intent.putExtra("INITIAL_INDEX", index)
+                                    context.startActivity(intent)
+                                }
+                            )
+                        }
+                    }
                 }
             }
             "Listings" -> {
@@ -972,4 +1016,28 @@ fun ListingDeleteConfirmationDialog(
         },
         containerColor = White
     )
+}
+
+@Composable
+fun ProfilePostCard(
+    post: PostModel,
+    onRefresh: () -> Unit,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = White)
+    ) {
+        AsyncImage(
+            model = post.imageUrl,
+            contentDescription = post.caption,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    }
 }
