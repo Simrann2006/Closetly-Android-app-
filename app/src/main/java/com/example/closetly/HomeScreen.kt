@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +59,11 @@ import com.example.closetly.ui.theme.White
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,18 +71,103 @@ import kotlinx.coroutines.delay
 fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
     val context = LocalContext.current
+    val database = FirebaseDatabase.getInstance()
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val currentUserId = currentUser?.uid ?: "guest_user"
 
+    // Post 1 states (Emily's post)
     var isPost1Liked by remember { mutableStateOf(false) }
-    var post1LikeCount by remember { mutableStateOf(1143) }
-
-    var isPost2Liked by remember { mutableStateOf(false) }
-    var post2LikeCount by remember { mutableStateOf(509) }
-
+    var post1LikeCount by remember { mutableStateOf(0) }
     var isPost1Saved by remember { mutableStateOf(false) }
-    var isPost2Saved by remember { mutableStateOf(false) }
-
     var isPost1Following by remember { mutableStateOf(false) }
+    val post1Id = "post_emily_001"
+    val post1UserId = "user_emily"
+
+    // Post 2 states (Kendall's post)
+    var isPost2Liked by remember { mutableStateOf(false) }
+    var post2LikeCount by remember { mutableStateOf(0) }
+    var isPost2Saved by remember { mutableStateOf(false) }
     var isPost2Following by remember { mutableStateOf(false) }
+    val post2Id = "post_kendall_001"
+    val post2UserId = "user_kendall"
+
+    // Load and listen to Post 1 data from Firebase
+    LaunchedEffect(post1Id) {
+        // Listen to like count
+        val post1LikesRef = database.getReference("Posts/$post1Id/likes")
+        val likesListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                post1LikeCount = snapshot.childrenCount.toInt()
+                // Check if current user liked this post
+                isPost1Liked = snapshot.child(currentUserId).exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        post1LikesRef.addValueEventListener(likesListener)
+    }
+
+    // Listen to Post 1 save status
+    LaunchedEffect(post1Id) {
+        val savedRef = database.getReference("Users/$currentUserId/saved/$post1Id")
+        val savedListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isPost1Saved = snapshot.exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        savedRef.addValueEventListener(savedListener)
+    }
+
+    // Listen to Post 1 follow status
+    LaunchedEffect(post1UserId) {
+        val followRef = database.getReference("Users/$currentUserId/following/$post1UserId")
+        val followListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isPost1Following = snapshot.exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        followRef.addValueEventListener(followListener)
+    }
+
+    // Load and listen to Post 2 data from Firebase
+    LaunchedEffect(post2Id) {
+        // Listen to like count
+        val post2LikesRef = database.getReference("Posts/$post2Id/likes")
+        val likesListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                post2LikeCount = snapshot.childrenCount.toInt()
+                // Check if current user liked this post
+                isPost2Liked = snapshot.child(currentUserId).exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        post2LikesRef.addValueEventListener(likesListener)
+    }
+
+    // Listen to Post 2 save status
+    LaunchedEffect(post2Id) {
+        val savedRef = database.getReference("Users/$currentUserId/saved/$post2Id")
+        val savedListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isPost2Saved = snapshot.exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        savedRef.addValueEventListener(savedListener)
+    }
+
+    // Listen to Post 2 follow status
+    LaunchedEffect(post2UserId) {
+        val followRef = database.getReference("Users/$currentUserId/following/$post2UserId")
+        val followListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                isPost2Following = snapshot.exists()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        followRef.addValueEventListener(followListener)
+    }
 
     val images = listOf(
         "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
@@ -277,7 +368,18 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         androidx.compose.material3.Button(
                             onClick = {
-                                isPost1Following = !isPost1Following
+                                val followRef = database.getReference("Users/$currentUserId/following/$post1UserId")
+                                val followerRef = database.getReference("Users/$post1UserId/followers/$currentUserId")
+                                
+                                if (isPost1Following) {
+                                    // Unfollow
+                                    followRef.removeValue()
+                                    followerRef.removeValue()
+                                } else {
+                                    // Follow
+                                    followRef.setValue(true)
+                                    followerRef.setValue(true)
+                                }
                             },
                             modifier = Modifier
                                 .height(32.dp),
@@ -327,8 +429,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             ) {
                                 IconButton(
                                     onClick = {
-                                        isPost1Liked = !isPost1Liked
-                                        post1LikeCount = if (isPost1Liked) post1LikeCount + 1 else post1LikeCount - 1
+                                        val likesRef = database.getReference("Posts/$post1Id/likes/$currentUserId")
+                                        
+                                        if (isPost1Liked) {
+                                            // Unlike
+                                            likesRef.removeValue()
+                                        } else {
+                                            // Like
+                                            likesRef.setValue(true)
+                                        }
                                     },
                                     modifier = Modifier.size(32.dp)
                                 ) {
@@ -351,7 +460,9 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             Row(
                                 modifier = Modifier.clickable {
                                     val intent = Intent(context, CommentActivity::class.java).apply {
-                                        putExtra("POST_ID", "post_1")
+                                        putExtra("POST_ID", post1Id)
+                                        putExtra("POST_USER_ID", post1UserId)
+                                        putExtra("USER_NAME", "Emily")
                                     }
                                     context.startActivity(intent)
                                 },
@@ -374,7 +485,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         IconButton(
                             onClick = {
-                                isPost1Saved = !isPost1Saved
+                                val savedRef = database.getReference("Users/$currentUserId/saved/$post1Id")
+                                
+                                if (isPost1Saved) {
+                                    // Unsave
+                                    savedRef.removeValue()
+                                } else {
+                                    // Save
+                                    savedRef.setValue(true)
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -448,7 +567,18 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         androidx.compose.material3.Button(
                             onClick = {
-                                isPost2Following = !isPost2Following
+                                val followRef = database.getReference("Users/$currentUserId/following/$post2UserId")
+                                val followerRef = database.getReference("Users/$post2UserId/followers/$currentUserId")
+                                
+                                if (isPost2Following) {
+                                    // Unfollow
+                                    followRef.removeValue()
+                                    followerRef.removeValue()
+                                } else {
+                                    // Follow
+                                    followRef.setValue(true)
+                                    followerRef.setValue(true)
+                                }
                             },
                             modifier = Modifier
                                 .height(32.dp),
@@ -498,8 +628,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             ) {
                                 IconButton(
                                     onClick = {
-                                        isPost2Liked = !isPost2Liked
-                                        post2LikeCount = if (isPost2Liked) post2LikeCount + 1 else post2LikeCount - 1
+                                        val likesRef = database.getReference("Posts/$post2Id/likes/$currentUserId")
+                                        
+                                        if (isPost2Liked) {
+                                            // Unlike
+                                            likesRef.removeValue()
+                                        } else {
+                                            // Like
+                                            likesRef.setValue(true)
+                                        }
                                     },
                                     modifier = Modifier.size(32.dp)
                                 ) {
@@ -522,7 +659,9 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                             Row(
                                 modifier = Modifier.clickable {
                                     val intent = Intent(context, CommentActivity::class.java).apply {
-                                        putExtra("POST_ID", "post_2")
+                                        putExtra("POST_ID", post2Id)
+                                        putExtra("POST_USER_ID", post2UserId)
+                                        putExtra("USER_NAME", "kendall")
                                     }
                                     context.startActivity(intent)
                                 },
@@ -545,7 +684,15 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
 
                         IconButton(
                             onClick = {
-                                isPost2Saved = !isPost2Saved
+                                val savedRef = database.getReference("Users/$currentUserId/saved/$post2Id")
+                                
+                                if (isPost2Saved) {
+                                    // Unsave
+                                    savedRef.removeValue()
+                                } else {
+                                    // Save
+                                    savedRef.setValue(true)
+                                }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {

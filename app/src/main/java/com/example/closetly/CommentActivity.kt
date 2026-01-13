@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -69,7 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.closetly.data.model.Comment
+import com.example.closetly.model.CommentModel
 import com.example.closetly.viewmodel.CommentViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -104,7 +103,7 @@ fun CommentScreen(
     val commentText by viewModel.commentText.collectAsState()
     val listState = rememberLazyListState()
     
-    var selectedCommentForDelete by remember { mutableStateOf<Comment?>(null) }
+    var selectedCommentForDelete by remember { mutableStateOf<CommentModel?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
@@ -183,11 +182,7 @@ fun CommentScreen(
                 commentText = commentText,
                 onCommentChange = { viewModel.updateCommentText(it) },
                 onSendClick = {
-                    viewModel.postComment(
-                        postId = postId,
-                        userName = "You",
-                        userProfileImage = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200"
-                    )
+                    viewModel.postComment(postId = postId)
                 }
             )
         }
@@ -256,7 +251,7 @@ fun CommentScreen(
 
 @Composable
 fun CommentItem(
-    comment: Comment,
+    comment: CommentModel,
     isCurrentUser: Boolean,
     onCommentLongPress: () -> Unit,
     onLikeClick: () -> Unit

@@ -1,6 +1,6 @@
-package com.example.closetly.data.model
+package com.example.closetly.model
 
-data class Comment(
+data class CommentModel(
     val id: String,
     val postId: String,
     val userId: String,

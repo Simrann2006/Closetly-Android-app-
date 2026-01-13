@@ -1,11 +1,11 @@
 package com.example.closetly.repository
 
-import com.example.closetly.data.model.Comment
+import com.example.closetly.model.CommentModel
 import kotlinx.coroutines.flow.Flow
 
-interface CommentRepository {
-    fun getComments(postId: String): Flow<List<Comment>>
-    suspend fun addComment(comment: Comment): Result<Comment>
+interface CommentRepo {
+    fun getComments(postId: String): Flow<List<CommentModel>>
+    suspend fun addComment(comment: CommentModel): Result<CommentModel>
     suspend fun likeComment(commentId: String): Result<Boolean>
     suspend fun deleteComment(commentId: String): Result<Boolean>
 }
