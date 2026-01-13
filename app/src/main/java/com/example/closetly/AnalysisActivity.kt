@@ -1,5 +1,7 @@
 package com.example.closetl
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -43,6 +45,13 @@ data class ClosetCategory(
 fun AnalysisScreen(
     userImageUrl: String = "",
     activityStats: ActivityStats = ActivityStats(128, 24, 12),
+    closetCategories: List<ClosetCategory> = listOf(
+        ClosetCategory("Tops", 35f, Color(0xFFE8B4BC)),
+        ClosetCategory("Bottoms", 25f, Color(0xFFD4A5AE)),
+        ClosetCategory("Dresses", 20f, Color(0xFFC096A0)),
+        ClosetCategory("Outerwear", 12f, Color(0xFFAC8792)),
+        ClosetCategory("Accessories", 8f, Color(0xFF987884))
+    )
 ) {
     Scaffold(
     ) { paddingValues ->
@@ -57,6 +66,8 @@ fun AnalysisScreen(
                 userImageUrl = userImageUrl,
                 activityStats = activityStats
             )
+            Spacer(modifier = Modifier.height(24.dp))
+            ClosetBreakdownCard(categories = closetCategories)
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -200,17 +211,121 @@ private fun ClosetBreakdownCard(categories: List<ClosetCategory>) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            Box(
+            // Pie Chart
+            PieChart(
+                categories = categories,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp),
-                contentAlignment = Alignment.Center
-            ) {}
+                    .height(240.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Legend
+            CategoryLegend(categories = categories)
         }
     }
 }
 
+@Composable
+private fun PieChart(
+    categories: List<ClosetCategory>,
+    modifier: Modifier = Modifier,
+    animationDuration: Int = 1000
+) {
+    val totalPercentage = categories.sumOf { it.percentage.toDouble() }.toFloat()
+    val animatable = remember { Animatable(0f) }
 
+    LaunchedEffect(key1 = categories) {
+        animatable.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = animationDuration)
+        )
+    }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .size(200.dp)
+        ) {
+            val canvasSize = size.minDimension
+            val radius = canvasSize / 2
+            val centerX = size.width / 2
+            val centerY = size.height / 2
+
+            var startAngle = -90f
+
+            categories.forEach { category ->
+                val sweepAngle = (category.percentage / totalPercentage * 360f) * animatable.value
+
+                // Draw pie slice
+                drawArc(
+                    color = category.color,
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = true,
+                    topLeft = Offset(centerX - radius, centerY - radius),
+                    size = Size(radius * 2, radius * 2)
+                )
+
+                // Draw border between slices
+                drawArc(
+                    color = Color.White,
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = true,
+                    topLeft = Offset(centerX - radius, centerY - radius),
+                    size = Size(radius * 2, radius * 2),
+                    style = Stroke(width = 3f)
+                )
+
+                startAngle += sweepAngle
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryLegend(categories: List<ClosetCategory>) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        categories.forEach { category ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(category.color)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = category.name,
+                    fontSize = 14.sp,
+                    color = Color(0xFF6B4F54),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Text(
+                    text = "${category.percentage.toInt()}%",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF6B4F54)
+                )
+            }
+        }
+    }
+}
 
 @Composable
 @Preview
