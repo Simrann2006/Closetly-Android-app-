@@ -2,6 +2,7 @@ package com.example.closetly
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -13,9 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,11 +32,10 @@ import com.example.closetly.model.UserModel
 import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.getTimeAgoShort
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MessageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -267,16 +264,16 @@ fun MessageBody() {
                 chatViewModel.deleteChat(chatToDelete!!.first.chatId) { success, message ->
                     if (success) {
                         chatList = chatList.filter { it.first.chatId != chatToDelete!!.first.chatId }
-                        android.widget.Toast.makeText(
+                        Toast.makeText(
                             context,
                             "Chat deleted",
-                            android.widget.Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT
                         ).show()
                     } else {
-                        android.widget.Toast.makeText(
+                        Toast.makeText(
                             context,
                             "Failed: $message",
-                            android.widget.Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
@@ -300,7 +297,7 @@ fun MessageListItem(
     onLongPress: () -> Unit
 ) {
     val unreadCount = chat.unreadCount[currentUserId] ?: 0
-    val timeAgo = getTimeAgoText(chat.lastMessageTime)
+    val timeAgo = getTimeAgoShort(chat.lastMessageTime)
 
     Row(
         modifier = Modifier
@@ -369,7 +366,7 @@ fun MessageListItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val relativeTime = getRelativeTimeShort(chat.lastMessageTime)
+                val relativeTime = getTimeAgoShort(chat.lastMessageTime)
                 val displayMessage = when {
                     unreadCount > 0 -> "$unreadCount new message${if (unreadCount > 1) "s" else ""}"
                     chat.lastMessage.isNotEmpty() -> chat.lastMessage
@@ -393,40 +390,6 @@ fun MessageListItem(
                     modifier = Modifier.weight(1f, fill = false)
                 )
             }
-        }
-    }
-}
-
-fun getRelativeTimeShort(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    val seconds = diff / 1000
-    val minutes = seconds / 60
-    val hours = minutes / 60
-    val days = hours / 24
-
-    return when {
-        seconds < 60 -> "just now"
-        minutes < 60 -> "${minutes}m ago"
-        hours < 24 -> "${hours}h ago"
-        days < 7 -> "${days}d ago"
-        else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(timestamp))
-    }
-}
-
-fun getTimeAgoText(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-
-    return when {
-        diff < 60000 -> "now"
-        diff < 3600000 -> "${diff / 60000}m"
-        diff < 86400000 -> "${diff / 3600000}h"
-        diff < 604800000 -> "${diff / 86400000}d"
-        diff < 2592000000 -> "${diff / 604800000}w"
-        else -> {
-            val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
-            sdf.format(Date(timestamp))
         }
     }
 }

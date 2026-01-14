@@ -38,6 +38,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -69,11 +70,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.closetly.model.CommentModel
+import com.example.closetly.utils.getTimeAgoShort
 import com.example.closetly.viewmodel.CommentViewModel
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class CommentActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -302,7 +301,7 @@ fun CommentItem(
                     )
                 )
                 Text(
-                    getTimeAgo(comment.timestamp),
+                    getTimeAgoShort(comment.timestamp),
                     style = TextStyle(
                         fontSize = 12.sp,
                         color = Color.Gray
@@ -413,7 +412,7 @@ fun CommentInputSection(
                     Icons.Default.Send,
                     contentDescription = "Send",
                     tint = if (commentText.isNotBlank()) 
-                        androidx.compose.material3.MaterialTheme.colorScheme.primary 
+                        MaterialTheme.colorScheme.primary
                     else 
                         Color.Gray
                 )
@@ -462,17 +461,4 @@ fun DeleteConfirmationDialog(
         containerColor = Color.White,
         shape = RoundedCornerShape(16.dp)
     )
-}
-
-fun getTimeAgo(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-
-    return when {
-        diff < 60000 -> "Just now"
-        diff < 3600000 -> "${diff / 60000}m"
-        diff < 86400000 -> "${diff / 3600000}h"
-        diff < 604800000 -> "${diff / 86400000}d"
-        else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(timestamp))
-    }
 }

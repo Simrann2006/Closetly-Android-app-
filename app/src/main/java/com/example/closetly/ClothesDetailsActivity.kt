@@ -3,6 +3,8 @@ package com.example.closetly
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper.getMainLooper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -415,7 +417,7 @@ fun ClothesDetailsBody(
                             val newCategory = CategoryModel(categoryName = categoryToAdd)
                             categoryViewModel.addCategory(newCategory) { success, message ->
                                 if (success) {
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    Handler(getMainLooper()).postDelayed({
                                         categoryViewModel.getAllCategories { _, _, data ->
                                             if (data != null) {
                                                 categories = data

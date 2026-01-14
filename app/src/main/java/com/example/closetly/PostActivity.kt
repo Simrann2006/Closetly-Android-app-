@@ -1,5 +1,6 @@
 package com.example.closetly
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,7 +19,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -42,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,10 +54,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.model.PostModel
+import com.example.closetly.model.ProductModel
 import com.example.closetly.repository.ChatRepoImpl
+import com.example.closetly.repository.PostRepoImpl
+import com.example.closetly.repository.ProductRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.ChatViewModel
+import com.example.closetly.viewmodel.PostViewModel
+import com.example.closetly.viewmodel.ProductViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -81,6 +89,10 @@ fun PostBody(userId: String, initialUsername: String) {
     val context = LocalContext.current
     val userRepo = remember { UserRepoImpl() }
     val userViewModel = remember { UserViewModel(userRepo) }
+    val postRepo = remember { PostRepoImpl() }
+    val postViewModel = remember { PostViewModel(postRepo) }
+    val productRepo = remember { ProductRepoImpl() }
+    val productViewModel = remember { ProductViewModel(productRepo) }
     val chatRepo = remember { ChatRepoImpl() }
     val chatViewModel = remember { ChatViewModel(chatRepo) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -93,6 +105,8 @@ fun PostBody(userId: String, initialUsername: String) {
     var existingChatId by remember { mutableStateOf("") }
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Posts", "Listings")
+    var userPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
+    var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
@@ -104,6 +118,16 @@ fun PostBody(userId: String, initialUsername: String) {
                     profilePicture = userData.profilePicture
                 }
                 isLoading = false
+            }
+            
+            // Fetch user's posts
+            postViewModel.getUserPosts(userId) { posts ->
+                userPosts = posts
+            }
+            
+            // Fetch user's listings
+            productViewModel.getUserProducts(userId) { products ->
+                userListings = products
             }
             
             chatViewModel.getOrCreateChat(currentUserId, userId) { success, _, chatId ->
@@ -205,7 +229,7 @@ fun PostBody(userId: String, initialUsername: String) {
                 Column (
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
-                    Text("0",style = TextStyle(
+                    Text("${userPosts.size}",style = TextStyle(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Black
@@ -339,8 +363,8 @@ fun PostBody(userId: String, initialUsername: String) {
                 }
             }
             when (selectedTabIndex) {
-                0 -> PostsGrid(context)
-                1 -> ListingsGrid(context)
+                0 -> PostsGrid(context, userPosts, userId)
+                1 -> ListingsGrid(context, userListings)
             }
         }
         }
@@ -348,32 +372,46 @@ fun PostBody(userId: String, initialUsername: String) {
 }
 
 @Composable
-fun PostsGrid(context: android.content.Context) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 2.dp)
-    ) {
-        items(2) { rowIndex ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                for (colIndex in 0 until 3) {
-                    val index = rowIndex * 3 + colIndex
-                    if (index < 3) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .padding(1.dp)
-                                .background(Color.LightGray)
-                                .clickable {
-                                }
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+fun PostsGrid(context: Context, posts: List<PostModel>, userId: String) {
+    if (posts.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No posts yet",
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = Grey
+                )
+            )
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(posts) { post ->
+                val postIndex = posts.indexOf(post)
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .padding(1.dp)
+                        .background(Light_grey)
+                        .clickable {
+                            val intent = Intent(context, PostFeedActivity::class.java).apply {
+                                putExtra("USER_ID", userId)
+                                putExtra("INITIAL_INDEX", postIndex)
+                            }
+                            context.startActivity(intent)
+                        }
+                ) {
+                    AsyncImage(
+                        model = post.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
             }
         }
@@ -381,32 +419,44 @@ fun PostsGrid(context: android.content.Context) {
 }
 
 @Composable
-fun ListingsGrid(context: android.content.Context) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 2.dp)
-    ) {
-        items(3) { rowIndex ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                for (colIndex in 0 until 3) {
-                    val index = rowIndex * 3 + colIndex
-                    if (index < 4) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .padding(1.dp)
-                                .background(Color.LightGray)
-                                .clickable {
-                                }
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
+fun ListingsGrid(context: Context, listings: List<ProductModel>) {
+    if (listings.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No listings yet",
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = Grey
+                )
+            )
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(listings) { listing ->
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .padding(1.dp)
+                        .background(Light_grey)
+                        .clickable {
+                            val intent = Intent(context, ListingViewerActivity::class.java).apply {
+                                putExtra("productId", listing.id)
+                            }
+                            context.startActivity(intent)
+                        }
+                ) {
+                    AsyncImage(
+                        model = listing.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
             }
         }
@@ -418,6 +468,6 @@ fun ListingsGrid(context: android.content.Context) {
 fun PostBodyPreview(){
     PostBody(
         userId = "",
-        initialUsername = ""
+        initialUsername = "username"
     )
 }

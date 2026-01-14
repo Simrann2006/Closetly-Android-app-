@@ -34,8 +34,12 @@ import com.example.closetly.model.ListingType
 import com.example.closetly.viewmodel.ProductViewModel
 import com.example.closetly.repository.ProductRepoImpl
 import com.example.closetly.repository.ChatRepoImpl
+import com.example.closetly.utils.getTimeAgo
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.widget.Toast
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.window.Dialog
+import com.example.closetly.repository.UserRepoImpl
 
 @Composable
 fun MarketplaceScreen() {
@@ -179,7 +183,7 @@ fun FilterButton(
             .clickable(
                 onClick = onClick,
                 indication = null,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                interactionSource = remember { MutableInteractionSource() }
             ),
         shape = RoundedCornerShape(20.dp),
         color = if (isSelected) Brown else Light_grey
@@ -372,8 +376,21 @@ fun ProductDetailsDialog(
 ) {
     val context = LocalContext.current
     val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val userRepo = remember { UserRepoImpl() }
     
-    androidx.compose.ui.window.Dialog(
+    var sellerName by remember { mutableStateOf(product.sellerName) }
+    var sellerProfilePic by remember { mutableStateOf(product.sellerProfilePic) }
+    
+    LaunchedEffect(product.sellerId) {
+        userRepo.getUserById(product.sellerId) { success, _, userData ->
+            if (success && userData != null) {
+                sellerName = userData.username
+                sellerProfilePic = userData.profilePicture
+            }
+        }
+    }
+
+    Dialog(
         onDismissRequest = onDismiss
     ) {
         Card(
@@ -398,9 +415,9 @@ fun ProductDetailsDialog(
                         .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -413,7 +430,7 @@ fun ProductDetailsDialog(
                         color = Black,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = when (product.listingType) {
@@ -430,9 +447,9 @@ fun ProductDetailsDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
                         "$${product.rentPricePerDay}/day"
@@ -443,7 +460,7 @@ fun ProductDetailsDialog(
                     fontWeight = FontWeight.Bold,
                     color = Brown
                 )
-                
+
                 if (product.description.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -459,9 +476,9 @@ fun ProductDetailsDialog(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 if (product.brand.isNotEmpty()) {
                     ProductDetailRow(label = "Brand", value = product.brand)
                 }
@@ -474,19 +491,19 @@ fun ProductDetailsDialog(
                 if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
                     ProductDetailRow(label = "Sale Price", value = "$${product.price}")
                 }
-                ProductDetailRow(label = "Posted", value = getTimeAgoListing(product.timestamp))
-                
+                ProductDetailRow(label = "Posted", value = getTimeAgo(product.timestamp))
+
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(color = Light_grey)
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (product.sellerProfilePic.isNotEmpty()) {
+                    if (sellerProfilePic.isNotEmpty()) {
                         AsyncImage(
-                            model = product.sellerProfilePic,
+                            model = sellerProfilePic,
                             contentDescription = null,
                             modifier = Modifier
                                 .size(48.dp)
@@ -501,7 +518,7 @@ fun ProductDetailsDialog(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = product.sellerName.firstOrNull()?.toString()?.uppercase() ?: "?",
+                                    text = sellerName.firstOrNull()?.toString()?.uppercase() ?: "?",
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Brown
@@ -509,10 +526,10 @@ fun ProductDetailsDialog(
                             }
                         }
                     }
-                    
+
                     Column {
                         Text(
-                            text = product.sellerName,
+                            text = sellerName,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Black
@@ -524,12 +541,12 @@ fun ProductDetailsDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 if (product.sellerId != currentUserId) {
                     var isLoadingChat by remember { mutableStateOf(false) }
-                    
+
                     Button(
                         onClick = {
                             isLoadingChat = true
@@ -540,8 +557,8 @@ fun ProductDetailsDialog(
                                     val intent = Intent(context, ChatActivity::class.java).apply {
                                         putExtra("chatId", chatId)
                                         putExtra("otherUserId", product.sellerId)
-                                        putExtra("otherUserName", product.sellerName)
-                                        putExtra("otherUserImage", product.sellerProfilePic ?: "")
+                                        putExtra("otherUserName", sellerName)
+                                        putExtra("otherUserImage", sellerProfilePic)
                                     }
                                     context.startActivity(intent)
                                 } else {
@@ -605,23 +622,6 @@ fun ProductDetailRow(label: String, value: String) {
             fontWeight = FontWeight.Medium,
             color = Black
         )
-    }
-}
-
-fun getTimeAgoListing(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    val seconds = diff / 1000
-    val minutes = seconds / 60
-    val hours = minutes / 60
-    val days = hours / 24
-    
-    return when {
-        days > 30 -> "${days / 30} month${if (days / 30 > 1) "s" else ""} ago"
-        days > 0 -> "$days day${if (days > 1) "s" else ""} ago"
-        hours > 0 -> "$hours hour${if (hours > 1) "s" else ""} ago"
-        minutes > 0 -> "$minutes minute${if (minutes > 1) "s" else ""} ago"
-        else -> "Just now"
     }
 }
 

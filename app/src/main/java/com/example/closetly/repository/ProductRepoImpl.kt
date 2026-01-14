@@ -81,13 +81,52 @@ class ProductRepoImpl : ProductRepo {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val products = mutableListOf<ProductModel>()
+                var remainingFetches = snapshot.childrenCount.toInt()
+                
+                if (remainingFetches == 0) {
+                    callback(true, "Products fetched", products)
+                    return
+                }
+                
                 for (data in snapshot.children) {
                     val product = data.getValue(ProductModel::class.java)
                     if (product != null) {
-                        products.add(product)
+                        // Fetch fresh user data for each product
+                        val usersRef = database.getReference("Users").child(product.sellerId)
+                        usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(userSnapshot: DataSnapshot) {
+                                val freshUserName = userSnapshot.child("username").getValue(String::class.java) ?: product.sellerName
+                                val freshProfilePic = userSnapshot.child("profilePicture").getValue(String::class.java) ?: product.sellerProfilePic
+                                
+                                // Update product with fresh user data
+                                val updatedProduct = product.copy(
+                                    sellerName = freshUserName,
+                                    sellerProfilePic = freshProfilePic
+                                )
+                                products.add(updatedProduct)
+                                
+                                remainingFetches--
+                                if (remainingFetches == 0) {
+                                    callback(true, "Products fetched", products.sortedByDescending { it.timestamp })
+                                }
+                            }
+                            
+                            override fun onCancelled(error: DatabaseError) {
+                                // If user fetch fails, use existing data
+                                products.add(product)
+                                remainingFetches--
+                                if (remainingFetches == 0) {
+                                    callback(true, "Products fetched", products.sortedByDescending { it.timestamp })
+                                }
+                            }
+                        })
+                    } else {
+                        remainingFetches--
+                        if (remainingFetches == 0) {
+                            callback(true, "Products fetched", products.sortedByDescending { it.timestamp })
+                        }
                     }
                 }
-                callback(true, "Products fetched", products)
             }
             override fun onCancelled(error: DatabaseError) {
                 callback(false, error.message, null)

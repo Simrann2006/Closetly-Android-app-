@@ -24,12 +24,15 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.closetly.model.MessageModel
 import com.example.closetly.repository.ChatRepoImpl
@@ -340,7 +343,7 @@ fun ChatBody(
                             isUploading = false
                             onImagesSent()
                             if (uploadedUrls.size != imagesToSend.size) {
-                                android.widget.Toast.makeText(context, "Some images failed to upload", android.widget.Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Some images failed to upload", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -448,7 +451,7 @@ fun ImagePreviewDialog(
                                         .clip(RoundedCornerShape(8.dp))
                                         .border(
                                             width = if (index == currentIndex) 2.dp else 0.dp,
-                                            color = if (index == currentIndex) Black else androidx.compose.ui.graphics.Color.Transparent,
+                                            color = if (index == currentIndex) Black else Color.Transparent,
                                             shape = RoundedCornerShape(8.dp)
                                         )
                                         .clickable { currentIndex = index }
@@ -500,9 +503,9 @@ fun FullScreenImageDialog(
     initialIndex: Int,
     onDismiss: () -> Unit
 ) {
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Box(
             modifier = Modifier

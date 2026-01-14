@@ -46,9 +46,14 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ListingViewerActivity"
+            android:exported="false"
+            android:label="ListingViewerActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".PostCreationActivity"
             android:exported="true"
-            android:label="@string/title_activity_post_cration"
+            android:label="PostCreationActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

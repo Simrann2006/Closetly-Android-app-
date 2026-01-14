@@ -71,6 +71,7 @@ import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.ClothesViewModel
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ClosetScreen() {
@@ -449,7 +450,7 @@ fun ClothesDetailsDialog(
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = onDismiss
     ) {
         Card(
@@ -610,7 +611,7 @@ fun EditClothesDialog(
         }
     }
     
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()

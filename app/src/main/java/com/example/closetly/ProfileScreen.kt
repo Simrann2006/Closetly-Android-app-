@@ -41,10 +41,6 @@ import com.example.closetly.ui.theme.White
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Grey
 import com.google.firebase.auth.FirebaseAuth
-import android.widget.Toast
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 
 @Composable
 fun ProfileScreen() {
@@ -381,13 +377,18 @@ fun ProfileListingCard(
     product: ProductModel,
     onRefresh: () -> Unit
 ) {
-    var showPostViewer by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clickable { showPostViewer = true },
+            .clickable {
+                val intent = Intent(context, ListingViewerActivity::class.java).apply {
+                    putExtra("productId", product.id)
+                }
+                context.startActivity(intent)
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(containerColor = White)
@@ -397,265 +398,6 @@ fun ProfileListingCard(
             contentDescription = product.title,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
-        )
-    }
-    
-    if (showPostViewer) {
-        ListingViewer(
-            product = product,
-            onDismiss = { showPostViewer = false },
-            onRefresh = onRefresh
-        )
-    }
-}
-
-@Composable
-fun ListingViewer(
-    product: ProductModel,
-    onDismiss: () -> Unit,
-    onRefresh: () -> Unit
-) {
-    val context = LocalContext.current
-    val productRepo = remember { ProductRepoImpl() }
-    val productViewModel = remember { ProductViewModel(productRepo) }
-    
-    var showMenu by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-    
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(White)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                ) {
-                    AsyncImage(
-                        model = product.imageUrl,
-                        contentDescription = product.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp)
-                            .background(White.copy(alpha = 0.9f), CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = null,
-                            tint = Black
-                        )
-                    }
-                    
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { showMenu = !showMenu },
-                            modifier = Modifier
-                                .background(White.copy(alpha = 0.9f), CircleShape)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_more_vert_24),
-                                contentDescription = null,
-                                tint = Black
-                            )
-                        }
-                        
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(White)
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Edit", color = Black) },
-                                onClick = {
-                                    showMenu = false
-                                    showEditDialog = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.baseline_edit_24),
-                                        contentDescription = null,
-                                        tint = Black
-                                    )
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = Black,
-                                    leadingIconColor = Black
-                                )
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Delete", color = Black) },
-                                onClick = {
-                                    showMenu = false
-                                    showDeleteDialog = true
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.baseline_delete_24),
-                                        contentDescription = null,
-                                        tint = Black
-                                    )
-                                },
-                                colors = MenuDefaults.itemColors(
-                                    textColor = Black,
-                                    leadingIconColor = Black
-                                )
-                            )
-                        }
-                    }
-                    
-                    if (product.status != "Available") {
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(12.dp),
-                            color = when (product.status) {
-                                "Sold Out" -> Color.Red
-                                "On Rent" -> Color(0xFFFFA500)
-                                else -> Grey
-                            },
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = product.status.uppercase(),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = White
-                            )
-                        }
-                    }
-                }
-                
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = product.title,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Black,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        Text(
-                            text = if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
-                                "$${product.rentPricePerDay}/day"
-                            } else {
-                                "$${product.price}"
-                            },
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Brown
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = product.listingType.name,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Grey
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    if (product.description.isNotEmpty()) {
-                        Text(
-                            text = product.description,
-                            fontSize = 14.sp,
-                            color = Black,
-                            lineHeight = 20.sp
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                    
-                    Divider(color = Grey.copy(alpha = 0.3f))
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(
-                        text = "Details",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    ListingDetailRow(label = "Condition", value = product.condition)
-                    if (product.brand.isNotEmpty()) {
-                        ListingDetailRow(label = "Brand", value = product.brand)
-                    }
-                    if (product.size.isNotEmpty()) {
-                        ListingDetailRow(label = "Size", value = product.size)
-                    }
-                    ListingDetailRow(label = "Status", value = product.status)
-                    ListingDetailRow(label = "Posted", value = getTimeAgoListing(product.timestamp))
-                }
-            }
-        }
-    }
-    
-    if (showEditDialog) {
-        EditListingDialog(
-            product = product,
-            productViewModel = productViewModel,
-            onDismiss = { showEditDialog = false },
-            onSaved = {
-                showEditDialog = false
-                onDismiss()
-                onRefresh()
-                Toast.makeText(context, "Listing updated", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-    
-    if (showDeleteDialog) {
-        ListingDeleteConfirmationDialog(
-            listingTitle = product.title,
-            onConfirm = {
-                productViewModel.deleteProduct(product.id) { success, message ->
-                    if (success) {
-                        Toast.makeText(context, "Listing deleted", Toast.LENGTH_SHORT).show()
-                        onDismiss()
-                        onRefresh()
-                    } else {
-                        Toast.makeText(context, "Failed: $message", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                showDeleteDialog = false
-            },
-            onDismiss = { showDeleteDialog = false }
         )
     }
 }
@@ -697,6 +439,7 @@ fun EditListingDialog(
         ) {
             Column(
                 modifier = Modifier
+                    .fillMaxSize()
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(20.dp)
