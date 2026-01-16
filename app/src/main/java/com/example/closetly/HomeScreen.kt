@@ -138,7 +138,7 @@ fun HomeScreen(
                                         val intent = Intent(context, PostActivity::class.java).apply {
                                             when (indexOfImages) {
                                                 0 -> putExtra("userId", "user_kendall")
-                                                1 -> putExtra("userId", "user_emily")
+                                                1 -> putExtra("userId", "simran02")
                                                 2 -> putExtra("userId", "user_sophia")
                                                 3 -> putExtra("userId", "user_olivia")
                                             }
@@ -168,7 +168,7 @@ fun HomeScreen(
                             // Display username from Firebase post or fallback
                             val displayUsername = sliderItem?.username ?: when (indexOfImages) {
                                 0 -> "kendall"
-                                1 -> "emily"
+                                1 -> "simran02"
                                 2 -> "sophia"
                                 3 -> "olivia"
                                 else -> "explore"
