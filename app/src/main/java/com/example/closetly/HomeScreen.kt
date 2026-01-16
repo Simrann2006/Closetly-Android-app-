@@ -57,6 +57,7 @@ import coil.compose.AsyncImage
 import com.example.closetly.ui.theme.White
 import com.example.closetly.utils.getTimeAgo
 import com.example.closetly.viewmodel.HomeViewModel
+import com.example.closetly.viewmodel.SliderViewModel
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
@@ -66,14 +67,20 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     onPostClick: (String, String) -> Unit = { _, _ -> },
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    sliderViewModel: SliderViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val postsUI by viewModel.postsUI.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-
-    val images = listOf(
+    
+    // Firebase slider data
+    val sliderItems by sliderViewModel.sliderItems.collectAsState()
+    val sliderCount = if (sliderItems.isEmpty()) 4 else sliderItems.size
+    
+    // Fallback to hardcoded images if Firebase has no data
+    val fallbackImages = listOf(
         "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
         "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800",
         "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800",
@@ -82,11 +89,13 @@ fun HomeScreen(
 
     val pagerState = rememberPagerState()
 
-    LaunchedEffect(pagerState) {
+    LaunchedEffect(pagerState, sliderCount) {
         while (true) {
             delay(3000)
-            val nextPage = (pagerState.currentPage + 1) % images.size
-            pagerState.animateScrollToPage(nextPage)
+            if (sliderCount > 0) {
+                val nextPage = (pagerState.currentPage + 1) % sliderCount
+                pagerState.animateScrollToPage(nextPage)
+            }
         }
     }
 
@@ -104,59 +113,46 @@ fun HomeScreen(
                     .height(400.dp)
             ) {
                 HorizontalPager(
-                    count = images.size,
+                    count = sliderCount,
                     state = pagerState,
                 ) { indexOfImages ->
+                    val sliderItem = sliderItems.getOrNull(indexOfImages)
+                    val imageUrl = sliderItem?.imageUrl ?: fallbackImages.getOrElse(indexOfImages) { fallbackImages[0] }
+                    
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(400.dp)
                             .clickable {
-                                val intent = Intent(context, PostActivity::class.java).apply {
-                                    when (indexOfImages) {
-                                        0 -> {
-                                            putExtra("USER_NAME", "Kendall")
-                                            putExtra("USER_HANDLE", "k2")
-                                            putExtra(
-                                                "USER_BIO",
-                                                "Sustainable style for every soul."
-                                            )
-                                            putExtra("POSTS_COUNT", 3)
-                                            putExtra("FOLLOWERS_COUNT", 1456)
-                                            putExtra("FOLLOWING_COUNT", 11)
+                                try {
+                                    // Navigate to user's profile showing the specific post
+                                    if (sliderItem != null && sliderItem.userId.isNotEmpty()) {
+                                        val intent = Intent(context, PostActivity::class.java).apply {
+                                            putExtra("userId", sliderItem.userId)
+                                            putExtra("username", sliderItem.username)
+                                            putExtra("highlightPostId", sliderItem.postId) // Highlight this specific post
                                         }
-                                        1 -> {
-                                            putExtra("USER_NAME", "Emily")
-                                            putExtra("USER_HANDLE", "emily_style")
-                                            putExtra("USER_BIO", "Eco-friendly, wallet-friendly.")
-                                            putExtra("POSTS_COUNT", 8)
-                                            putExtra("FOLLOWERS_COUNT", 2340)
-                                            putExtra("FOLLOWING_COUNT", 156)
+                                        context.startActivity(intent)
+                                    } else {
+                                        // Fallback to old behavior for backward compatibility
+                                        val intent = Intent(context, PostActivity::class.java).apply {
+                                            when (indexOfImages) {
+                                                0 -> putExtra("userId", "user_kendall")
+                                                1 -> putExtra("userId", "user_emily")
+                                                2 -> putExtra("userId", "user_sophia")
+                                                3 -> putExtra("userId", "user_olivia")
+                                            }
                                         }
-                                        2 -> {
-                                            putExtra("USER_NAME", "Sophia")
-                                            putExtra("USER_HANDLE", "sophia_fashion")
-                                            putExtra("USER_BIO", "Vintage vibes & modern style")
-                                            putExtra("POSTS_COUNT", 15)
-                                            putExtra("FOLLOWERS_COUNT", 3890)
-                                            putExtra("FOLLOWING_COUNT", 234)
-                                        }
-                                        3 -> {
-                                            putExtra("USER_NAME", "Olivia")
-                                            putExtra("USER_HANDLE", "liv_closet")
-                                            putExtra("USER_BIO", "Minimalist wardrobe enthusiast")
-                                            putExtra("POSTS_COUNT", 12)
-                                            putExtra("FOLLOWERS_COUNT", 1987)
-                                            putExtra("FOLLOWING_COUNT", 89)
-                                        }
+                                        context.startActivity(intent)
                                     }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                                context.startActivity(intent)
                             }
                     ) {
                         AsyncImage(
-                            model = images[indexOfImages],
-                            contentDescription = null,
+                            model = imageUrl,
+                            contentDescription = sliderItem?.username ?: "Slider image",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(400.dp)
@@ -169,27 +165,89 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .fillMaxSize()
                         ) {
-                            val nameText = when (indexOfImages) {
+                            // Display username from Firebase post or fallback
+                            val displayUsername = sliderItem?.username ?: when (indexOfImages) {
                                 0 -> "kendall"
                                 1 -> "emily"
                                 2 -> "sophia"
                                 3 -> "olivia"
-                                else -> "kendall"
+                                else -> "explore"
                             }
 
-                            Text(
-                                text = nameText,
-                                style = TextStyle(
-                                    fontSize = 64.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                ),
+                            Column(
                                 modifier = Modifier
                                     .align(Alignment.CenterStart)
                                     .padding(start = 16.dp)
-                            )
+                            ) {
+                                Text(
+                                    text = displayUsername,
+                                    style = TextStyle(
+                                        fontSize = 64.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                )
+                                
+                                // Show "posted a new post" indicator
+                                if (sliderItem != null) {
+                                    Text(
+                                        text = "posted a new post",
+                                        style = TextStyle(
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            color = Color.White.copy(alpha = 0.9f)
+                                        ),
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            // Show caption and engagement stats if available
+                            if (sliderItem != null) {
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(start = 16.dp, bottom = 80.dp)
+                                ) {
+                                    if (sliderItem.caption.isNotEmpty()) {
+                                        Text(
+                                            text = sliderItem.caption,
+                                            style = TextStyle(
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Normal,
+                                                color = Color.White
+                                            ),
+                                            maxLines = 2,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                    }
+                                    
+                                    // Show likes and comments count
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Text(
+                                            text = "❤️ ${sliderItem.likesCount}",
+                                            style = TextStyle(
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        )
+                                        Text(
+                                            text = "💬 ${sliderItem.commentsCount}",
+                                            style = TextStyle(
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         }
 
+                        // Show product cards (keeping existing functionality)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -228,7 +286,7 @@ fun HomeScreen(
 
             HorizontalPagerIndicator(
                 pagerState = pagerState,
-                pageCount = 4,
+                pageCount = sliderCount,
                 activeColor = Color.White,
                 inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
             )
