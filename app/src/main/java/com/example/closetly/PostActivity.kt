@@ -110,31 +110,41 @@ fun PostBody(userId: String, initialUsername: String) {
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
-            userViewModel.getUserById(userId) { success, _, userData ->
-                if (success && userData != null) {
-                    name = userData.fullName
-                    username = userData.username
-                    bio = userData.bio
-                    profilePicture = userData.profilePicture
+            try {
+                userViewModel.getUserById(userId) { success, _, userData ->
+                    if (success && userData != null) {
+                        name = userData.fullName
+                        username = userData.username
+                        bio = userData.bio
+                        profilePicture = userData.profilePicture
+                    }
+                    isLoading = false
                 }
+                
+                // Fetch user's posts
+                postViewModel.getUserPosts(userId) { posts ->
+                    userPosts = posts
+                }
+                
+                // Fetch user's listings
+                productViewModel.getUserProducts(userId) { products ->
+                    userListings = products
+                }
+                
+                // Only create chat if both users are valid
+                if (currentUserId.isNotEmpty() && currentUserId != userId) {
+                    chatViewModel.getOrCreateChat(currentUserId, userId) { success, _, chatId ->
+                        if (success && chatId != null) {
+                            existingChatId = chatId
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
                 isLoading = false
             }
-            
-            // Fetch user's posts
-            postViewModel.getUserPosts(userId) { posts ->
-                userPosts = posts
-            }
-            
-            // Fetch user's listings
-            productViewModel.getUserProducts(userId) { products ->
-                userListings = products
-            }
-            
-            chatViewModel.getOrCreateChat(currentUserId, userId) { success, _, chatId ->
-                if (success && chatId != null) {
-                    existingChatId = chatId
-                }
-            }
+        } else {
+            isLoading = false
         }
     }
 

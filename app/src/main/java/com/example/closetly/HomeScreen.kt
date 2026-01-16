@@ -73,7 +73,6 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Top banner images
     val images = listOf(
         "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
         "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800",
@@ -98,7 +97,6 @@ fun HomeScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top banner with auto-scrolling images
         item {
             Box(
                 modifier = Modifier
@@ -238,7 +236,6 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // Loading indicator
         if (isLoading && postsUI.isEmpty()) {
             item {
                 Box(
@@ -252,7 +249,6 @@ fun HomeScreen(
             }
         }
 
-        // Error message
         error?.let { errorMessage ->
             item {
                 Text(
@@ -263,7 +259,6 @@ fun HomeScreen(
             }
         }
 
-        // Posts feed with real-time updates
         items(
             items = postsUI,
             key = { it.post.postId }
@@ -295,12 +290,13 @@ fun PostCard(
     onFollowClick: () -> Unit,
     onCommentClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    
     Card(
         contentColor = Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column {
-            // User header with follow button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -315,6 +311,19 @@ fun PostCard(
                         .size(40.dp)
                         .clip(CircleShape)
                         .border(2.dp, Color.LightGray, CircleShape)
+                        .clickable {
+                            if (postUI.post.userId.isNotEmpty()) {
+                                try {
+                                    val intent = Intent(context, PostActivity::class.java).apply {
+                                        putExtra("userId", postUI.post.userId)
+                                        putExtra("username", postUI.post.username)
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        }
                 )
                 Spacer(modifier = Modifier.width(13.dp))
 
@@ -323,7 +332,20 @@ fun PostCard(
                     style = TextStyle(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
-                    )
+                    ),
+                    modifier = Modifier.clickable {
+                        if (postUI.post.userId.isNotEmpty()) {
+                            try {
+                                val intent = Intent(context, PostActivity::class.java).apply {
+                                    putExtra("userId", postUI.post.userId)
+                                    putExtra("username", postUI.post.username)
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -347,7 +369,6 @@ fun PostCard(
                 Spacer(modifier = Modifier.width(20.dp))
             }
 
-            // Post image
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -360,7 +381,6 @@ fun PostCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Action buttons row (like, comment, save)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -397,7 +417,6 @@ fun PostCard(
                         )
                     }
 
-                    // Comment button with count
                     Row(
                         modifier = Modifier.clickable { onCommentClick() },
                         verticalAlignment = Alignment.CenterVertically,
@@ -418,7 +437,6 @@ fun PostCard(
                     }
                 }
 
-                // Save button
                 IconButton(
                     onClick = onSaveClick,
                     modifier = Modifier.size(32.dp)
@@ -435,7 +453,6 @@ fun PostCard(
                 }
             }
 
-            // Caption
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -450,7 +467,6 @@ fun PostCard(
                 )
             }
 
-            // Timestamp
             Row(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             ) {
