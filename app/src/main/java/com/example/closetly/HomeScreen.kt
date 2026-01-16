@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
@@ -32,13 +32,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,121 +52,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.closetly.ui.theme.White
+import com.example.closetly.utils.getTimeAgo
+import com.example.closetly.viewmodel.HomeViewModel
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
-
+fun HomeScreen(
+    onPostClick: (String, String) -> Unit = { _, _ -> },
+    viewModel: HomeViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val database = FirebaseDatabase.getInstance()
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val currentUserId = currentUser?.uid ?: "guest_user"
+    val postsUI by viewModel.postsUI.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
-    // Post 1 states (Emily's post)
-    var isPost1Liked by remember { mutableStateOf(false) }
-    var post1LikeCount by remember { mutableStateOf(0) }
-    var isPost1Saved by remember { mutableStateOf(false) }
-    var isPost1Following by remember { mutableStateOf(false) }
-    val post1Id = "post_emily_001"
-    val post1UserId = "user_emily"
-
-    // Post 2 states (Kendall's post)
-    var isPost2Liked by remember { mutableStateOf(false) }
-    var post2LikeCount by remember { mutableStateOf(0) }
-    var isPost2Saved by remember { mutableStateOf(false) }
-    var isPost2Following by remember { mutableStateOf(false) }
-    val post2Id = "post_kendall_001"
-    val post2UserId = "user_kendall"
-
-    // Load and listen to Post 1 data from Firebase
-    LaunchedEffect(post1Id) {
-        // Listen to like count
-        val post1LikesRef = database.getReference("Posts/$post1Id/likes")
-        val likesListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                post1LikeCount = snapshot.childrenCount.toInt()
-                // Check if current user liked this post
-                isPost1Liked = snapshot.child(currentUserId).exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        post1LikesRef.addValueEventListener(likesListener)
-    }
-
-    // Listen to Post 1 save status
-    LaunchedEffect(post1Id) {
-        val savedRef = database.getReference("Users/$currentUserId/saved/$post1Id")
-        val savedListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isPost1Saved = snapshot.exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        savedRef.addValueEventListener(savedListener)
-    }
-
-    // Listen to Post 1 follow status
-    LaunchedEffect(post1UserId) {
-        val followRef = database.getReference("Users/$currentUserId/following/$post1UserId")
-        val followListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isPost1Following = snapshot.exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        followRef.addValueEventListener(followListener)
-    }
-
-    // Load and listen to Post 2 data from Firebase
-    LaunchedEffect(post2Id) {
-        // Listen to like count
-        val post2LikesRef = database.getReference("Posts/$post2Id/likes")
-        val likesListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                post2LikeCount = snapshot.childrenCount.toInt()
-                // Check if current user liked this post
-                isPost2Liked = snapshot.child(currentUserId).exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        post2LikesRef.addValueEventListener(likesListener)
-    }
-
-    // Listen to Post 2 save status
-    LaunchedEffect(post2Id) {
-        val savedRef = database.getReference("Users/$currentUserId/saved/$post2Id")
-        val savedListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isPost2Saved = snapshot.exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        savedRef.addValueEventListener(savedListener)
-    }
-
-    // Listen to Post 2 follow status
-    LaunchedEffect(post2UserId) {
-        val followRef = database.getReference("Users/$currentUserId/following/$post2UserId")
-        val followListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                isPost2Following = snapshot.exists()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        followRef.addValueEventListener(followListener)
-    }
-
+    // Top banner images
     val images = listOf(
         "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
         "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800",
@@ -186,8 +91,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
         }
     }
 
-    val scrollState = rememberScrollState()
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -195,6 +98,7 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Top banner with auto-scrolling images
         item {
             Box(
                 modifier = Modifier
@@ -223,7 +127,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                             putExtra("FOLLOWERS_COUNT", 1456)
                                             putExtra("FOLLOWING_COUNT", 11)
                                         }
-
                                         1 -> {
                                             putExtra("USER_NAME", "Emily")
                                             putExtra("USER_HANDLE", "emily_style")
@@ -232,7 +135,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                             putExtra("FOLLOWERS_COUNT", 2340)
                                             putExtra("FOLLOWING_COUNT", 156)
                                         }
-
                                         2 -> {
                                             putExtra("USER_NAME", "Sophia")
                                             putExtra("USER_HANDLE", "sophia_fashion")
@@ -241,7 +143,6 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
                                             putExtra("FOLLOWERS_COUNT", 3890)
                                             putExtra("FOLLOWING_COUNT", 234)
                                         }
-
                                         3 -> {
                                             putExtra("USER_NAME", "Olivia")
                                             putExtra("USER_HANDLE", "liv_closet")
@@ -335,403 +236,232 @@ fun HomeScreen(onPostClick: (String, String) -> Unit = { _, _ -> }) {
             )
 
             Spacer(Modifier.height(16.dp))
+        }
 
-            Card(
-                contentColor = Color.Transparent
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color.LightGray, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(13.dp))
-
-                        Text(
-                            "Emily",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        androidx.compose.material3.Button(
-                            onClick = {
-                                val followRef = database.getReference("Users/$currentUserId/following/$post1UserId")
-                                val followerRef = database.getReference("Users/$post1UserId/followers/$currentUserId")
-                                
-                                if (isPost1Following) {
-                                    // Unfollow
-                                    followRef.removeValue()
-                                    followerRef.removeValue()
-                                } else {
-                                    // Follow
-                                    followRef.setValue(true)
-                                    followerRef.setValue(true)
-                                }
-                            },
-                            modifier = Modifier
-                                .height(32.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isPost1Following) Color.LightGray else colorResource(R.color.purple_200),
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                        ) {
-                            Text(
-                                if (isPost1Following) "Following" else "Follow",
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isPost1Following) Color.DarkGray else Color.White
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(20.dp))
-
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        val likesRef = database.getReference("Posts/$post1Id/likes/$currentUserId")
-                                        
-                                        if (isPost1Liked) {
-                                            // Unlike
-                                            likesRef.removeValue()
-                                        } else {
-                                            // Like
-                                            likesRef.setValue(true)
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isPost1Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = "Like",
-                                        tint = if (isPost1Liked) Color.Red else Color.Black,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    "$post1LikeCount", style = TextStyle(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.clickable {
-                                    val intent = Intent(context, CommentActivity::class.java).apply {
-                                        putExtra("POST_ID", post1Id)
-                                        putExtra("POST_USER_ID", post1UserId)
-                                        putExtra("USER_NAME", "Emily")
-                                    }
-                                    context.startActivity(intent)
-                                },
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.chat),
-                                    contentDescription = "Comment",
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    "59", style = TextStyle(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = {
-                                val savedRef = database.getReference("Users/$currentUserId/saved/$post1Id")
-                                
-                                if (isPost1Saved) {
-                                    // Unsave
-                                    savedRef.removeValue()
-                                } else {
-                                    // Save
-                                    savedRef.setValue(true)
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isPost1Saved)
-                                    Icons.Default.Bookmark
-                                else
-                                    Icons.Default.BookmarkBorder,
-                                contentDescription = "Save",
-                                tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-                    ) {
-                        Text(
-                            "Eco-friendly, wallet-friendly.", style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp)
-                    ) {
-                        Text(
-                            "22 hours ago", style = TextStyle(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = Color.Gray
-                            )
-                        )
-                    }
+        // Loading indicator
+        if (isLoading && postsUI.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+        }
 
-            Card(
-                contentColor = Color.Transparent
+        // Error message
+        error?.let { errorMessage ->
+            item {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
+        // Posts feed with real-time updates
+        items(
+            items = postsUI,
+            key = { it.post.postId }
+        ) { postUI ->
+            PostCard(
+                postUI = postUI,
+                onLikeClick = { viewModel.toggleLike(postUI.post.postId) },
+                onSaveClick = { viewModel.toggleSave(postUI.post.postId) },
+                onFollowClick = { viewModel.toggleFollow(postUI.post.userId) },
+                onCommentClick = {
+                    val intent = Intent(context, CommentActivity::class.java).apply {
+                        putExtra("POST_ID", postUI.post.postId)
+                        putExtra("POST_USER_ID", postUI.post.userId)
+                        putExtra("USER_NAME", postUI.post.username)
+                    }
+                    context.startActivity(intent)
+                }
+            )
+            Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+fun PostCard(
+    postUI: com.example.closetly.viewmodel.PostUI,
+    onLikeClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onFollowClick: () -> Unit,
+    onCommentClick: () -> Unit
+) {
+    Card(
+        contentColor = Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            // User header with follow button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
+                AsyncImage(
+                    model = postUI.post.userProfilePic.ifEmpty { "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" },
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.LightGray, CircleShape)
+                )
+                Spacer(modifier = Modifier.width(13.dp))
+
+                Text(
+                    postUI.post.username,
+                    style = TextStyle(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                androidx.compose.material3.Button(
+                    onClick = onFollowClick,
+                    modifier = Modifier.height(32.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (postUI.isFollowing) Color.LightGray else colorResource(R.color.purple_200),
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text(
+                        if (postUI.isFollowing) "Following" else "Follow",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (postUI.isFollowing) Color.DarkGray else Color.White
+                        )
+                    )
+                }
+                Spacer(modifier = Modifier.width(20.dp))
+            }
+
+            // Post image
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AsyncImage(
+                    model = postUI.post.imageUrl.ifEmpty { "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800" },
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Action buttons row (like, comment, save)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    // Like button with count
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200",
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, Color.LightGray, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(13.dp))
-
-                        Text(
-                            "kendall",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        androidx.compose.material3.Button(
-                            onClick = {
-                                val followRef = database.getReference("Users/$currentUserId/following/$post2UserId")
-                                val followerRef = database.getReference("Users/$post2UserId/followers/$currentUserId")
-                                
-                                if (isPost2Following) {
-                                    // Unfollow
-                                    followRef.removeValue()
-                                    followerRef.removeValue()
-                                } else {
-                                    // Follow
-                                    followRef.setValue(true)
-                                    followerRef.setValue(true)
-                                }
-                            },
-                            modifier = Modifier
-                                .height(32.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isPost2Following) Color.LightGray else colorResource(R.color.purple_200),
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                        ) {
-                            Text(
-                                if (isPost2Following) "Following" else "Follow",
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isPost2Following) Color.DarkGray else Color.White
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(20.dp))
-
-                    }
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            model = "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800",
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        val likesRef = database.getReference("Posts/$post2Id/likes/$currentUserId")
-                                        
-                                        if (isPost2Liked) {
-                                            // Unlike
-                                            likesRef.removeValue()
-                                        } else {
-                                            // Like
-                                            likesRef.setValue(true)
-                                        }
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isPost2Liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                        contentDescription = "Like",
-                                        tint = if (isPost2Liked) Color.Red else Color.Black,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    "$post2LikeCount", style = TextStyle(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.clickable {
-                                    val intent = Intent(context, CommentActivity::class.java).apply {
-                                        putExtra("POST_ID", post2Id)
-                                        putExtra("POST_USER_ID", post2UserId)
-                                        putExtra("USER_NAME", "kendall")
-                                    }
-                                    context.startActivity(intent)
-                                },
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.chat),
-                                    contentDescription = "Comment",
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    "32", style = TextStyle(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-                        }
-
                         IconButton(
-                            onClick = {
-                                val savedRef = database.getReference("Users/$currentUserId/saved/$post2Id")
-                                
-                                if (isPost2Saved) {
-                                    // Unsave
-                                    savedRef.removeValue()
-                                } else {
-                                    // Save
-                                    savedRef.setValue(true)
-                                }
-                            },
+                            onClick = onLikeClick,
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = if (isPost2Saved)
-                                    Icons.Default.Bookmark
-                                else
-                                    Icons.Default.BookmarkBorder,
-                                contentDescription = "Save",
-                                tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
+                                imageVector = if (postUI.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Like",
+                                tint = if (postUI.isLiked) Color.Red else Color.Black,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp, end = 12.dp, top = 8.dp)
-                    ) {
                         Text(
-                            "Style that tells a story", style = TextStyle(
+                            "${postUI.likesCount}",
+                            style = TextStyle(
                                 fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Normal
                             )
                         )
                     }
 
+                    // Comment button with count
                     Row(
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp)
+                        modifier = Modifier.clickable { onCommentClick() },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Icon(
+                            painter = painterResource(R.drawable.chat),
+                            contentDescription = "Comment",
+                            modifier = Modifier.size(26.dp)
+                        )
                         Text(
-                            "5 days ago", style = TextStyle(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = Color.Gray
+                            "${postUI.commentsCount}",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Normal
                             )
                         )
                     }
                 }
+
+                // Save button
+                IconButton(
+                    onClick = onSaveClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (postUI.isSaved)
+                            Icons.Default.Bookmark
+                        else
+                            Icons.Default.BookmarkBorder,
+                        contentDescription = "Save",
+                        tint = Color.Black,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
+
+            // Caption
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+            ) {
+                Text(
+                    postUI.post.caption,
+                    style = TextStyle(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Normal,
+                    )
+                )
+            }
+
+            // Timestamp
+            Row(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
+            ) {
+                Text(
+                    getTimeAgo(postUI.post.timestamp),
+                    style = TextStyle(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = Color.Gray
+                    )
+                )
             }
         }
     }

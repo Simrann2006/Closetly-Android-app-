@@ -9,5 +9,6 @@ data class PostModel(
     val userProfilePic: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val likesCount: Int = 0,
-    val commentsCount: Int = 0
+    val commentsCount: Int = 0,
+    val images: List<String> = emptyList()
 )

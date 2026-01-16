@@ -1,0 +1,16 @@
+package com.example.closetly.repository
+
+import com.example.closetly.model.PostModel
+import kotlinx.coroutines.flow.Flow
+
+interface HomePostRepo {
+    fun getAllPostsRealTime(): Flow<List<PostModel>>
+    suspend fun toggleLike(postId: String, userId: String): Result<Boolean>
+    suspend fun toggleSave(postId: String, userId: String): Result<Boolean>
+    suspend fun toggleFollow(targetUserId: String, currentUserId: String): Result<Boolean>
+    fun getPostLikesCount(postId: String): Flow<Int>
+    fun getPostCommentsCount(postId: String): Flow<Int>
+    fun isPostLiked(postId: String, userId: String): Flow<Boolean>
+    fun isPostSaved(postId: String, userId: String): Flow<Boolean>
+    fun isUserFollowing(targetUserId: String, currentUserId: String): Flow<Boolean>
+}
