@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Black
+import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_grey1
 import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.White
@@ -52,6 +54,8 @@ fun SettingsBody() {
     val userViewModel = remember { UserViewModel(userRepo) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    
+    var notificationsEnabled by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -60,7 +64,9 @@ fun SettingsBody() {
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = { 
+                        (context as Activity).finish()
+                    }) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null
@@ -139,10 +145,12 @@ fun SettingsBody() {
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
-            SettingsItem(
+            SettingsToggleItem(
                 icon = R.drawable.notification,
                 title = "Notifications",
-                onClick = { }
+                subtitle = "Receive notifications",
+                checked = notificationsEnabled,
+                onCheckedChange = { notificationsEnabled = it }
             )
 
             HorizontalDivider(color = Light_grey1, thickness = 8.dp)
@@ -309,6 +317,57 @@ fun SettingsItem(
             contentDescription = null,
             tint = Color.LightGray,
             modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+@Composable
+fun SettingsToggleItem(
+    icon: Int,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+            Text(
+                text = subtitle,
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+        }
+        
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = White,
+                checkedTrackColor = Brown,
+                uncheckedThumbColor = White,
+                uncheckedTrackColor = Grey.copy(alpha = 0.4f)
+            )
         )
     }
 }

@@ -9,24 +9,30 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.ui.theme.*
 
 class EditProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +57,8 @@ fun EditProfileScreen() {
     var name by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("name") ?: "") }
     var username by rememberSaveable { mutableStateOf((context as Activity).intent.getStringExtra("username") ?: "") }
     var bio by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
     var imageUri by rememberSaveable { mutableStateOf<Any>((context as Activity).intent.getStringExtra("imageUri")?.let { Uri.parse(it) } ?: R.drawable.profile) }
     var cloudinaryImageUrl by remember { mutableStateOf("") }
 
@@ -75,13 +83,13 @@ fun EditProfileScreen() {
                             userId = user.uid,
                             fullName = name,
                             email = user.email ?: "",
-                            phoneNumber = "",
-                            selectedCountry = "",
+                            phoneNumber = phoneNumber,
+                            selectedCountry = location,
                             profilePicture = cloudinaryImageUrl,
                             username = username.lowercase(),
                             bio = bio
                         )
-                        
+
                         userViewModel.editProfile(user.uid, updatedUser) { success, message ->
                             isSaving = false
                             if (success) {
@@ -107,13 +115,19 @@ fun EditProfileScreen() {
                     if (userData.bio.isNotEmpty()) {
                         bio = userData.bio
                     }
+                    if (userData.phoneNumber.isNotEmpty()) {
+                        phoneNumber = userData.phoneNumber
+                    }
+                    if (userData.selectedCountry.isNotEmpty()) {
+                        location = userData.selectedCountry
+                    }
                 }
             }
         }
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { 
+        uri?.let {
             imageUri = it
             isUploadingImage = true
             commonViewModel.uploadImage(context, it) { uploadedUrl ->
@@ -141,12 +155,12 @@ fun EditProfileScreen() {
                         Toast.makeText(context, "Username is required", Toast.LENGTH_SHORT).show()
                     } else if (!isSaving) {
                         isSaving = true
-                        
+
                         if (isUploadingImage) {
                             shouldSaveAfterUpload = true
                             return@EditProfileTopBar
                         }
-                        
+
                         currentUser?.let { user ->
                             userRepo.checkUsernameExists(username.lowercase(), user.uid) { exists ->
                                 if (exists) {
@@ -159,13 +173,13 @@ fun EditProfileScreen() {
                                         userId = user.uid,
                                         fullName = name,
                                         email = user.email ?: "",
-                                        phoneNumber = "",
-                                        selectedCountry = "",
+                                        phoneNumber = phoneNumber,
+                                        selectedCountry = location,
                                         profilePicture = cloudinaryImageUrl,
                                         username = username.lowercase(),
                                         bio = bio
                                     )
-                                    
+
                                     userViewModel.editProfile(user.uid, updatedUser) { success, message ->
                                         isSaving = false
                                         if (success) {
@@ -183,98 +197,164 @@ fun EditProfileScreen() {
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .background(Light_grey)
+                .verticalScroll(rememberScrollState())
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.registrationbg),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .height(200.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Card(
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clickable { imagePickerLauncher.launch("image/*") }
-                    ) {
-                        AsyncImage(
-                            model = imageUri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                        .background(
+                            Brown,
+                            shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
                         )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Change Profile Picture", color = Color.DarkGray)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black
-                    ),
-                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier.size(120.dp)
+                    ) {
+                        Card(
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(120.dp)
+                                .border(4.dp, White, CircleShape)
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            elevation = CardDefaults.cardElevation(8.dp)
+                        ) {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
 
-                TextField(
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(36.dp)
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            shape = CircleShape,
+                            color = Brown,
+                            shadowElevation = 4.dp
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+
+                    if (isUploadingImage) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Brown
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProfileSectionCard(title = "Personal Information") {
+                ProfileTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "Full Name",
+                    icon = Icons.Default.Person
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ProfileTextField(
                     value = username,
                     onValueChange = {
                         username = it
                         usernameError = false
                     },
-                    label = { Text("Username") },
+                    label = "Username",
+                    icon = Icons.Default.AccountCircle,
                     isError = usernameError,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        errorLabelColor = Color.Red
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    errorMessage = usernameErrorMessage
                 )
-                if (usernameError) {
-                    Text(usernameErrorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                TextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text("Bio") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black
-                    ),
-                    singleLine = false,
-                    minLines = 3,
-                    maxLines = 10
+                ProfileTextField(
+                    value = currentUser?.email ?: "",
+                    onValueChange = { },
+                    label = "Email",
+                    icon = Icons.Default.Email,
+                    enabled = false
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProfileSectionCard(title = "Contact & Location") {
+                ProfileTextField(
+                    value = phoneNumber,
+                    onValueChange = { phoneNumber = it },
+                    label = "Phone Number",
+                    icon = Icons.Default.Phone
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ProfileTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = "Location",
+                    icon = Icons.Default.LocationOn
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // About Card
+            ProfileSectionCard(title = "About") {
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Bio", color = Grey, fontSize = 14.sp) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = White,
+                        unfocusedContainerColor = White,
+                        focusedTextColor = Black,
+                        unfocusedTextColor = Black,
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = false,
+                    minLines = 4,
+                    maxLines = 8
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -287,10 +367,22 @@ fun EditProfileTopBar(
     onSaveClick: () -> Unit
 ) {
     TopAppBar(
-        title = { Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Edit Profile") } },
+        title = {
+            Text(
+                "Edit Profile",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
         navigationIcon = {
             IconButton(onClick = { onBackClick() }, enabled = !isLoading) {
-                Image(painter = painterResource(R.drawable.back), contentDescription = "Back")
+                Icon(
+                    imageVector = Icons.Default.ArrowBackIos,
+                    contentDescription = null,
+                    tint = Black
+                )
             }
         },
         actions = {
@@ -302,12 +394,105 @@ fun EditProfileTopBar(
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Brown
                     )
                 } else {
-                    Text("Save")
+                    Text(
+                        "Save",
+                        color = Brown,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = White
+        )
     )
+}
+
+@Composable
+fun ProfileSectionCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = DarkGrey,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String = ""
+) {
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label, fontSize = 14.sp) },
+            leadingIcon = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = if (isError) Red else Brown
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
+            isError = isError,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = if (enabled) White else Light_grey1.copy(alpha = 0.3f),
+                unfocusedContainerColor = if (enabled) White else Light_grey1.copy(alpha = 0.3f),
+                disabledContainerColor = White,
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                disabledTextColor = Grey,
+                focusedBorderColor = Brown,
+                unfocusedBorderColor = Grey.copy(alpha = 0.3f),
+                disabledBorderColor = Grey.copy(alpha = 0.2f),
+                errorBorderColor = Red,
+                focusedLabelColor = Brown,
+                unfocusedLabelColor = Grey
+            ),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
+        )
+
+        if (isError && errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = Red,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
+    }
 }
