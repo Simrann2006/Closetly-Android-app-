@@ -6,13 +6,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +22,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.repository.ProductRepoImpl
@@ -34,12 +33,12 @@ import com.example.closetly.viewmodel.ProductViewModel
 import com.example.closetly.viewmodel.PostViewModel
 import com.example.closetly.model.ProductModel
 import com.example.closetly.model.PostModel
-import com.example.closetly.model.ListingType
 import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.White
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Grey
+import com.example.closetly.ui.theme.Light_grey
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -107,6 +106,7 @@ fun ProfileScreen() {
     }
 
     val selectedTab = remember { mutableStateOf("Posts") }
+    val listState = rememberLazyListState()
     
     if (isLoading) {
         Box(
@@ -120,200 +120,277 @@ fun ProfileScreen() {
         return
     }
 
-    Column(
+    LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(White)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
+        item {
+            Column(
                 modifier = Modifier
-                    .size(86.dp)
-                    .clip(CircleShape)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (profilePicture.isNotEmpty()) {
-                    AsyncImage(
-                        model = profilePicture,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFFE0E0E0))
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(24.dp))
-
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ProfileStat("${userPosts.size}", "Posts")
-                ProfileStat("0", "Followers")
-                ProfileStat("0", "Following")
-            }
-        }
-        
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            Text(
-                text = name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = Color.Black
-            )
-            
-            Text(
-                text = username,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-            
-            if (bio.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = bio,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        ProfileButton(
-            text = "Edit Profile",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .height(40.dp),
-            onClick = {
-                editProfileLauncher.launch(
-                    Intent(context, EditProfileActivity::class.java).apply {
-                        putExtra("name", name)
-                        putExtra("username", username)
-                        putExtra("bio", bio)
-                        putExtra("imageUri", profilePicture)
-                    }
-                )
-            }
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ProfileTab(
-                text = "Posts",
-                selected = selectedTab.value == "Posts",
-                onClick = { selectedTab.value = "Posts" }
-            )
-
-            ProfileTab(
-                text = "Listings",
-                selected = selectedTab.value == "Listings",
-                onClick = { selectedTab.value = "Listings" }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        when (selectedTab.value) {
-            "Posts" -> {
-                if (userPosts.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No posts yet",
-                            fontSize = 16.sp,
-                            color = Grey
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(Light_grey)
+                ) {
+                    if (profilePicture.isNotEmpty()) {
+                        AsyncImage(
+                            model = profilePicture,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
                         )
-                    }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 1.dp),
-                        contentPadding = PaddingValues(1.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        items(userPosts.size) { index ->
-                            val post = userPosts[index]
-                            ProfilePostCard(
-                                post = post,
-                                onRefresh = {
-                                    currentUser?.let { user ->
-                                        postViewModel.getUserPosts(user.uid) { posts ->
-                                            userPosts = posts
-                                        }
-                                    }
-                                },
-                                onClick = {
-                                    val intent = Intent(context, PostFeedActivity::class.java)
-                                    intent.putExtra("USER_ID", currentUser?.uid)
-                                    intent.putExtra("INITIAL_INDEX", index)
-                                    context.startActivity(intent)
-                                }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_person_24),
+                                contentDescription = null,
+                                tint = Grey,
+                                modifier = Modifier.size(50.dp)
                             )
                         }
                     }
                 }
-            }
-            "Listings" -> {
-                if (userListings.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No listings yet",
-                            fontSize = 16.sp,
-                            color = Grey
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Black
+                )
+                
+                Text(
+                    text = "@$username",
+                    fontSize = 14.sp,
+                    color = Grey
+                )
+                
+                if (bio.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = bio,
+                        fontSize = 14.sp,
+                        color = Black,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ProfileStat(
+                        count = "${userPosts.size}",
+                        label = "Posts"
+                    )
+                    ProfileStat(
+                        count = "0",
+                        label = "Followers"
+                    )
+                    ProfileStat(
+                        count = "0",
+                        label = "Following"
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        editProfileLauncher.launch(
+                            Intent(context, EditProfileActivity::class.java).apply {
+                                putExtra("name", name)
+                                putExtra("username", username)
+                                putExtra("bio", bio)
+                                putExtra("imageUri", profilePicture)
+                            }
                         )
-                    }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 1.dp),
-                        contentPadding = PaddingValues(1.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        items(userListings.size) { index ->
-                            val listing = userListings[index]
-                            ProfileListingCard(
-                                product = listing,
-                                onRefresh = {
-                                    currentUser?.let { user ->
-                                        productViewModel.getUserProducts(user.uid) { listings ->
-                                            userListings = listings
-                                        }
-                                    }
-                                }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    )
+                ) {
+                    Text(
+                        "Edit Profile",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        stickyHeader {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(White)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ProfileTab(
+                    text = "Posts",
+                    selected = selectedTab.value == "Posts",
+                    onClick = { selectedTab.value = "Posts" }
+                )
+
+                ProfileTab(
+                    text = "Listings",
+                    selected = selectedTab.value == "Listings",
+                    onClick = { selectedTab.value = "Listings" }
+                )
+            }
+        }
+
+        val maxRows = maxOf(
+            if (userPosts.isEmpty()) 1 else userPosts.chunked(3).size,
+            if (userListings.isEmpty()) 1 else userListings.chunked(3).size
+        )
+        
+        items(maxRows) { rowIndex ->
+            when (selectedTab.value) {
+                "Posts" -> {
+                    if (userPosts.isEmpty() && rowIndex == 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No posts yet",
+                                fontSize = 16.sp,
+                                color = Grey
                             )
+                        }
+                    } else if (rowIndex < userPosts.chunked(3).size) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.dp, vertical = 1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            userPosts.chunked(3)[rowIndex].forEach { post ->
+                                val index = userPosts.indexOf(post)
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clickable {
+                                            val intent = Intent(context, PostFeedActivity::class.java)
+                                            intent.putExtra("USER_ID", currentUser?.uid)
+                                            intent.putExtra("INITIAL_INDEX", index)
+                                            context.startActivity(intent)
+                                        }
+                                ) {
+                                    AsyncImage(
+                                        model = post.imageUrl,
+                                        contentDescription = post.caption,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                            repeat(3 - userPosts.chunked(3)[rowIndex].size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.dp, vertical = 1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            repeat(3) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+                "Listings" -> {
+                    if (userListings.isEmpty() && rowIndex == 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No listings yet",
+                                fontSize = 16.sp,
+                                color = Grey
+                            )
+                        }
+                    } else if (rowIndex < userListings.chunked(3).size) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.dp, vertical = 1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            userListings.chunked(3)[rowIndex].forEach { listing ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clickable {
+                                            val intent = Intent(context, ListingViewerActivity::class.java).apply {
+                                                putExtra("productId", listing.id)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                ) {
+                                    AsyncImage(
+                                        model = listing.imageUrl,
+                                        contentDescription = listing.title,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                            repeat(3 - userListings.chunked(3)[rowIndex].size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.dp, vertical = 1.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            repeat(3) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                )
+                            }
                         }
                     }
                 }
@@ -326,7 +403,11 @@ fun ProfileScreen() {
 fun ProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier.clickable(
+            onClick = onClick,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        )
     ) {
         Text(
             text = text,
@@ -344,443 +425,19 @@ fun ProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ProfileStat(number: String, label: String) {
+fun ProfileStat(count: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(number, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Text(label, fontSize = 12.sp)
-    }
-}
-
-@Composable
-fun ProfileButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Pink40)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
         Text(
-            text = text,
-            color = Color.White,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-fun ProfileListingCard(
-    product: ProductModel,
-    onRefresh: () -> Unit
-) {
-    val context = LocalContext.current
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable {
-                val intent = Intent(context, ListingViewerActivity::class.java).apply {
-                    putExtra("productId", product.id)
-                }
-                context.startActivity(intent)
-            },
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = White)
-    ) {
-        AsyncImage(
-            model = product.imageUrl,
-            contentDescription = product.title,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-    }
-}
-
-@Composable
-fun EditListingDialog(
-    product: ProductModel,
-    productViewModel: ProductViewModel,
-    onDismiss: () -> Unit,
-    onSaved: () -> Unit
-) {
-    var title by remember { mutableStateOf(product.title) }
-    var description by remember { mutableStateOf(product.description) }
-    var price by remember { mutableStateOf(product.price.toString()) }
-    var rentPrice by remember { mutableStateOf(product.rentPricePerDay?.toString() ?: "") }
-    var brand by remember { mutableStateOf(product.brand) }
-    var size by remember { mutableStateOf(product.size) }
-    var condition by remember { mutableStateOf(product.condition) }
-    var status by remember { mutableStateOf(product.status) }
-    
-    var expandedCondition by remember { mutableStateOf(false) }
-    var expandedStatus by remember { mutableStateOf(false) }
-    
-    val conditions = listOf("New", "Like New", "Good", "Fair", "Poor")
-    val statusOptions = if (product.listingType == ListingType.THRIFT) {
-        listOf("Available", "Sold Out")
-    } else {
-        listOf("Available", "On Rent")
-    }
-    
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.9f)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp)
-            ) {
-                Text(
-                    text = "Edit Listing",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Black
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    ),
-                    maxLines = 4
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = { Text("Price") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    )
-                )
-                
-                if (product.listingType == ListingType.RENT) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    OutlinedTextField(
-                        value = rentPrice,
-                        onValueChange = { rentPrice = it },
-                        label = { Text("Rent Price per Day") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Brown,
-                            unfocusedBorderColor = Grey
-                        )
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Brand") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                OutlinedTextField(
-                    value = size,
-                    onValueChange = { size = it },
-                    label = { Text("Size") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = condition,
-                        onValueChange = { },
-                        label = { Text("Condition") },
-                        modifier = Modifier.fillMaxWidth(),
-                        readOnly = true,
-                        enabled = false,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = Grey,
-                            disabledTextColor = Black
-                        ),
-                        trailingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
-                                contentDescription = null
-                            )
-                        }
-                    )
-                    
-                    DropdownMenu(
-                        expanded = expandedCondition,
-                        onDismissRequest = { expandedCondition = false },
-                        modifier = Modifier.background(White)
-                    ) {
-                        conditions.forEach { cond ->
-                            DropdownMenuItem(
-                                text = { Text(cond) },
-                                onClick = {
-                                    condition = cond
-                                    expandedCondition = false
-                                }
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { expandedCondition = true }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = status,
-                        onValueChange = { },
-                        label = { Text(if (product.listingType == ListingType.THRIFT) "Availability" else "Rental Status") },
-                        modifier = Modifier.fillMaxWidth(),
-                        readOnly = true,
-                        enabled = false,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = when (status) {
-                                "Sold Out" -> Color.Red
-                                "On Rent" -> Color(0xFFFFA500)
-                                else -> Grey
-                            },
-                            disabledTextColor = when (status) {
-                                "Sold Out" -> Color.Red
-                                "On Rent" -> Color(0xFFFFA500)
-                                else -> Black
-                            }
-                        ),
-                        trailingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
-                                contentDescription = null,
-                                tint = when (status) {
-                                    "Sold Out" -> Color.Red
-                                    "On Rent" -> Color(0xFFFFA500)
-                                    else -> Grey
-                                }
-                            )
-                        }
-                    )
-                    
-                    DropdownMenu(
-                        expanded = expandedStatus,
-                        onDismissRequest = { expandedStatus = false },
-                        modifier = Modifier.background(White)
-                    ) {
-                        statusOptions.forEach { stat ->
-                            DropdownMenuItem(
-                                text = { 
-                                    Text(
-                                        stat,
-                                        color = when (stat) {
-                                            "Sold Out" -> Color.Red
-                                            "On Rent" -> Color(0xFFFFA500)
-                                            else -> Black
-                                        },
-                                        fontWeight = if (stat != "Available") FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                onClick = {
-                                    status = stat
-                                    expandedStatus = false
-                                }
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { expandedStatus = true }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Grey
-                        )
-                    ) {
-                        Text("Cancel")
-                    }
-                    
-                    Button(
-                        onClick = {
-                            val updatedProduct = product.copy(
-                                title = title,
-                                description = description,
-                                price = price.toDoubleOrNull() ?: product.price,
-                                rentPricePerDay = rentPrice.toDoubleOrNull(),
-                                brand = brand,
-                                size = size,
-                                condition = condition,
-                                status = status
-                            )
-                            productViewModel.editProduct(updatedProduct) { success, _ ->
-                                if (success) {
-                                    onSaved()
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Brown
-                        )
-                    ) {
-                        Text("Save")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ListingDetailRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = "$label:",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Grey
-        )
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+            text = count,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
             color = Black
         )
-    }
-}
-
-@Composable
-fun ListingDeleteConfirmationDialog(
-    listingTitle: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Delete Listing",
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Text("Are you sure you want to delete \"$listingTitle\"? This action cannot be undone.")
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
-            ) {
-                Text("Delete")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-        containerColor = White
-    )
-}
-
-@Composable
-fun ProfilePostCard(
-    post: PostModel,
-    onRefresh: () -> Unit,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = White)
-    ) {
-        AsyncImage(
-            model = post.imageUrl,
-            contentDescription = post.caption,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            color = Grey
         )
     }
 }

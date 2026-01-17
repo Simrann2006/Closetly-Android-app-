@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -236,12 +237,32 @@ fun EditProfileScreen() {
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             elevation = CardDefaults.cardElevation(8.dp)
                         ) {
-                            AsyncImage(
-                                model = imageUri,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Light_grey)
+                            ) {
+                                if (cloudinaryImageUrl.isNotEmpty()) {
+                                    AsyncImage(
+                                        model = cloudinaryImageUrl,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = Grey,
+                                            modifier = Modifier.size(60.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         Surface(
@@ -330,7 +351,6 @@ fun EditProfileScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // About Card
             ProfileSectionCard(title = "About") {
                 OutlinedTextField(
                     value = bio,
