@@ -60,4 +60,36 @@ interface UserRepo {
         currentUserId: String,
         callback: (Boolean) -> Unit
     )
+    
+    fun toggleFollow(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun isFollowing(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    )
+    
+    fun getFollowersCount(
+        userId: String,
+        callback: (Int) -> Unit
+    )
+    
+    fun getFollowingCount(
+        userId: String,
+        callback: (Int) -> Unit
+    )
+    
+    fun getFollowersList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    )
+    
+    fun getFollowingList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    )
 }

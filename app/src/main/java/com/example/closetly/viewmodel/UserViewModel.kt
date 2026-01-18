@@ -78,4 +78,48 @@ class UserViewModel (val repo : UserRepo) : ViewModel(){
     ){
         repo.getAllUser(callback)
     }
+    
+    fun toggleFollow(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ){
+        repo.toggleFollow(currentUserId, targetUserId, callback)
+    }
+    
+    fun isFollowing(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    ){
+        repo.isFollowing(currentUserId, targetUserId, callback)
+    }
+    
+    fun getFollowersCount(
+        userId: String,
+        callback: (Int) -> Unit
+    ){
+        repo.getFollowersCount(userId, callback)
+    }
+    
+    fun getFollowingCount(
+        userId: String,
+        callback: (Int) -> Unit
+    ){
+        repo.getFollowingCount(userId, callback)
+    }
+    
+    fun getFollowersList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    ){
+        repo.getFollowersList(userId, callback)
+    }
+    
+    fun getFollowingList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    ){
+        repo.getFollowingList(userId, callback)
+    }
 }

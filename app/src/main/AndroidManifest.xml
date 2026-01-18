@@ -117,6 +117,12 @@
             android:theme="@style/Theme.Closetly">
         </activity>
         <activity
+            android:name=".FollowersFollowingActivity"
+            android:exported="false"
+            android:label="FollowersFollowingActivity"
+            android:theme="@style/Theme.Closetly">
+        </activity>
+        <activity
             android:name=".ClothesDetailsActivity"
             android:exported="true"
             android:label="@string/title_activity_clothes_detail"
@@ -186,17 +192,6 @@
             android:name=".LoginActivity"
             android:exported="true"
             android:label="@string/title_activity_login"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="MainActivity"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -107,6 +107,11 @@ fun PostBody(userId: String, initialUsername: String) {
     var userPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
     var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     val listState = rememberLazyListState()
+    
+    var isFollowing by remember { mutableStateOf(false) }
+    var followersCount by remember { mutableStateOf(0) }
+    var followingCount by remember { mutableStateOf(0) }
+    var theyFollowUs by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
@@ -127,6 +132,24 @@ fun PostBody(userId: String, initialUsername: String) {
 
                 productViewModel.getUserProducts(userId) { products ->
                     userListings = products
+                }
+                
+                if (currentUserId.isNotEmpty() && currentUserId != userId) {
+                    userViewModel.isFollowing(currentUserId, userId) { following ->
+                        isFollowing = following
+                    }
+                    
+                    userViewModel.isFollowing(userId, currentUserId) { theyFollow ->
+                        theyFollowUs = theyFollow
+                    }
+                }
+                
+                userViewModel.getFollowersCount(userId) { count ->
+                    followersCount = count
+                }
+                
+                userViewModel.getFollowingCount(userId) { count ->
+                    followingCount = count
                 }
 
                 if (currentUserId.isNotEmpty() && currentUserId != userId) {
@@ -271,15 +294,32 @@ fun PostBody(userId: String, initialUsername: String) {
                     ) {
                         UserProfileStat(
                             count = "${userPosts.size}",
-                            label = "Posts"
+                            label = "Posts",
+                            onClick = {}
                         )
                         UserProfileStat(
-                            count = "0",
-                            label = "Followers"
+                            count = "$followersCount",
+                            label = "Followers",
+                            onClick = {
+                                val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                    putExtra("userId", userId)
+                                    putExtra("username", username)
+                                    putExtra("type", "followers")
+                                }
+                                context.startActivity(intent)
+                            }
                         )
                         UserProfileStat(
-                            count = "0",
-                            label = "Following"
+                            count = "$followingCount",
+                            label = "Following",
+                            onClick = {
+                                val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                    putExtra("userId", userId)
+                                    putExtra("username", username)
+                                    putExtra("type", "following")
+                                }
+                                context.startActivity(intent)
+                            }
                         )
                     }
 
@@ -290,21 +330,34 @@ fun PostBody(userId: String, initialUsername: String) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = { },
+                            onClick = {
+                                if (currentUserId.isNotEmpty() && currentUserId != userId) {
+                                    userViewModel.toggleFollow(currentUserId, userId) { success, message ->
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(40.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Brown
+                                containerColor = if (isFollowing) Light_grey else Brown
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
+                            val buttonText = if (isFollowing) {
+                                "Following"
+                            } else if (theyFollowUs) {
+                                "Follow Back"
+                            } else {
+                                "Follow"
+                            }
+                            
                             Text(
-                                "Follow",
+                                buttonText,
                                 style = TextStyle(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = White
+                                    color = if (isFollowing) Black else White
                                 )
                             )
                         }
@@ -510,8 +563,15 @@ fun PostBody(userId: String, initialUsername: String) {
 }
 
 @Composable
-fun UserProfileStat(count: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun UserProfileStat(count: String, label: String, onClick: () -> Unit = {}) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(
+            onClick = onClick,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        )
+    ) {
         Text(
             text = count,
             fontWeight = FontWeight.Bold,

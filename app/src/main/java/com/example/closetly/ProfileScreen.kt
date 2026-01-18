@@ -59,6 +59,8 @@ fun ProfileScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var userPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
+    var followersCount by remember { mutableStateOf(0) }
+    var followingCount by remember { mutableStateOf(0) }
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.let { user ->
@@ -76,6 +78,14 @@ fun ProfileScreen() {
             }
             postViewModel.getUserPosts(user.uid) { posts ->
                 userPosts = posts
+            }
+            
+            userViewModel.getFollowersCount(user.uid) { count ->
+                followersCount = count
+            }
+            
+            userViewModel.getFollowingCount(user.uid) { count ->
+                followingCount = count
             }
         } ?: run {
             isLoading = false
@@ -194,15 +204,36 @@ fun ProfileScreen() {
                 ) {
                     ProfileStat(
                         count = "${userPosts.size}",
-                        label = "Posts"
+                        label = "Posts",
+                        onClick = {}
                     )
                     ProfileStat(
-                        count = "0",
-                        label = "Followers"
+                        count = "$followersCount",
+                        label = "Followers",
+                        onClick = {
+                            currentUser?.let { user ->
+                                val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                    putExtra("userId", user.uid)
+                                    putExtra("username", username)
+                                    putExtra("type", "followers")
+                                }
+                                context.startActivity(intent)
+                            }
+                        }
                     )
                     ProfileStat(
-                        count = "0",
-                        label = "Following"
+                        count = "$followingCount",
+                        label = "Following",
+                        onClick = {
+                            currentUser?.let { user ->
+                                val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                    putExtra("userId", user.uid)
+                                    putExtra("username", username)
+                                    putExtra("type", "following")
+                                }
+                                context.startActivity(intent)
+                            }
+                        }
                     )
                 }
 
@@ -425,8 +456,15 @@ fun ProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ProfileStat(count: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun ProfileStat(count: String, label: String, onClick: () -> Unit = {}) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(
+            onClick = onClick,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        )
+    ) {
         Text(
             text = count,
             fontWeight = FontWeight.Bold,

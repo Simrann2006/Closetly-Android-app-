@@ -199,4 +199,166 @@ class UserRepoImpl : UserRepo{
                 }
             })
     }
+    
+    override fun toggleFollow(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        val followingRef = ref.child(currentUserId).child("following").child(targetUserId)
+        val followerRef = ref.child(targetUserId).child("followers").child(currentUserId)
+        
+        followingRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    followingRef.removeValue()
+                    followerRef.removeValue().addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            callback(true, "Unfollowed successfully")
+                        } else {
+                            callback(false, it.exception?.message ?: "Failed to unfollow")
+                        }
+                    }
+                } else {
+                    followingRef.setValue(true)
+                    followerRef.setValue(true).addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            callback(true, "Followed successfully")
+                        } else {
+                            callback(false, it.exception?.message ?: "Failed to follow")
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                callback(false, error.message)
+            }
+        })
+    }
+    
+    override fun isFollowing(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        ref.child(currentUserId).child("following").child(targetUserId)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    callback(snapshot.exists())
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
+    }
+    
+    override fun getFollowersCount(userId: String, callback: (Int) -> Unit) {
+        ref.child(userId).child("followers")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    callback(snapshot.childrenCount.toInt())
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(0)
+                }
+            })
+    }
+    
+    override fun getFollowingCount(userId: String, callback: (Int) -> Unit) {
+        ref.child(userId).child("following")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    callback(snapshot.childrenCount.toInt())
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(0)
+                }
+            })
+    }
+    
+    override fun getFollowersList(userId: String, callback: (List<UserModel>) -> Unit) {
+        ref.child(userId).child("followers")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val followersList = mutableListOf<UserModel>()
+                    val followerIds = snapshot.children.mapNotNull { it.key }
+                    
+                    if (followerIds.isEmpty()) {
+                        callback(emptyList())
+                        return
+                    }
+                    
+                    var processedCount = 0
+                    followerIds.forEach { followerId ->
+                        ref.child(followerId).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(userSnapshot: DataSnapshot) {
+                                userSnapshot.getValue(UserModel::class.java)?.let {
+                                    followersList.add(it)
+                                }
+                                processedCount++
+                                if (processedCount == followerIds.size) {
+                                    callback(followersList)
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                processedCount++
+                                if (processedCount == followerIds.size) {
+                                    callback(followersList)
+                                }
+                            }
+                        })
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(emptyList())
+                }
+            })
+    }
+    
+    override fun getFollowingList(userId: String, callback: (List<UserModel>) -> Unit) {
+        ref.child(userId).child("following")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val followingList = mutableListOf<UserModel>()
+                    val followingIds = snapshot.children.mapNotNull { it.key }
+                    
+                    if (followingIds.isEmpty()) {
+                        callback(emptyList())
+                        return
+                    }
+                    
+                    var processedCount = 0
+                    followingIds.forEach { followingId ->
+                        ref.child(followingId).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(userSnapshot: DataSnapshot) {
+                                userSnapshot.getValue(UserModel::class.java)?.let {
+                                    followingList.add(it)
+                                }
+                                processedCount++
+                                if (processedCount == followingIds.size) {
+                                    callback(followingList)
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                processedCount++
+                                if (processedCount == followingIds.size) {
+                                    callback(followingList)
+                                }
+                            }
+                        })
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(emptyList())
+                }
+            })
+    }
 }
