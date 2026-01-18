@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -397,7 +398,7 @@ fun PostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AsyncImage(
@@ -405,9 +406,9 @@ fun PostCard(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.LightGray, CircleShape)
+                        .border(1.5.dp, Color.LightGray, CircleShape)
                         .clickable {
                             if (postUI.post.userId.isNotEmpty()) {
                                 try {
@@ -422,13 +423,13 @@ fun PostCard(
                             }
                         }
                 )
-                Spacer(modifier = Modifier.width(13.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
                     postUI.post.username,
                     style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
                     ),
                     modifier = Modifier.clickable {
                         if (postUI.post.userId.isNotEmpty()) {
@@ -448,22 +449,22 @@ fun PostCard(
 
                 androidx.compose.material3.Button(
                     onClick = onFollowClick,
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(30.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (postUI.isFollowing) Color.LightGray else colorResource(R.color.purple_200),
                     ),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {
                     Text(
                         if (postUI.isFollowing) "Following" else "Follow",
                         style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = if (postUI.isFollowing) Color.DarkGray else Color.White
                         )
                     )
                 }
-                Spacer(modifier = Modifier.width(20.dp))
             }
 
             // Post Image
@@ -482,36 +483,36 @@ fun PostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Left side: Like and Comment
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Like button with count
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         IconButton(
                             onClick = onLikeClick,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 imageVector = if (postUI.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Like",
                                 tint = if (postUI.isLiked) Color.Red else Color.Black,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                         if (postUI.likesCount > 0) {
                             Text(
                                 "${postUI.likesCount}",
                                 style = TextStyle(
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.Black
                                 )
@@ -523,24 +524,24 @@ fun PostCard(
                     Row(
                         modifier = Modifier.clickable { onCommentClick() },
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Box(
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(36.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.chat),
                                 contentDescription = "Comment",
                                 tint = Color.Black,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                         if (postUI.commentsCount > 0) {
                             Text(
                                 "${postUI.commentsCount}",
                                 style = TextStyle(
-                                    fontSize = 14.sp,
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.Black
                                 )
@@ -552,7 +553,7 @@ fun PostCard(
                 // Right side: Save button
                 IconButton(
                     onClick = onSaveClick,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
                         imageVector = if (postUI.isSaved)
@@ -561,7 +562,7 @@ fun PostCard(
                             Icons.Default.BookmarkBorder,
                         contentDescription = "Save",
                         tint = Color.Black,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -570,18 +571,18 @@ fun PostCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .padding(horizontal = 12.dp, vertical = 2.dp)
             ) {
                 // Show title for products
                 if (postUI.post.postType == "product" && postUI.post.title.isNotEmpty()) {
                     Text(
                         postUI.post.title,
                         style = TextStyle(
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         ),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
                 
@@ -592,7 +593,7 @@ fun PostCard(
                             postUI.post.username,
                             style = TextStyle(
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = Color.Black
                             )
                         )
@@ -612,11 +613,11 @@ fun PostCard(
                     Text(
                         postUI.post.formatPrice(),
                         style = TextStyle(
-                            fontSize = 17.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.purple_200)
                         ),
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 6.dp)
                     )
                 }
 
@@ -624,11 +625,11 @@ fun PostCard(
                 Text(
                     getTimeAgo(postUI.post.timestamp),
                     style = TextStyle(
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Normal,
                         color = Color.Gray
                     ),
-                    modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
                 )
             }
         }

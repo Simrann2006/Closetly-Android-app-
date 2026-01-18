@@ -199,23 +199,24 @@ fun CommentScreen(
             } else if (comments.isEmpty()) {
                 Column(
                     modifier = Modifier
-                        .align(Alignment.Center),
+                        .align(Alignment.Center)
+                        .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         "No comments yet",
                         style = TextStyle(
-                            fontSize = 16.sp,
+                            fontSize = 17.sp,
                             color = Color.Gray,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Be the first to comment!",
+                        "Be the first to share your thoughts!",
                         style = TextStyle(
                             fontSize = 14.sp,
-                            color = Color.LightGray
+                            color = Color.Gray.copy(alpha = 0.7f)
                         )
                     )
                 }
@@ -272,32 +273,42 @@ fun CommentItem(
                     }
                 )
             }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // Profile Picture
         AsyncImage(
-            model = comment.userProfileImage,
+            model = comment.userProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(40.dp)
+                .size(36.dp)
                 .clip(CircleShape)
                 .border(1.dp, Color.LightGray, CircleShape)
         )
 
+        // Comment Content
         Column(
             modifier = Modifier.weight(1f)
         ) {
             // Username and Timestamp
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     comment.userName,
                     style = TextStyle(
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                )
+                Text(
+                    "•",
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 )
                 Text(
@@ -309,6 +320,7 @@ fun CommentItem(
                 )
             }
 
+            // Comment Text
             Text(
                 comment.commentText,
                 style = TextStyle(
@@ -316,37 +328,34 @@ fun CommentItem(
                     color = Color.Black,
                     lineHeight = 20.sp
                 ),
-                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = 3.dp, bottom = 2.dp)
             )
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            IconButton(
-                onClick = onLikeClick,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = if (comment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Like",
-                    tint = if (comment.isLiked) Color.Red else Color.Gray,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
             
-            // Like Count beside icon
+            // Like count below comment (Instagram style)
             if (comment.likesCount > 0) {
                 Text(
-                    "${comment.likesCount}",
+                    "${comment.likesCount} ${if (comment.likesCount == 1) "like" else "likes"}",
                     style = TextStyle(
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (comment.isLiked) Color.Red else Color.Gray
-                    )
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Gray
+                    ),
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
+        }
+
+        // Like Button
+        IconButton(
+            onClick = onLikeClick,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = if (comment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = "Like",
+                tint = if (comment.isLiked) Color.Red else Color.Gray,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
@@ -362,21 +371,21 @@ fun CommentInputSection(
             .fillMaxWidth()
             .imePadding(),
         color = Color.White,
-        shadowElevation = 8.dp
+        shadowElevation = 4.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             AsyncImage(
                 model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200",
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(32.dp)
                     .clip(CircleShape)
                     .border(1.dp, Color.LightGray, CircleShape)
             )
@@ -388,16 +397,25 @@ fun CommentInputSection(
                 placeholder = { 
                     Text(
                         "Add a comment...",
-                        style = TextStyle(fontSize = 14.sp)
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
                     ) 
                 },
-                textStyle = TextStyle(fontSize = 14.sp),
-                shape = RoundedCornerShape(24.dp),
+                textStyle = TextStyle(
+                    fontSize = 14.sp,
+                    color = Color.Black
+                ),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
                 ),
-                maxLines = 4
+                maxLines = 4,
+                singleLine = false
             )
 
             IconButton(
@@ -406,15 +424,17 @@ fun CommentInputSection(
                         onSendClick()
                     }
                 },
-                enabled = commentText.isNotBlank()
+                enabled = commentText.isNotBlank(),
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
                     Icons.Default.Send,
                     contentDescription = "Send",
                     tint = if (commentText.isNotBlank()) 
-                        MaterialTheme.colorScheme.primary
+                        Color(0xFF9C27B0)
                     else 
-                        Color.Gray
+                        Color.Gray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
