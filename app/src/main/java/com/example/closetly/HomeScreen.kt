@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -105,119 +106,133 @@ fun HomeScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        item {
-            // Netflix-style auto-slider with real-time Firebase data
-            if (sliderLoading && sliderItems.isEmpty()) {
-                // Loading state
+        // Show single loading indicator when both are loading initially
+        if ((sliderLoading && sliderItems.isEmpty()) && (isLoading && postsUI.isEmpty())) {
+            item {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .padding(top = 200.dp),
+                    contentAlignment = Alignment.TopCenter
                 ) {
                     CircularProgressIndicator()
                 }
-            } else {
-                // Real-time slider from Firebase
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                ) {
-                    HorizontalPager(
-                        count = sliderCount,
-                        state = pagerState,
-                    ) { pageIndex ->
-                        val sliderItem = sliderItems.getOrNull(pageIndex)
-                        
-                        if (sliderItem != null) {
-                            SliderItemCard(
-                                sliderItem = sliderItem,
-                                onItemClick = {
-                                    // Navigate to user profile when clicking anywhere on slider
-                                    try {
-                                        val intent = Intent(context, PostActivity::class.java).apply {
-                                            putExtra("userId", sliderItem.userId)
-                                            putExtra("username", sliderItem.username)
+            }
+        } else {
+            item {
+                // Netflix-style auto-slider with real-time Firebase data
+                if (sliderLoading && sliderItems.isEmpty()) {
+                    // Loading state for slider only
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // Real-time slider from Firebase
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                    ) {
+                        HorizontalPager(
+                            count = sliderCount,
+                            state = pagerState,
+                        ) { pageIndex ->
+                            val sliderItem = sliderItems.getOrNull(pageIndex)
+                            
+                            if (sliderItem != null) {
+                                SliderItemCard(
+                                    sliderItem = sliderItem,
+                                    onItemClick = {
+                                        // Navigate to user profile when clicking anywhere on slider
+                                        try {
+                                            val intent = Intent(context, PostActivity::class.java).apply {
+                                                putExtra("userId", sliderItem.userId)
+                                                putExtra("username", sliderItem.username)
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
                                         }
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                },
-                                onUsernameClick = {
-                                    // Navigate to user profile when clicking username
-                                    try {
-                                        val intent = Intent(context, PostActivity::class.java).apply {
-                                            putExtra("userId", sliderItem.userId)
-                                            putExtra("username", sliderItem.username)
+                                    },
+                                    onUsernameClick = {
+                                        // Navigate to user profile when clicking username
+                                        try {
+                                            val intent = Intent(context, PostActivity::class.java).apply {
+                                                putExtra("userId", sliderItem.userId)
+                                                putExtra("username", sliderItem.username)
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
                                         }
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(10.dp))
 
-                // Slider indicators
-                HorizontalPagerIndicator(
-                    pagerState = pagerState,
-                    pageCount = sliderCount,
-                    activeColor = Color.White,
-                    inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
-                )
+                    // Slider indicators
+                    HorizontalPagerIndicator(
+                        pagerState = pagerState,
+                        pageCount = sliderCount,
+                        activeColor = Color.White,
+                        inactiveColor = MaterialTheme.colors.onSurface.copy(alpha = 0.3f)
+                    )
 
-                Spacer(Modifier.height(16.dp))
-            }
-        }
-
-        if (isLoading && postsUI.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-        }
 
-        error?.let { errorMessage ->
-            item {
-                Text(
-                    text = errorMessage,
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-
-        items(
-            items = postsUI,
-            key = { it.post.postId }
-        ) { postUI ->
-            PostCard(
-                postUI = postUI,
-                onLikeClick = { viewModel.toggleLike(postUI.post.postId) },
-                onSaveClick = { viewModel.toggleSave(postUI.post.postId) },
-                onFollowClick = { viewModel.toggleFollow(postUI.post.userId) },
-                onCommentClick = {
-                    val intent = Intent(context, CommentActivity::class.java).apply {
-                        putExtra("POST_ID", postUI.post.postId)
-                        putExtra("POST_USER_ID", postUI.post.userId)
-                        putExtra("USER_NAME", postUI.post.username)
+            if (isLoading && postsUI.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
                     }
-                    context.startActivity(intent)
                 }
-            )
-            Spacer(Modifier.height(10.dp))
+            }
+
+            error?.let { errorMessage ->
+                item {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            items(
+                items = postsUI,
+                key = { it.post.postId }
+            ) { postUI ->
+                PostCard(
+                    postUI = postUI,
+                    onLikeClick = { viewModel.toggleLike(postUI.post.postId) },
+                    onSaveClick = { viewModel.toggleSave(postUI.post.postId) },
+                    onFollowClick = { viewModel.toggleFollow(postUI.post.userId) },
+                    onCommentClick = {
+                        val intent = Intent(context, CommentActivity::class.java).apply {
+                            putExtra("POST_ID", postUI.post.postId)
+                            putExtra("POST_USER_ID", postUI.post.userId)
+                            putExtra("USER_NAME", postUI.post.username)
+                        }
+                        context.startActivity(intent)
+                    }
+                )
+                Spacer(Modifier.height(10.dp))
+            }
         }
     }
 }
@@ -467,17 +482,15 @@ fun PostCard(
                 }
             }
 
-            // Post Image
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                AsyncImage(
-                    model = postUI.post.imageUrl.ifEmpty { "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800" },
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            // Post Image - Fixed square size
+            AsyncImage(
+                model = postUI.post.imageUrl.ifEmpty { "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800" },
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+            )
 
             // Action buttons row (Like, Comment, Save) - Instagram style
             Row(

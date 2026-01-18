@@ -12,16 +12,17 @@ import kotlinx.coroutines.flow.callbackFlow
  * Implementation of SliderRepo that provides real-time slider data from Firebase.
  * 
  * LOGIC:
- * 1. Fetches all listings (posts) from Firebase in real-time
+ * 1. Fetches all listings (sale + rent items) from Firebase in real-time
  * 2. Groups listings by userId (so each user gets one slider)
  * 3. Each slider shows user's profile picture as background
  * 4. Multiple listing cards (images, names, prices) shown inside each slider
- * 5. Automatically updates when any user posts a new listing
+ * 5. Automatically updates when any user posts a new listing or rent item
  */
 class SliderRepoImpl : SliderRepo {
     
     private val database = FirebaseDatabase.getInstance()
-    private val listingsRef = database.getReference("Products")  // Read from Products node where listings are stored
+    private val productsRef = database.getReference("Products")  // Sale items
+    private val rentRef = database.getReference("Rent")  // Rent items
     private val usersRef = database.getReference("Users")
     
     companion object {
@@ -32,136 +33,199 @@ class SliderRepoImpl : SliderRepo {
     
     /**
      * Returns a Flow that emits slider items grouped by user in real-time.
+     * Fetches from both Products (sale) and Rent nodes.
      * 
      * HOW IT WORKS:
-     * - Listens to Firebase "posts" (or "listings") collection
-     * - When ANY listing is added/updated/deleted, this triggers
-     * - Groups all listings by userId
+     * - Listens to both Products and Rent Firebase collections
+     * - Combines all items (sale + rent) from both sources
+     * - Groups all items by userId
      * - For each user, fetches their profile picture from users collection
-     * - Creates one SliderItemModel per user with their listings
-     * - Sorts users by their latest listing timestamp (most recent first)
+     * - Creates one SliderItemModel per user with their items
+     * - Sorts users by their latest item timestamp (most recent first)
      * - Returns top 10 active users
      */
     override fun getSliderItems(): Flow<List<SliderItemModel>> = callbackFlow {
-        val listener = object : ValueEventListener {
+        val allListings = mutableListOf<Triple<String, String, ListingItem>>()
+        val sliderItems = mutableListOf<SliderItemModel>()
+        var productsLoaded = false
+        var rentLoaded = false
+        
+        fun processAndEmitItems() {
+            if (!productsLoaded || !rentLoaded) return
+            
+            // Group all items by userId
+            val listingsByUser = allListings.groupBy { it.first }
+            Log.d(TAG, "Grouped ${allListings.size} items into ${listingsByUser.size} users")
+            
+            sliderItems.clear()
+            
+            for ((userId, userListings) in listingsByUser) {
+                try {
+                    val listings = userListings
+                        .map { it.third }
+                        .sortedByDescending { it.timestamp }
+                        .take(MAX_LISTINGS_PER_USER)
+                    
+                    val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
+                    
+                    // Fetch user data from Users node
+                    usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
+                        if (userSnapshot.exists()) {
+                            val username = userSnapshot.child("fullName").getValue(String::class.java) 
+                                ?: userSnapshot.child("username").getValue(String::class.java) 
+                                ?: "User"
+                            val profilePictureUrl = userSnapshot.child("profilePicture").getValue(String::class.java) 
+                                ?: userSnapshot.child("profilePic").getValue(String::class.java)
+                                ?: ""
+                            
+                            Log.d(TAG, "User data: $username - ${listings.size} items")
+                            
+                            if (listings.isNotEmpty()) {
+                                val sliderItem = SliderItemModel(
+                                    userId = userId,
+                                    username = username,
+                                    profilePictureUrl = profilePictureUrl,
+                                    listings = listings,
+                                    totalListings = userListings.size,
+                                    lastUpdated = lastUpdated
+                                )
+                                
+                                sliderItems.add(sliderItem)
+                                
+                                val sortedItems = sliderItems
+                                    .sortedByDescending { it.lastUpdated }
+                                    .take(MAX_USERS_IN_SLIDER)
+                                
+                                trySend(sortedItems)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error creating slider for user $userId: ${e.message}", e)
+                }
+            }
+        }
+        
+        // Listener for Products (sale items)
+        val productsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                Log.d(TAG, "Firebase data changed. Total listings: ${snapshot.childrenCount}")
+                Log.d(TAG, "Products data changed: ${snapshot.childrenCount} items")
                 
-                // Step 1: Parse all listings from Firebase
-                val allListings = mutableListOf<Triple<String, String, ListingItem>>()
-                // Triple = (userId, username, ListingItem)
+                // Remove old products and add new ones
+                allListings.removeAll { it.third.listingId.startsWith("product_") }
                 
                 for (child in snapshot.children) {
                     try {
                         val listingId = child.key ?: ""
-                        // Map ProductModel fields to our expected fields
                         val userId = child.child("sellerId").getValue(String::class.java) ?: ""
-                        val username = child.child("sellerName").getValue(String::class.java) ?: ""
                         val imageUrl = child.child("imageUrl").getValue(String::class.java) ?: ""
                         val itemName = child.child("title").getValue(String::class.java) ?: ""
-                        val priceDouble = child.child("price").getValue(Double::class.java) ?: 0.0
-                        val price = "₹${priceDouble.toInt()}"  // Format price
+                        val listingTypeStr = child.child("listingType").getValue(String::class.java) ?: "THRIFT"
+                        
+                        // Get appropriate price based on listing type
+                        val price = if (listingTypeStr == "RENT") {
+                            val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) ?: 0.0
+                            "₹${rentPriceDouble.toInt()}/day"
+                        } else {
+                            val priceDouble = child.child("price").getValue(Double::class.java) ?: 0.0
+                            "₹${priceDouble.toInt()}"
+                        }
+                        
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
                         val status = child.child("status").getValue(String::class.java) ?: "Available"
                         
-                        Log.d(TAG, "Processing listing: id=$listingId, user=$username, userId=$userId, status=$status")
+                        Log.d(TAG, "Product: id=$listingId, userId=$userId, type=$listingTypeStr, status=$status")
                         
-                        // Only include available listings with valid data
                         if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
                             val listing = ListingItem(
-                                listingId = listingId,
+                                listingId = "product_$listingId",
                                 imageUrl = imageUrl,
                                 itemName = itemName,
                                 price = price,
                                 timestamp = timestamp
                             )
-                            allListings.add(Triple(userId, username, listing))
-                            Log.d(TAG, "✓ Added listing from user: $username ($userId)")
-                        } else {
-                            Log.w(TAG, "✗ Skipped listing: missing data or unavailable (status=$status)")
+                            allListings.add(Triple(userId, "", listing))
+                            Log.d(TAG, "✓ Added ${listingTypeStr} item for user: $userId")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error parsing listing: ${e.message}", e)
+                        Log.e(TAG, "Error parsing product: ${e.message}", e)
                     }
                 }
                 
-                // Step 2: Group listings by userId
-                val listingsByUser = allListings.groupBy { it.first }
-                Log.d(TAG, "Grouped listings into ${listingsByUser.size} users")
-                
-                // Step 3: Create SliderItemModel for each user with proper user data from Users node
-                val sliderItems = mutableListOf<SliderItemModel>()
-                
-                for ((userId, userListings) in listingsByUser) {
-                    try {
-                        // Get listings (sorted by timestamp, take latest 3)
-                        val listings = userListings
-                            .map { it.third }
-                            .sortedByDescending { it.timestamp }
-                            .take(MAX_LISTINGS_PER_USER)
-                        
-                        // Get latest timestamp for sorting users
-                        val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
-                        
-                        // Fetch user data from Users node synchronously
-                        usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
-                            if (userSnapshot.exists()) {
-                                val username = userSnapshot.child("fullName").getValue(String::class.java) 
-                                    ?: userSnapshot.child("username").getValue(String::class.java) 
-                                    ?: "User"
-                                val profilePictureUrl = userSnapshot.child("profilePicture").getValue(String::class.java) 
-                                    ?: userSnapshot.child("profilePic").getValue(String::class.java)
-                                    ?: ""
-                                
-                                Log.d(TAG, "Fetched user data: username=$username, profile=${profilePictureUrl.take(50)}")
-                                
-                                // Create slider item with proper user data
-                                if (listings.isNotEmpty()) {
-                                    val sliderItem = SliderItemModel(
-                                        userId = userId,
-                                        username = username,
-                                        profilePictureUrl = profilePictureUrl,
-                                        listings = listings,
-                                        totalListings = userListings.size,
-                                        lastUpdated = lastUpdated
-                                    )
-                                    
-                                    // Add to list and re-emit sorted items
-                                    sliderItems.add(sliderItem)
-                                    
-                                    // Sort and emit immediately so UI updates as each user loads
-                                    val sortedItems = sliderItems
-                                        .sortedByDescending { it.lastUpdated }
-                                        .take(MAX_USERS_IN_SLIDER)
-                                    
-                                    trySend(sortedItems)
-                                }
-                            } else {
-                                Log.w(TAG, "User $userId not found in Users node")
-                            }
-                        }.addOnFailureListener { e ->
-                            Log.e(TAG, "Error fetching user $userId: ${e.message}", e)
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error creating slider for user $userId: ${e.message}", e)
-                    }
-                }
+                productsLoaded = true
+                processAndEmitItems()
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Firebase listener cancelled: ${error.message}")
-                close(error.toException())
+                Log.e(TAG, "Products listener cancelled: ${error.message}")
             }
         }
         
-        // Attach the real-time listener
-        listingsRef.addValueEventListener(listener)
-        Log.d(TAG, "Firebase listener attached for real-time updates")
+        // Listener for Rent items  
+        val rentListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d(TAG, "Rent data changed: ${snapshot.childrenCount} items")
+                
+                // Remove old rent items and add new ones
+                allListings.removeAll { it.third.listingId.startsWith("rent_") }
+                
+                for (child in snapshot.children) {
+                    try {
+                        val listingId = child.key ?: ""
+                        // Try multiple field names for userId
+                        val userId = child.child("sellerId").getValue(String::class.java) 
+                            ?: child.child("ownerId").getValue(String::class.java)
+                            ?: child.child("userId").getValue(String::class.java) ?: ""
+                        val imageUrl = child.child("imageUrl").getValue(String::class.java) ?: ""
+                        val itemName = child.child("title").getValue(String::class.java) ?: ""
+                        // Try multiple field names for rent price
+                        val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) 
+                            ?: child.child("rentPrice").getValue(Double::class.java) 
+                            ?: child.child("price").getValue(Double::class.java) ?: 0.0
+                        val price = "₹${rentPriceDouble.toInt()}/day"
+                        val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
+                        val status = child.child("status").getValue(String::class.java) ?: "Available"
+                        val listingType = child.child("listingType").getValue(String::class.java) ?: ""
+                        
+                        Log.d(TAG, "Rent item: id=$listingId, userId=$userId, status=$status, listingType=$listingType")
+                        
+                        if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
+                            val listing = ListingItem(
+                                listingId = "rent_$listingId",
+                                imageUrl = imageUrl,
+                                itemName = itemName,
+                                price = price,
+                                timestamp = timestamp
+                            )
+                            allListings.add(Triple(userId, "", listing))
+                            Log.d(TAG, "✓ Added rent item for user: $userId")
+                        } else {
+                            Log.w(TAG, "✗ Skipped rent item: id=$listingId, userId=$userId, imageUrl=${imageUrl.take(20)}, status=$status")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing rent item: ${e.message}", e)
+                    }
+                }
+                
+                rentLoaded = true
+                processAndEmitItems()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Rent listener cancelled: ${error.message}")
+            }
+        }
         
-        // Clean up listener when Flow is cancelled
+        // Attach both listeners
+        productsRef.addValueEventListener(productsListener)
+        rentRef.addValueEventListener(rentListener)
+        Log.d(TAG, "Firebase listeners attached for Products and Rent")
+        
+        // Clean up listeners when Flow is cancelled
         awaitClose {
-            Log.d(TAG, "Removing Firebase listener")
-            listingsRef.removeEventListener(listener)
+            Log.d(TAG, "Removing Firebase listeners")
+            productsRef.removeEventListener(productsListener)
+            rentRef.removeEventListener(rentListener)
         }
     }
 }
