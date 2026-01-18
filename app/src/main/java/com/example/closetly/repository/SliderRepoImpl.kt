@@ -89,14 +89,11 @@ class SliderRepoImpl : SliderRepo {
                 val listingsByUser = allListings.groupBy { it.first }
                 Log.d(TAG, "Grouped listings into ${listingsByUser.size} users")
                 
-                // Step 3: Create SliderItemModel for each user
+                // Step 3: Create SliderItemModel for each user with proper user data from Users node
                 val sliderItems = mutableListOf<SliderItemModel>()
                 
                 for ((userId, userListings) in listingsByUser) {
                     try {
-                        // Get username (same for all listings of this user)
-                        val username = userListings.firstOrNull()?.second ?: ""
-                        
                         // Get listings (sorted by timestamp, take latest 3)
                         val listings = userListings
                             .map { it.third }
@@ -106,44 +103,49 @@ class SliderRepoImpl : SliderRepo {
                         // Get latest timestamp for sorting users
                         val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
                         
-                        // Get profile picture from ProductModel (already has sellerProfilePic field)
-                        var profilePictureUrl = ""
-                        
-                        // Try to get profile pic from the first listing's sellerProfilePic field
-                        snapshot.children.find { 
-                            it.child("sellerId").getValue(String::class.java) == userId 
-                        }?.let { listingSnapshot ->
-                            profilePictureUrl = listingSnapshot.child("sellerProfilePic")
-                                .getValue(String::class.java) ?: ""
-                        }
-                        
-                        // Create slider item
-                        if (listings.isNotEmpty()) {
-                            sliderItems.add(
-                                SliderItemModel(
-                                    userId = userId,
-                                    username = username,
-                                    profilePictureUrl = profilePictureUrl,
-                                    listings = listings,
-                                    totalListings = userListings.size,
-                                    lastUpdated = lastUpdated
-                                )
-                            )
+                        // Fetch user data from Users node synchronously
+                        usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
+                            if (userSnapshot.exists()) {
+                                val username = userSnapshot.child("fullName").getValue(String::class.java) 
+                                    ?: userSnapshot.child("username").getValue(String::class.java) 
+                                    ?: "User"
+                                val profilePictureUrl = userSnapshot.child("profilePicture").getValue(String::class.java) 
+                                    ?: userSnapshot.child("profilePic").getValue(String::class.java)
+                                    ?: ""
+                                
+                                Log.d(TAG, "Fetched user data: username=$username, profile=${profilePictureUrl.take(50)}")
+                                
+                                // Create slider item with proper user data
+                                if (listings.isNotEmpty()) {
+                                    val sliderItem = SliderItemModel(
+                                        userId = userId,
+                                        username = username,
+                                        profilePictureUrl = profilePictureUrl,
+                                        listings = listings,
+                                        totalListings = userListings.size,
+                                        lastUpdated = lastUpdated
+                                    )
+                                    
+                                    // Add to list and re-emit sorted items
+                                    sliderItems.add(sliderItem)
+                                    
+                                    // Sort and emit immediately so UI updates as each user loads
+                                    val sortedItems = sliderItems
+                                        .sortedByDescending { it.lastUpdated }
+                                        .take(MAX_USERS_IN_SLIDER)
+                                    
+                                    trySend(sortedItems)
+                                }
+                            } else {
+                                Log.w(TAG, "User $userId not found in Users node")
+                            }
+                        }.addOnFailureListener { e ->
+                            Log.e(TAG, "Error fetching user $userId: ${e.message}", e)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error creating slider for user $userId: ${e.message}", e)
                     }
                 }
-                
-                // Step 4: Sort by latest activity and limit
-                val sortedItems = sliderItems
-                    .sortedByDescending { it.lastUpdated }
-                    .take(MAX_USERS_IN_SLIDER)
-                
-                Log.d(TAG, "Emitting ${sortedItems.size} slider items (grouped by user)")
-                
-                // Emit the data - this will trigger UI update
-                trySend(sortedItems)
             }
 
             override fun onCancelled(error: DatabaseError) {

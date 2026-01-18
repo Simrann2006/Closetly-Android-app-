@@ -40,20 +40,58 @@ class HomePostRepoImpl : HomePostRepo {
                 // Clear and reload posts
                 allPosts.removeAll { it.postType == "post" }
                 
+                val postsToProcess = mutableListOf<PostModel>()
                 snapshot.children.forEach { postSnapshot ->
                     try {
                         postSnapshot.getValue(PostModel::class.java)?.let { post ->
-                            // Ensure it's marked as a post
-                            val postWithType = post.copy(postType = "post")
-                            allPosts.add(postWithType)
+                            postsToProcess.add(post.copy(postType = "post"))
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing post: ${e.message}", e)
                     }
                 }
                 
+                // Fetch user data for each post
+                postsToProcess.forEach { post ->
+                    if (post.userId.isNotEmpty()) {
+                        usersRef.child(post.userId).get().addOnSuccessListener { userSnapshot ->
+                            if (userSnapshot.exists()) {
+                                val username = userSnapshot.child("fullName").getValue(String::class.java)
+                                    ?: userSnapshot.child("username").getValue(String::class.java)
+                                    ?: post.username
+                                val profilePic = userSnapshot.child("profilePicture").getValue(String::class.java)
+                                    ?: userSnapshot.child("profilePic").getValue(String::class.java)
+                                    ?: post.userProfilePic
+                                
+                                val updatedPost = post.copy(
+                                    username = username,
+                                    userProfilePic = profilePic,
+                                    profilePicture = profilePic
+                                )
+                                
+                                // Remove old version and add updated
+                                allPosts.removeAll { it.postId == post.postId && it.postType == "post" }
+                                allPosts.add(updatedPost)
+                                emitCombinedData()
+                            } else {
+                                // User not found, use existing data
+                                allPosts.add(post)
+                                emitCombinedData()
+                            }
+                        }.addOnFailureListener {
+                            // Failed to fetch user, use existing data
+                            allPosts.add(post)
+                            emitCombinedData()
+                        }
+                    } else {
+                        allPosts.add(post)
+                    }
+                }
+                
                 postsLoaded = true
-                emitCombinedData()
+                if (postsToProcess.isEmpty()) {
+                    emitCombinedData()
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -69,6 +107,7 @@ class HomePostRepoImpl : HomePostRepo {
                 // Clear and reload products
                 allPosts.removeAll { it.postType == "product" }
                 
+                val productsToProcess = mutableListOf<PostModel>()
                 snapshot.children.forEach { productSnapshot ->
                     try {
                         val productId = productSnapshot.key ?: ""
@@ -77,8 +116,6 @@ class HomePostRepoImpl : HomePostRepo {
                         val imageUrl = productSnapshot.child("imageUrl").getValue(String::class.java) ?: ""
                         val price = productSnapshot.child("price").getValue(Double::class.java) ?: 0.0
                         val sellerId = productSnapshot.child("sellerId").getValue(String::class.java) ?: ""
-                        val sellerName = productSnapshot.child("sellerName").getValue(String::class.java) ?: ""
-                        val sellerProfilePic = productSnapshot.child("sellerProfilePic").getValue(String::class.java) ?: ""
                         val timestamp = productSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
                         val status = productSnapshot.child("status").getValue(String::class.java) ?: "Available"
                         
@@ -90,9 +127,9 @@ class HomePostRepoImpl : HomePostRepo {
                                 title = title,
                                 imageUrl = imageUrl,
                                 userId = sellerId,
-                                username = sellerName,
-                                userProfilePic = sellerProfilePic,
-                                profilePicture = sellerProfilePic,
+                                username = "",  // Will be filled from Users node
+                                userProfilePic = "",  // Will be filled from Users node
+                                profilePicture = "",
                                 price = price,
                                 priceText = "₹${price.toInt()}",
                                 timestamp = timestamp,
@@ -101,15 +138,50 @@ class HomePostRepoImpl : HomePostRepo {
                                 likesCount = 0,
                                 commentsCount = 0
                             )
-                            allPosts.add(productAsPost)
+                            productsToProcess.add(productAsPost)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing product: ${e.message}", e)
                     }
                 }
                 
+                // Fetch user data for each product
+                productsToProcess.forEach { product ->
+                    usersRef.child(product.userId).get().addOnSuccessListener { userSnapshot ->
+                        if (userSnapshot.exists()) {
+                            val username = userSnapshot.child("fullName").getValue(String::class.java)
+                                ?: userSnapshot.child("username").getValue(String::class.java)
+                                ?: "User"
+                            val profilePic = userSnapshot.child("profilePicture").getValue(String::class.java)
+                                ?: userSnapshot.child("profilePic").getValue(String::class.java)
+                                ?: ""
+                            
+                            val updatedProduct = product.copy(
+                                username = username,
+                                userProfilePic = profilePic,
+                                profilePicture = profilePic
+                            )
+                            
+                            // Remove old version and add updated
+                            allPosts.removeAll { it.postId == product.postId && it.postType == "product" }
+                            allPosts.add(updatedProduct)
+                            emitCombinedData()
+                        } else {
+                            // User not found, use product data
+                            allPosts.add(product)
+                            emitCombinedData()
+                        }
+                    }.addOnFailureListener {
+                        // Failed to fetch user, use product data
+                        allPosts.add(product)
+                        emitCombinedData()
+                    }
+                }
+                
                 productsLoaded = true
-                emitCombinedData()
+                if (productsToProcess.isEmpty()) {
+                    emitCombinedData()
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
