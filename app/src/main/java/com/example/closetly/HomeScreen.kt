@@ -116,22 +116,6 @@ fun HomeScreen(
                 ) {
                     CircularProgressIndicator()
                 }
-            } else if (sliderItems.isEmpty()) {
-                // Empty state - no slider data from Firebase
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "No featured posts yet",
-                        style = TextStyle(
-                            fontSize = 16.sp,
-                            color = Color.Gray
-                        )
-                    )
-                }
             } else {
                 // Real-time slider from Firebase
                 Box(
@@ -243,72 +227,96 @@ fun SliderItemCard(
     onItemClick: () -> Unit,
     onUsernameClick: () -> Unit
 ) {
+    // Detect placeholder for empty state
+    val isPlaceholder = sliderItem.userId == "PLACEHOLDER_EMPTY"
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(400.dp)
-            .clickable { onItemClick() }  // Navigate to user profile
+            .clickable(enabled = !isPlaceholder) { onItemClick() }  // Disable click for placeholder
     ) {
-        // Background image = USER'S PROFILE PICTURE
-        AsyncImage(
-            model = sliderItem.profilePictureUrl,
-            contentDescription = "${sliderItem.username}'s profile",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp)
-                .clip(MaterialTheme.shapes.medium),
-            contentScale = ContentScale.Crop
-        )
-
-        // Overlay content
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))  // Slight overlay for text visibility
-        ) {
-            // Username overlay at top-left
-            Column(
+        if (isPlaceholder) {
+            // Empty state: show message centered
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .clickable { onUsernameClick() }
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.LightGray.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = sliderItem.username,
+                    text = "No featured posts yet",
                     style = TextStyle(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                )
-                
-                Text(
-                    text = "${sliderItem.totalListings} listings",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.White.copy(alpha = 0.9f)
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     ),
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = Color.Gray
                 )
             }
-            
-            // LISTING CARDS at bottom (small boxes with listing image, name, price)
-            if (sliderItem.listings.isNotEmpty()) {
-                Row(
+        } else {
+            // Normal slide: show user profile background with listings
+            // Background image = USER'S PROFILE PICTURE
+            AsyncImage(
+                model = sliderItem.profilePictureUrl,
+                contentDescription = "${sliderItem.username}'s profile",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .clip(MaterialTheme.shapes.medium),
+                contentScale = ContentScale.Crop
+            )
+
+            // Overlay content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))  // Slight overlay for text visibility
+            ) {
+                // Username overlay at top-left
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .clickable { onUsernameClick() }
                 ) {
-                    // Show up to 3 listing cards
-                    sliderItem.listings.take(3).forEach { listing ->
-                        ListingCard(
-                            imageUrl = listing.imageUrl,
-                            itemName = listing.itemName,
-                            price = listing.price
+                    Text(
+                        text = sliderItem.username,
+                        style = TextStyle(
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
+                    )
+                    
+                    Text(
+                        text = "${sliderItem.totalListings} listings",
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.White.copy(alpha = 0.9f)
+                        ),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                
+                // LISTING CARDS at bottom (small boxes with listing image, name, price)
+                if (sliderItem.listings.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Show up to 3 listing cards
+                        sliderItem.listings.take(3).forEach { listing ->
+                            ListingCard(
+                                imageUrl = listing.imageUrl,
+                                itemName = listing.itemName,
+                                price = listing.price
+                            )
+                        }
                     }
                 }
             }
@@ -458,6 +466,7 @@ fun PostCard(
                 Spacer(modifier = Modifier.width(20.dp))
             }
 
+            // Post Image
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -468,67 +477,82 @@ fun PostCard(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
 
+            // Action buttons row (Like, Comment, Save) - Instagram style
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Left side: Like and Comment
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Like button with count
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         IconButton(
                             onClick = onLikeClick,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 imageVector = if (postUI.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                 contentDescription = "Like",
                                 tint = if (postUI.isLiked) Color.Red else Color.Black,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
-                        Text(
-                            "${postUI.likesCount}",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Normal
+                        if (postUI.likesCount > 0) {
+                            Text(
+                                "${postUI.likesCount}",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Black
+                                )
                             )
-                        )
+                        }
                     }
 
+                    // Comment button with count
                     Row(
                         modifier = Modifier.clickable { onCommentClick() },
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.chat),
-                            contentDescription = "Comment",
-                            modifier = Modifier.size(26.dp)
-                        )
-                        Text(
-                            "${postUI.commentsCount}",
-                            style = TextStyle(
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Normal
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.chat),
+                                contentDescription = "Comment",
+                                tint = Color.Black,
+                                modifier = Modifier.size(26.dp)
                             )
-                        )
+                        }
+                        if (postUI.commentsCount > 0) {
+                            Text(
+                                "${postUI.commentsCount}",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.Black
+                                )
+                            )
+                        }
                     }
                 }
 
+                // Right side: Save button
                 IconButton(
                     onClick = onSaveClick,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = if (postUI.isSaved)
@@ -537,35 +561,74 @@ fun PostCard(
                             Icons.Default.BookmarkBorder,
                         contentDescription = "Save",
                         tint = Color.Black,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
 
-            Row(
+            // Caption and content section
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Text(
-                    postUI.post.caption,
-                    style = TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Normal,
+                // Show title for products
+                if (postUI.post.postType == "product" && postUI.post.title.isNotEmpty()) {
+                    Text(
+                        postUI.post.title,
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        ),
+                        modifier = Modifier.padding(bottom = 6.dp)
                     )
-                )
-            }
+                }
+                
+                // Show caption/description with username
+                if (postUI.post.resolveCaption().isNotEmpty()) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            postUI.post.username,
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        )
+                        Text(
+                            " ${postUI.post.resolveCaption()}",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.Black
+                            )
+                        )
+                    }
+                }
+                
+                // Show price for products
+                if (postUI.post.postType == "product" && postUI.post.price > 0.0) {
+                    Text(
+                        postUI.post.formatPrice(),
+                        style = TextStyle(
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(R.color.purple_200)
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
 
-            Row(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
-            ) {
+                // Timestamp - subtle and clean
                 Text(
                     getTimeAgo(postUI.post.timestamp),
                     style = TextStyle(
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
                         color = Color.Gray
-                    )
+                    ),
+                    modifier = Modifier.padding(top = 6.dp, bottom = 4.dp)
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.example.closetly.repository
 
+import android.util.Log
 import com.example.closetly.model.PostModel
 import com.google.firebase.database.*
 import kotlinx.coroutines.channels.awaitClose
@@ -11,30 +12,122 @@ class HomePostRepoImpl : HomePostRepo {
     
     private val database = FirebaseDatabase.getInstance()
     private val postsRef = database.getReference("Posts")
+    private val productsRef = database.getReference("Products")
     private val usersRef = database.getReference("Users")
     
+    companion object {
+        private const val TAG = "HomePostRepoImpl"
+    }
+
     override fun getAllPostsRealTime(): Flow<List<PostModel>> = callbackFlow {
-        val listener = object : ValueEventListener {
+        val allPosts = mutableListOf<PostModel>()
+        var postsLoaded = false
+        var productsLoaded = false
+        
+        fun emitCombinedData() {
+            if (postsLoaded && productsLoaded) {
+                // Sort by timestamp (newest first)
+                val sorted = allPosts.sortedByDescending { it.resolveTimestamp() }
+                Log.d(TAG, "Emitting ${sorted.size} total items (posts + products)")
+                trySend(sorted)
+            }
+        }
+        
+        val postsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val posts = mutableListOf<PostModel>()
+                Log.d(TAG, "Posts data changed: ${snapshot.childrenCount} posts")
+                
+                // Clear and reload posts
+                allPosts.removeAll { it.postType == "post" }
+                
                 snapshot.children.forEach { postSnapshot ->
-                    postSnapshot.getValue(PostModel::class.java)?.let { post ->
-                        posts.add(post)
+                    try {
+                        postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                            // Ensure it's marked as a post
+                            val postWithType = post.copy(postType = "post")
+                            allPosts.add(postWithType)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing post: ${e.message}", e)
                     }
                 }
-                // Sort by timestamp descending (newest first)
-                trySend(posts.sortedByDescending { it.timestamp })
+                
+                postsLoaded = true
+                emitCombinedData()
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Posts listener cancelled: ${error.message}")
                 close(error.toException())
             }
         }
         
-        postsRef.addValueEventListener(listener)
+        val productsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d(TAG, "Products data changed: ${snapshot.childrenCount} products")
+                
+                // Clear and reload products
+                allPosts.removeAll { it.postType == "product" }
+                
+                snapshot.children.forEach { productSnapshot ->
+                    try {
+                        val productId = productSnapshot.key ?: ""
+                        val title = productSnapshot.child("title").getValue(String::class.java) ?: ""
+                        val description = productSnapshot.child("description").getValue(String::class.java) ?: ""
+                        val imageUrl = productSnapshot.child("imageUrl").getValue(String::class.java) ?: ""
+                        val price = productSnapshot.child("price").getValue(Double::class.java) ?: 0.0
+                        val sellerId = productSnapshot.child("sellerId").getValue(String::class.java) ?: ""
+                        val sellerName = productSnapshot.child("sellerName").getValue(String::class.java) ?: ""
+                        val sellerProfilePic = productSnapshot.child("sellerProfilePic").getValue(String::class.java) ?: ""
+                        val timestamp = productSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                        val status = productSnapshot.child("status").getValue(String::class.java) ?: "Available"
+                        
+                        if (status == "Available" && productId.isNotEmpty() && sellerId.isNotEmpty()) {
+                            val productAsPost = PostModel(
+                                postId = productId,
+                                caption = description,
+                                text = description,
+                                title = title,
+                                imageUrl = imageUrl,
+                                userId = sellerId,
+                                username = sellerName,
+                                userProfilePic = sellerProfilePic,
+                                profilePicture = sellerProfilePic,
+                                price = price,
+                                priceText = "₹${price.toInt()}",
+                                timestamp = timestamp,
+                                postTimestamp = timestamp,
+                                postType = "product",
+                                likesCount = 0,
+                                commentsCount = 0
+                            )
+                            allPosts.add(productAsPost)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing product: ${e.message}", e)
+                    }
+                }
+                
+                productsLoaded = true
+                emitCombinedData()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Products listener cancelled: ${error.message}")
+                close(error.toException())
+            }
+        }
+        
+        // Attach both listeners
+        postsRef.addValueEventListener(postsListener)
+        productsRef.addValueEventListener(productsListener)
+        
+        Log.d(TAG, "Firebase real-time listeners attached for Posts and Products")
         
         awaitClose {
-            postsRef.removeEventListener(listener)
+            Log.d(TAG, "Removing Firebase listeners")
+            postsRef.removeEventListener(postsListener)
+            productsRef.removeEventListener(productsListener)
         }
     }
     

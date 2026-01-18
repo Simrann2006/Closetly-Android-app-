@@ -21,8 +21,8 @@ import kotlinx.coroutines.flow.callbackFlow
 class SliderRepoImpl : SliderRepo {
     
     private val database = FirebaseDatabase.getInstance()
-    private val listingsRef = database.getReference("posts")  // or "listings" if you have separate node
-    private val usersRef = database.getReference("users")
+    private val listingsRef = database.getReference("Products")  // Read from Products node where listings are stored
+    private val usersRef = database.getReference("Users")
     
     companion object {
         private const val TAG = "SliderRepoImpl"
@@ -54,16 +54,20 @@ class SliderRepoImpl : SliderRepo {
                 for (child in snapshot.children) {
                     try {
                         val listingId = child.key ?: ""
-                        val userId = child.child("userId").getValue(String::class.java) ?: ""
-                        val username = child.child("username").getValue(String::class.java) ?: ""
+                        // Map ProductModel fields to our expected fields
+                        val userId = child.child("sellerId").getValue(String::class.java) ?: ""
+                        val username = child.child("sellerName").getValue(String::class.java) ?: ""
                         val imageUrl = child.child("imageUrl").getValue(String::class.java) ?: ""
-                        val itemName = child.child("itemName").getValue(String::class.java) ?: ""
-                        val price = child.child("price").getValue(String::class.java) ?: ""
+                        val itemName = child.child("title").getValue(String::class.java) ?: ""
+                        val priceDouble = child.child("price").getValue(Double::class.java) ?: 0.0
+                        val price = "₹${priceDouble.toInt()}"  // Format price
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
-                        val isActive = child.child("isActive").getValue(Boolean::class.java) ?: true
+                        val status = child.child("status").getValue(String::class.java) ?: "Available"
                         
-                        // Only include active listings with valid data
-                        if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && isActive) {
+                        Log.d(TAG, "Processing listing: id=$listingId, user=$username, userId=$userId, status=$status")
+                        
+                        // Only include available listings with valid data
+                        if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
                             val listing = ListingItem(
                                 listingId = listingId,
                                 imageUrl = imageUrl,
@@ -72,6 +76,9 @@ class SliderRepoImpl : SliderRepo {
                                 timestamp = timestamp
                             )
                             allListings.add(Triple(userId, username, listing))
+                            Log.d(TAG, "✓ Added listing from user: $username ($userId)")
+                        } else {
+                            Log.w(TAG, "✗ Skipped listing: missing data or unavailable (status=$status)")
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing listing: ${e.message}", e)
@@ -99,25 +106,15 @@ class SliderRepoImpl : SliderRepo {
                         // Get latest timestamp for sorting users
                         val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
                         
-                        // Fetch user's profile picture (from users collection or from listing data)
-                        // For now, we'll use a placeholder - you can fetch from users node
+                        // Get profile picture from ProductModel (already has sellerProfilePic field)
                         var profilePictureUrl = ""
                         
-                        // Try to get profile pic from users collection
-                        usersRef.child(userId).child("profilePicture")
-                            .get()
-                            .addOnSuccessListener { profileSnapshot ->
-                                profilePictureUrl = profileSnapshot.getValue(String::class.java) ?: ""
-                            }
-                        
-                        // If not found, try to get from first listing's profilePictureUrl field
-                        if (profilePictureUrl.isEmpty()) {
-                            snapshot.children.find { 
-                                it.child("userId").getValue(String::class.java) == userId 
-                            }?.let { listingSnapshot ->
-                                profilePictureUrl = listingSnapshot.child("profilePictureUrl")
-                                    .getValue(String::class.java) ?: ""
-                            }
+                        // Try to get profile pic from the first listing's sellerProfilePic field
+                        snapshot.children.find { 
+                            it.child("sellerId").getValue(String::class.java) == userId 
+                        }?.let { listingSnapshot ->
+                            profilePictureUrl = listingSnapshot.child("sellerProfilePic")
+                                .getValue(String::class.java) ?: ""
                         }
                         
                         // Create slider item

@@ -47,6 +47,7 @@ class SliderViewModel(
     /**
      * Loads slider items from Firebase in real-time.
      * Uses Flow to automatically receive updates when data changes.
+     * Injects a placeholder item when data is empty so slider always renders.
      */
     private fun loadSliderItems() {
         viewModelScope.launch {
@@ -61,12 +62,25 @@ class SliderViewModel(
                 }
                 .collectLatest { items ->
                     Log.d(TAG, "Received ${items.size} slider items from repository")
-                    _sliderItems.value = items
-                    _isLoading.value = false
                     
-                    if (items.isEmpty()) {
-                        Log.w(TAG, "No slider items available")
+                    // Inject placeholder when empty so slider always has at least 1 item
+                    _sliderItems.value = if (items.isEmpty()) {
+                        Log.w(TAG, "No slider items available - injecting placeholder")
+                        listOf(
+                            SliderItemModel(
+                                userId = "PLACEHOLDER_EMPTY",
+                                username = "",
+                                profilePictureUrl = "",
+                                listings = emptyList(),
+                                totalListings = 0,
+                                lastUpdated = 0L
+                            )
+                        )
+                    } else {
+                        items
                     }
+                    
+                    _isLoading.value = false
                 }
         }
     }
