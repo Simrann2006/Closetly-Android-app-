@@ -100,6 +100,7 @@ fun CommentScreen(
     val comments by viewModel.comments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()
+    val currentUserProfile by viewModel.currentUserProfile.collectAsState()
     val listState = rememberLazyListState()
     
     var selectedCommentForDelete by remember { mutableStateOf<CommentModel?>(null) }
@@ -179,6 +180,7 @@ fun CommentScreen(
         bottomBar = {
             CommentInputSection(
                 commentText = commentText,
+                currentUserProfileImage = currentUserProfile.second,
                 onCommentChange = { viewModel.updateCommentText(it) },
                 onSendClick = {
                     viewModel.postComment(postId = postId)
@@ -367,6 +369,7 @@ fun CommentItem(
 @Composable
 fun CommentInputSection(
     commentText: String,
+    currentUserProfileImage: String,
     onCommentChange: (String) -> Unit,
     onSendClick: () -> Unit
 ) {
@@ -385,7 +388,7 @@ fun CommentInputSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             AsyncImage(
-                model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200",
+                model = currentUserProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
