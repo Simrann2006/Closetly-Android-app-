@@ -531,7 +531,7 @@ fun PostCard(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.chat),
+                                painter = painterResource(R.drawable.comment),
                                 contentDescription = "Comment",
                                 tint = Color.Black,
                                 modifier = Modifier.size(24.dp)

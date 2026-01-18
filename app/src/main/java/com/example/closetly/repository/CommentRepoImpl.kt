@@ -20,10 +20,40 @@ class CommentRepoImpl : CommentRepo {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val commentsList = mutableListOf<CommentModel>()
                 snapshot.children.forEach { commentSnapshot ->
-                    commentSnapshot.getValue(CommentModel::class.java)?.let { comment ->
-                        if (comment.postId == postId) {
+                    try {
+                        val id = commentSnapshot.child("id").getValue(String::class.java) ?: ""
+                        val commentPostId = commentSnapshot.child("postId").getValue(String::class.java) ?: ""
+                        val userId = commentSnapshot.child("userId").getValue(String::class.java) ?: ""
+                        val userName = commentSnapshot.child("userName").getValue(String::class.java) ?: ""
+                        val userProfileImage = commentSnapshot.child("userProfileImage").getValue(String::class.java) ?: ""
+                        val commentText = commentSnapshot.child("commentText").getValue(String::class.java) ?: ""
+                        val timestamp = commentSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
+                        
+                        // Parse likes map
+                        val likes = mutableMapOf<String, Boolean>()
+                        commentSnapshot.child("likes").children.forEach { likeSnapshot ->
+                            likeSnapshot.key?.let { likeUserId ->
+                                if (likeSnapshot.getValue(Boolean::class.java) == true) {
+                                    likes[likeUserId] = true
+                                }
+                            }
+                        }
+                        
+                        if (commentPostId == postId) {
+                            val comment = CommentModel(
+                                id = id,
+                                postId = commentPostId,
+                                userId = userId,
+                                userName = userName,
+                                userProfileImage = userProfileImage,
+                                commentText = commentText,
+                                timestamp = timestamp,
+                                likes = likes
+                            )
                             commentsList.add(comment)
                         }
+                    } catch (e: Exception) {
+                        // Skip invalid comment
                     }
                 }
                 trySend(commentsList.sortedByDescending { it.timestamp })
@@ -50,19 +80,19 @@ class CommentRepoImpl : CommentRepo {
         }
     }
 
-    override suspend fun likeComment(commentId: String): Result<Boolean> {
+    override suspend fun likeComment(commentId: String, userId: String): Result<Boolean> {
         return try {
-            val commentRef = commentsRef.child(commentId)
-            val snapshot = commentRef.get().await()
-            val comment = snapshot.getValue(CommentModel::class.java)
+            val likesRef = commentsRef.child(commentId).child("likes").child(userId)
+            val snapshot = likesRef.get().await()
             
-            comment?.let {
-                val updatedComment = it.copy(
-                    isLiked = !it.isLiked,
-                    likesCount = if (it.isLiked) it.likesCount - 1 else it.likesCount + 1
-                )
-                commentRef.setValue(updatedComment).await()
+            if (snapshot.exists()) {
+                // Unlike: remove user from likes
+                likesRef.removeValue().await()
+            } else {
+                // Like: add user to likes
+                likesRef.setValue(true).await()
             }
+            
             Result.success(true)
         } catch (e: Exception) {
             Result.failure(e)

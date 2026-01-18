@@ -232,6 +232,7 @@ fun CommentScreen(
                     ) { comment ->
                         CommentItem(
                             comment = comment,
+                            currentUserId = viewModel.getCurrentUserId(),
                             isCurrentUser = viewModel.isCurrentUserComment(comment.userId),
                             onCommentLongPress = {
                                 if (viewModel.isCurrentUserComment(comment.userId)) {
@@ -252,10 +253,13 @@ fun CommentScreen(
 @Composable
 fun CommentItem(
     comment: CommentModel,
+    currentUserId: String,
     isCurrentUser: Boolean,
     onCommentLongPress: () -> Unit,
     onLikeClick: () -> Unit
 ) {
+    val isLiked = comment.isLikedBy(currentUserId)
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,9 +355,9 @@ fun CommentItem(
             modifier = Modifier.size(32.dp)
         ) {
             Icon(
-                imageVector = if (comment.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                 contentDescription = "Like",
-                tint = if (comment.isLiked) Color.Red else Color.Gray,
+                tint = if (isLiked) Color.Red else Color.Gray,
                 modifier = Modifier.size(18.dp)
             )
         }
