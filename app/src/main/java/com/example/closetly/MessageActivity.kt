@@ -72,7 +72,7 @@ fun MessageBody() {
         chatViewModel.getUserChats(currentUserId) { success, _, chats ->
             isLoading = false
             if (success) {
-                chatList = chats
+                chatList = chats.filter { it.first.lastMessage.isNotEmpty() }
             }
         }
     }
@@ -404,21 +404,26 @@ fun NewChatDialog(
     onChatCreated: (String, UserModel) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var followingUsers by remember { mutableStateOf<List<UserModel>>(emptyList()) }
     var allUsers by remember { mutableStateOf<List<UserModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        userViewModel.getAllUser { success, _, users ->
+        userViewModel.getFollowingList(currentUserId) { users ->
+            followingUsers = users
             isLoading = false
+        }
+        
+        userViewModel.getAllUser { success, _, users ->
             if (success) {
                 allUsers = users.filter { it.userId != currentUserId }
             }
         }
     }
 
-    val filteredUsers = remember(allUsers, searchQuery) {
+    val filteredUsers = remember(followingUsers, allUsers, searchQuery) {
         if (searchQuery.isBlank()) {
-            allUsers
+            followingUsers
         } else {
             allUsers.filter {
                 it.username.contains(searchQuery, ignoreCase = true) ||
@@ -488,7 +493,7 @@ fun NewChatDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (searchQuery.isBlank()) "No users found" else "No results",
+                                text = if (searchQuery.isBlank()) "You're not following anyone yet" else "No results",
                                 color = Grey,
                                 fontSize = 14.sp
                             )

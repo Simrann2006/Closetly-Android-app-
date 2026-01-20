@@ -208,22 +208,35 @@ fun ChatBody(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            LazyColumn(
+            Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                state = listState
+                    .fillMaxWidth()
             ) {
-                items(messages) { message ->
-                    MessageBubble(
-                        message = message,
-                        isCurrentUser = message.senderId == currentUserId,
+                if (messages.isEmpty()) {
+                    Text(
+                        text = "Start a conversation",
+                        fontSize = 16.sp,
+                        color = Grey,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = listState
+                    ) {
+                        items(messages) { message ->
+                            MessageBubble(
+                                message = message,
+                                isCurrentUser = message.senderId == currentUserId,
                         onImageClick = { urls, index ->
                             fullScreenImageUrls = urls
                             fullScreenImageIndex = index
                             showFullScreenImage = true
                         }
                     )
+                        }
+                    }
                 }
             }
 
