@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.Flow
 interface SliderRepo {
     /**
      * Get slider items as a Flow for real-time updates.
+     * @param excludeUserId Optional userId to exclude from slider (typically current user)
      * @return Flow emitting list of SliderItemModel whenever data changes in Firebase
      */
-    fun getSliderItems(): Flow<List<SliderItemModel>>
+    fun getSliderItems(excludeUserId: String? = null): Flow<List<SliderItemModel>>
 }

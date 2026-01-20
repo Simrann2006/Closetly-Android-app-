@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.closetly.model.SliderItemModel
 import com.example.closetly.repository.SliderRepo
 import com.example.closetly.repository.SliderRepoImpl
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -14,8 +15,10 @@ import kotlinx.coroutines.launch
  * Provides real-time data from Firebase using StateFlow.
  * 
  * This ViewModel:
- * - Observes Firebase data in real-time
- * - Automatically updates UI when data changes
+ * - Observes Firebase data in real-time (latest 5 users only)
+ * - Groups all posts (thrift + rent) by user in one slider
+ * - Automatically updates UI when ANY user uploads a new post
+ * - Shows newest users first based on their latest post
  * - Handles loading states
  * - Follows clean MVVM architecture
  */
@@ -26,6 +29,8 @@ class SliderViewModel(
     companion object {
         private const val TAG = "SliderViewModel"
     }
+    
+    private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     
     // StateFlow for slider items - UI observes this for automatic updates
     private val _sliderItems = MutableStateFlow<List<SliderItemModel>>(emptyList())
@@ -45,16 +50,17 @@ class SliderViewModel(
     }
     
     /**
-     * Loads slider items from Firebase in real-time.
+     * Loads slider items from Firebase in real-time (LATEST 5 USERS ONLY).
      * Uses Flow to automatically receive updates when data changes.
-     * Injects a placeholder item when data is empty so slider always renders.
+     * Groups all user posts (thrift + rent) together in one slider per user.
+     * Shows up to 5 items per user. Newest users appear first.
      */
     private fun loadSliderItems() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             
-            repository.getSliderItems()
+            repository.getSliderItems(excludeUserId = currentUserId)
                 .catch { e ->
                     Log.e(TAG, "Error loading slider items: ${e.message}", e)
                     _error.value = "Failed to load slider: ${e.message}"
@@ -62,24 +68,7 @@ class SliderViewModel(
                 }
                 .collectLatest { items ->
                     Log.d(TAG, "Received ${items.size} slider items from repository")
-                    
-                    // Inject placeholder when empty so slider always has at least 1 item
-                    _sliderItems.value = if (items.isEmpty()) {
-                        Log.w(TAG, "No slider items available - injecting placeholder")
-                        listOf(
-                            SliderItemModel(
-                                userId = "PLACEHOLDER_EMPTY",
-                                username = "",
-                                profilePictureUrl = "",
-                                listings = emptyList(),
-                                totalListings = 0,
-                                lastUpdated = 0L
-                            )
-                        )
-                    } else {
-                        items
-                    }
-                    
+                    _sliderItems.value = items
                     _isLoading.value = false
                 }
         }

@@ -243,52 +243,30 @@ fun SliderItemCard(
     onItemClick: () -> Unit,
     onUsernameClick: () -> Unit
 ) {
-    // Detect placeholder for empty state
-    val isPlaceholder = sliderItem.userId == "PLACEHOLDER_EMPTY"
-    
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(400.dp)
-            .clickable(enabled = !isPlaceholder) { onItemClick() }  // Disable click for placeholder
+            .clickable { onItemClick() }
     ) {
-        if (isPlaceholder) {
-            // Empty state: show message centered
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No featured posts yet",
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = Color.Gray
-                )
-            }
-        } else {
-            // Normal slide: show user profile background with listings
-            // Background image = USER'S PROFILE PICTURE
-            AsyncImage(
-                model = sliderItem.profilePictureUrl,
-                contentDescription = "${sliderItem.username}'s profile",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp)
-                    .clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop
-            )
+        // Show user profile background with listings
+        // Background image = USER'S PROFILE PICTURE
+        AsyncImage(
+            model = sliderItem.profilePictureUrl,
+            contentDescription = "${sliderItem.username}'s profile",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .clip(MaterialTheme.shapes.medium),
+            contentScale = ContentScale.Crop
+        )
 
-            // Overlay content
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f))  // Slight overlay for text visibility
-            ) {
+        // Overlay content
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))  // Slight overlay for text visibility
+        ) {
                 // Username overlay at top-left
                 Column(
                     modifier = Modifier
@@ -336,7 +314,6 @@ fun SliderItemCard(
                     }
                 }
             }
-        }
     }
 }
 
@@ -416,13 +393,11 @@ fun PostCard(
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AsyncImage(
-                    model = postUI.post.userProfilePic.ifEmpty { "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" },
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
+                Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
+                        .background(Color(0xFFE8E8E8))
                         .border(1.5.dp, Color.LightGray, CircleShape)
                         .clickable {
                             if (postUI.post.userId.isNotEmpty()) {
@@ -436,8 +411,25 @@ fun PostCard(
                                     e.printStackTrace()
                                 }
                             }
-                        }
-                )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (postUI.post.userProfilePic.isNotEmpty()) {
+                        AsyncImage(
+                            model = postUI.post.userProfilePic,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_person_24),
+                            contentDescription = "Default profile",
+                            tint = Color(0xFF9E9E9E),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
@@ -466,7 +458,7 @@ fun PostCard(
                     onClick = onFollowClick,
                     modifier = Modifier.height(30.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (postUI.isFollowing) Color.LightGray else colorResource(R.color.purple_200),
+                        containerColor = if (postUI.isFollowing) Color(0xFFD3C1C1) else Color(0xFF8B6F6F),
                     ),
                     shape = RoundedCornerShape(6.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
@@ -476,7 +468,7 @@ fun PostCard(
                         style = TextStyle(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (postUI.isFollowing) Color.DarkGray else Color.White
+                            color = Color.White
                         )
                     )
                 }
@@ -484,7 +476,7 @@ fun PostCard(
 
             // Post Image - Fixed square size
             AsyncImage(
-                model = postUI.post.imageUrl.ifEmpty { "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800" },
+                model = postUI.post.imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -547,7 +539,7 @@ fun PostCard(
                                 painter = painterResource(R.drawable.comment),
                                 contentDescription = "Comment",
                                 tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                         if (postUI.commentsCount > 0) {
@@ -628,7 +620,7 @@ fun PostCard(
                         style = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = colorResource(R.color.purple_200)
+                            color = Color.Black
                         ),
                         modifier = Modifier.padding(top = 6.dp)
                     )

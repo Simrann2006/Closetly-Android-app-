@@ -45,6 +45,7 @@ class HomeViewModel(
     /**
      * Load all posts with real-time listeners
      * For each post, we also subscribe to its likes count, comments count, and user states
+     * Excludes current user's own posts from the feed
      */
     fun loadPosts() {
         viewModelScope.launch {
@@ -56,10 +57,17 @@ class HomeViewModel(
                     _isLoading.value = false
                 }
                 .collectLatest { posts ->
+                    // Filter out current user's own posts and posts without valid data
+                    val filteredPosts = posts.filter { post ->
+                        post.userId != currentUserId &&
+                        post.userId.isNotEmpty() &&
+                        post.imageUrl.isNotEmpty() &&
+                        post.username.isNotEmpty()
+                    }
                     _isLoading.value = false
                     
                     // For each post, combine it with its real-time states
-                    val postsWithStates = posts.map { post ->
+                    val postsWithStates = filteredPosts.map { post ->
                         createPostUIFlow(post)
                     }
                     
