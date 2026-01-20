@@ -27,48 +27,84 @@ class SliderRepoImpl : SliderRepo {
     
     companion object {
         private const val TAG = "SliderRepoImpl"
-        private const val MAX_LISTINGS_PER_USER = 3  // Show max 3 listing cards per slider
-        private const val MAX_USERS_IN_SLIDER = 10   // Show max 10 users in slider
+        private const val MAX_LISTINGS_PER_USER = 5  // Show max 5 listing cards per user slider
+        private const val MAX_USERS_IN_SLIDER = 5    // Show only latest 5 users in slider
     }
-    
-    /**
-     * Returns a Flow that emits slider items grouped by user in real-time.
-     * Fetches from both Products (sale) and Rent nodes.
-     * 
-     * HOW IT WORKS:
-     * - Listens to both Products and Rent Firebase collections
-     * - Combines all items (sale + rent) from both sources
-     * - Groups all items by userId
-     * - For each user, fetches their profile picture from users collection
-     * - Creates one SliderItemModel per user with their items
-     * - Sorts users by their latest item timestamp (most recent first)
-     * - Returns top 10 active users
-     */
+
     override fun getSliderItems(): Flow<List<SliderItemModel>> = callbackFlow {
-        val allListings = mutableListOf<Triple<String, String, ListingItem>>()
-        val sliderItems = mutableListOf<SliderItemModel>()
+        val allPostsMap = mutableMapOf<String, Pair<String, ListingItem>>() // postId -> (userId, listing)
+        val userDataCache = mutableMapOf<String, Pair<String, String>>() // userId -> (username, profilePic)
         var productsLoaded = false
         var rentLoaded = false
+        
+        fun emitSliderItems(
+            userListingsMap: Map<String, List<ListingItem>>,
+            userData: Map<String, Pair<String, String>>
+        ) {
+            val sliderItems = userListingsMap.map { (userId, listings) ->
+                val (username, profilePic) = userData[userId] ?: Pair("User", "")
+                val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
+                
+                SliderItemModel(
+                    userId = userId,
+                    username = username,
+                    profilePictureUrl = profilePic,
+                    listings = listings,
+                    totalListings = listings.size,
+                    lastUpdated = lastUpdated
+                )
+            }.sortedByDescending { it.lastUpdated }
+            
+            Log.d(TAG, "✅ Emitting ${sliderItems.size} slider items (newest users first)")
+            trySend(sliderItems)
+        }
         
         fun processAndEmitItems() {
             if (!productsLoaded || !rentLoaded) return
             
-            // Group all items by userId
-            val listingsByUser = allListings.groupBy { it.first }
-            Log.d(TAG, "Grouped ${allListings.size} items into ${listingsByUser.size} users")
+            Log.d(TAG, "Processing ${allPostsMap.size} total posts for slider")
             
-            sliderItems.clear()
+            // Group all posts by userId
+            val postsByUser = allPostsMap.values.groupBy { it.first }
             
-            for ((userId, userListings) in listingsByUser) {
-                try {
-                    val listings = userListings
-                        .map { it.third }
-                        .sortedByDescending { it.timestamp }
-                        .take(MAX_LISTINGS_PER_USER)
-                    
-                    val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
-                    
-                    // Fetch user data from Users node
+            Log.d(TAG, "Grouped into ${postsByUser.size} users")
+            
+            // For each user, get their listings sorted by timestamp (newest first)
+            // Take max 5 listings per user
+            val userListings = postsByUser.mapValues { (_, posts) ->
+                posts.map { it.second }
+                    .sortedByDescending { it.timestamp }
+                    .take(MAX_LISTINGS_PER_USER)
+            }
+            
+            // Sort users by their latest post timestamp and take top 5 users
+            val topUsers = userListings.entries
+                .sortedByDescending { (_, listings) ->
+                    listings.maxOfOrNull { it.timestamp } ?: 0L
+                }
+                .take(MAX_USERS_IN_SLIDER)
+                .associate { it.key to it.value }
+            
+            Log.d(TAG, "Selected top ${topUsers.size} users for slider")
+            
+            // Fetch user data for top users
+            val pendingFetches = topUsers.keys
+            var fetchedCount = 0
+            
+            if (pendingFetches.isEmpty()) {
+                trySend(emptyList())
+                return
+            }
+            
+            for (userId in pendingFetches) {
+                // Check cache first
+                if (userDataCache.containsKey(userId)) {
+                    fetchedCount++
+                    if (fetchedCount == pendingFetches.size) {
+                        emitSliderItems(topUsers, userDataCache)
+                    }
+                } else {
+                    // Fetch from Firebase
                     usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
                         if (userSnapshot.exists()) {
                             val username = userSnapshot.child("fullName").getValue(String::class.java) 
@@ -78,41 +114,34 @@ class SliderRepoImpl : SliderRepo {
                                 ?: userSnapshot.child("profilePic").getValue(String::class.java)
                                 ?: ""
                             
-                            Log.d(TAG, "User data: $username - ${listings.size} items")
-                            
-                            if (listings.isNotEmpty()) {
-                                val sliderItem = SliderItemModel(
-                                    userId = userId,
-                                    username = username,
-                                    profilePictureUrl = profilePictureUrl,
-                                    listings = listings,
-                                    totalListings = userListings.size,
-                                    lastUpdated = lastUpdated
-                                )
-                                
-                                sliderItems.add(sliderItem)
-                                
-                                val sortedItems = sliderItems
-                                    .sortedByDescending { it.lastUpdated }
-                                    .take(MAX_USERS_IN_SLIDER)
-                                
-                                trySend(sortedItems)
-                            }
+                            userDataCache[userId] = Pair(username, profilePictureUrl)
+                            Log.d(TAG, "Cached user data: $username ($userId)")
+                        } else {
+                            userDataCache[userId] = Pair("User", "")
+                        }
+                        
+                        fetchedCount++
+                        if (fetchedCount == pendingFetches.size) {
+                            emitSliderItems(topUsers, userDataCache)
+                        }
+                    }.addOnFailureListener {
+                        userDataCache[userId] = Pair("User", "")
+                        fetchedCount++
+                        if (fetchedCount == pendingFetches.size) {
+                            emitSliderItems(topUsers, userDataCache)
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error creating slider for user $userId: ${e.message}", e)
                 }
             }
         }
         
-        // Listener for Products (sale items)
+        // Listener for Products (sale/thrift items)
         val productsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                Log.d(TAG, "Products data changed: ${snapshot.childrenCount} items")
+                Log.d(TAG, "🔄 Products data changed: ${snapshot.childrenCount} items")
                 
-                // Remove old products and add new ones
-                allListings.removeAll { it.third.listingId.startsWith("product_") }
+                // Clear old products from map
+                allPostsMap.keys.removeAll { it.startsWith("product_") }
                 
                 for (child in snapshot.children) {
                     try {
@@ -134,8 +163,6 @@ class SliderRepoImpl : SliderRepo {
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
                         val status = child.child("status").getValue(String::class.java) ?: "Available"
                         
-                        Log.d(TAG, "Product: id=$listingId, userId=$userId, type=$listingTypeStr, status=$status")
-                        
                         if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
                             val listing = ListingItem(
                                 listingId = "product_$listingId",
@@ -144,8 +171,8 @@ class SliderRepoImpl : SliderRepo {
                                 price = price,
                                 timestamp = timestamp
                             )
-                            allListings.add(Triple(userId, "", listing))
-                            Log.d(TAG, "✓ Added ${listingTypeStr} item for user: $userId")
+                            allPostsMap["product_$listingId"] = Pair(userId, listing)
+                            Log.d(TAG, "✓ Added ${listingTypeStr} post: $listingId (${itemName})")
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing product: ${e.message}", e)
@@ -164,10 +191,10 @@ class SliderRepoImpl : SliderRepo {
         // Listener for Rent items  
         val rentListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                Log.d(TAG, "Rent data changed: ${snapshot.childrenCount} items")
+                Log.d(TAG, "🔄 Rent data changed: ${snapshot.childrenCount} items")
                 
-                // Remove old rent items and add new ones
-                allListings.removeAll { it.third.listingId.startsWith("rent_") }
+                // Clear old rent items from map
+                allPostsMap.keys.removeAll { it.startsWith("rent_") }
                 
                 for (child in snapshot.children) {
                     try {
@@ -185,9 +212,6 @@ class SliderRepoImpl : SliderRepo {
                         val price = "₹${rentPriceDouble.toInt()}/day"
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
                         val status = child.child("status").getValue(String::class.java) ?: "Available"
-                        val listingType = child.child("listingType").getValue(String::class.java) ?: ""
-                        
-                        Log.d(TAG, "Rent item: id=$listingId, userId=$userId, status=$status, listingType=$listingType")
                         
                         if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
                             val listing = ListingItem(
@@ -197,10 +221,8 @@ class SliderRepoImpl : SliderRepo {
                                 price = price,
                                 timestamp = timestamp
                             )
-                            allListings.add(Triple(userId, "", listing))
-                            Log.d(TAG, "✓ Added rent item for user: $userId")
-                        } else {
-                            Log.w(TAG, "✗ Skipped rent item: id=$listingId, userId=$userId, imageUrl=${imageUrl.take(20)}, status=$status")
+                            allPostsMap["rent_$listingId"] = Pair(userId, listing)
+                            Log.d(TAG, "✓ Added rent post: $listingId (${itemName})")
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error parsing rent item: ${e.message}", e)

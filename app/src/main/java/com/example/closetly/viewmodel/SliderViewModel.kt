@@ -14,8 +14,10 @@ import kotlinx.coroutines.launch
  * Provides real-time data from Firebase using StateFlow.
  * 
  * This ViewModel:
- * - Observes Firebase data in real-time
- * - Automatically updates UI when data changes
+ * - Observes Firebase data in real-time (latest 5 users only)
+ * - Groups all posts (thrift + rent) by user in one slider
+ * - Automatically updates UI when ANY user uploads a new post
+ * - Shows newest users first based on their latest post
  * - Handles loading states
  * - Follows clean MVVM architecture
  */
@@ -45,9 +47,10 @@ class SliderViewModel(
     }
     
     /**
-     * Loads slider items from Firebase in real-time.
+     * Loads slider items from Firebase in real-time (LATEST 5 USERS ONLY).
      * Uses Flow to automatically receive updates when data changes.
-     * Injects a placeholder item when data is empty so slider always renders.
+     * Groups all user posts (thrift + rent) together in one slider per user.
+     * Shows up to 5 items per user. Newest users appear first.
      */
     private fun loadSliderItems() {
         viewModelScope.launch {
