@@ -60,6 +60,11 @@ import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.ChatViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.launch
 
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,6 +101,30 @@ fun DashboardBody(){
 
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     val chatViewModel = remember { ChatViewModel(ChatRepoImpl()) }
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            val notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("Notifications")
+                .child(currentUserId)
+            
+            notificationsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var count = 0
+                    for (child in snapshot.children) {
+                        val isRead = child.child("isRead").getValue(Boolean::class.java) ?: false
+                        if (!isRead) {
+                            count++
+                        }
+                    }
+                    unreadNotifications = count
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                }
+            })
+        }
+    }
 
     LaunchedEffect(currentUserId) {
         if (currentUserId != null) {

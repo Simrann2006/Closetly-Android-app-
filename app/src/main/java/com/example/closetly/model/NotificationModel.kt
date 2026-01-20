@@ -3,7 +3,7 @@ package com.example.closetly.model
 enum class NotificationType {
     FOLLOW,
     LIKE,
-    MENTION,
+    COMMENT,
     POST
 }
 data class NotificationModel(
@@ -13,7 +13,10 @@ data class NotificationModel(
     var message: String = "",
     var time: String = "",
     var isRead: Boolean = false,
-    var senderId: String = ""
+    var senderId: String = "",
+    var postId: String = "",
+    var postImage: String = "",
+    var commentText: String = ""
 
 ) {
     fun toMap(): Map<String, Any> {
@@ -23,7 +26,11 @@ data class NotificationModel(
             "type" to type.name,
             "message" to message,
             "time" to time,
-            "isRead" to isRead
+            "isRead" to isRead,
+            "senderId" to senderId,
+            "postId" to postId,
+            "postImage" to postImage,
+            "commentText" to commentText
         )
     }
 }

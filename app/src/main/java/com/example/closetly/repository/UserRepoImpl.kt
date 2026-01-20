@@ -16,6 +16,7 @@ class UserRepoImpl : UserRepo{
     val auth : FirebaseAuth = FirebaseAuth.getInstance()
     val database : FirebaseDatabase = FirebaseDatabase.getInstance()
     val ref : DatabaseReference = database.getReference("Users")
+    private val notificationRepo = NotificationRepoImpl()
 
     override fun login(
         email: String,
@@ -223,6 +224,20 @@ class UserRepoImpl : UserRepo{
                     followingRef.setValue(true)
                     followerRef.setValue(true).addOnCompleteListener {
                         if (it.isSuccessful) {
+                            ref.child(currentUserId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(userSnapshot: DataSnapshot) {
+                                    val currentUser = userSnapshot.getValue(UserModel::class.java)
+                                    if (currentUser != null) {
+                                        notificationRepo.sendFollowNotification(
+                                            senderId = currentUserId,
+                                            senderName = currentUser.username,
+                                            senderImage = currentUser.profilePicture,
+                                            receiverId = targetUserId
+                                        )
+                                    }
+                                }
+                                override fun onCancelled(error: DatabaseError) {}
+                            })
                             callback(true, "Followed successfully")
                         } else {
                             callback(false, it.exception?.message ?: "Failed to follow")

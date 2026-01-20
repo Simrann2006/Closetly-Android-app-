@@ -15,6 +15,10 @@ class CommentRepoImpl : CommentRepo {
     private val database = FirebaseDatabase.getInstance()
     private val commentsRef = database.getReference("Comments")
 
+    private val postsRef = database.getReference("Posts")
+    private val usersRef = database.getReference("Users")
+    private val notificationRepo = NotificationRepoImpl()
+
     override fun getComments(postId: String): Flow<List<CommentModel>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -29,7 +33,6 @@ class CommentRepoImpl : CommentRepo {
                         val commentText = commentSnapshot.child("commentText").getValue(String::class.java) ?: ""
                         val timestamp = commentSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
                         
-                        // Parse likes map
                         val likes = mutableMapOf<String, Boolean>()
                         commentSnapshot.child("likes").children.forEach { likeSnapshot ->
                             likeSnapshot.key?.let { likeUserId ->
@@ -53,7 +56,6 @@ class CommentRepoImpl : CommentRepo {
                             commentsList.add(comment)
                         }
                     } catch (e: Exception) {
-                        // Skip invalid comment
                     }
                 }
                 trySend(commentsList.sortedByDescending { it.timestamp })
@@ -74,6 +76,24 @@ class CommentRepoImpl : CommentRepo {
     override suspend fun addComment(comment: CommentModel): Result<CommentModel> {
         return try {
             commentsRef.child(comment.id).setValue(comment).await()
+
+            val postSnapshot = postsRef.child(comment.postId).get().await()
+            val post = postSnapshot.getValue(com.example.closetly.model.PostModel::class.java)
+            val userSnapshot = usersRef.child(comment.userId).get().await()
+            val user = userSnapshot.getValue(com.example.closetly.model.UserModel::class.java)
+
+            if (post != null && user != null) {
+                notificationRepo.sendCommentNotification(
+                    senderId = comment.userId,
+                    senderName = user.username,
+                    senderImage = user.profilePicture,
+                    postOwnerId = post.userId,
+                    postId = comment.postId,
+                    postImage = post.imageUrl,
+                    commentText = comment.commentText
+                )
+            }
+
             Result.success(comment)
         } catch (e: Exception) {
             Result.failure(e)
@@ -86,10 +106,8 @@ class CommentRepoImpl : CommentRepo {
             val snapshot = likesRef.get().await()
             
             if (snapshot.exists()) {
-                // Unlike: remove user from likes
                 likesRef.removeValue().await()
             } else {
-                // Like: add user to likes
                 likesRef.setValue(true).await()
             }
             

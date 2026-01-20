@@ -8,6 +8,7 @@ class PostRepoImpl : PostRepo {
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
     private val ref: DatabaseReference = database.getReference("Posts")
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val notificationRepo = NotificationRepoImpl()
 
     override fun addPost(model: PostModel, callback: (Boolean, String) -> Unit) {
         val currentUserId = auth.currentUser?.uid
@@ -29,6 +30,16 @@ class PostRepoImpl : PostRepo {
                 )
                 ref.child(id).setValue(post).addOnCompleteListener {
                     if (it.isSuccessful) {
+                        if (post.caption.contains("sale", ignoreCase = true)) {
+                            notificationRepo.sendPostNotification(
+                                postOwnerId = currentUserId,
+                                postOwnerName = userName,
+                                postOwnerImage = profilePic,
+                                postId = id,
+                                postImage = post.imageUrl,
+                                postCaption = post.caption
+                            )
+                        }
                         callback(true, "Post added successfully")
                     } else {
                         callback(false, "${it.exception?.message}")
@@ -87,7 +98,7 @@ class PostRepoImpl : PostRepo {
                         posts.add(post)
                     }
                 }
-                posts.reverse() // Show newest first
+                posts.reverse()
                 callback(true, "Posts fetched", posts)
             }
             override fun onCancelled(error: DatabaseError) {
@@ -106,7 +117,7 @@ class PostRepoImpl : PostRepo {
                         posts.add(post)
                     }
                 }
-                posts.sortByDescending { it.timestamp } // Show newest first
+                posts.sortByDescending { it.timestamp }
                 callback(true, "User posts fetched", posts)
             }
             override fun onCancelled(error: DatabaseError) {
