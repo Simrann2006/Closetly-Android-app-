@@ -27,11 +27,31 @@ class CommentViewModel(
     private val _commentText = MutableStateFlow("")
     val commentText: StateFlow<String> = _commentText.asStateFlow()
     
+    private val _currentUserProfile = MutableStateFlow<Pair<String, String>>("" to "")
+    val currentUserProfile: StateFlow<Pair<String, String>> = _currentUserProfile.asStateFlow()
+    
     private val _showDeleteDialog = MutableStateFlow<String?>(null)
     val showDeleteDialog: StateFlow<String?> = _showDeleteDialog.asStateFlow()
     
     private val database = FirebaseDatabase.getInstance()
     private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest_user"
+    
+    init {
+        loadCurrentUserProfile()
+    }
+    
+    private fun loadCurrentUserProfile() {
+        viewModelScope.launch {
+            try {
+                val userSnapshot = database.getReference("Users/$currentUserId").get().await()
+                val userName = userSnapshot.child("fullName").value?.toString() ?: "User"
+                val userProfileImage = userSnapshot.child("profilePicture").value?.toString() ?: ""
+                _currentUserProfile.value = userName to userProfileImage
+            } catch (e: Exception) {
+                _currentUserProfile.value = "User" to ""
+            }
+        }
+    }
     
     fun loadComments(postId: String) {
         viewModelScope.launch {
@@ -83,20 +103,8 @@ class CommentViewModel(
     
     fun likeComment(commentId: String, postId: String) {
         viewModelScope.launch {
-            // Optimistically update UI immediately
-            val updatedComments = _comments.value.map { comment ->
-                if (comment.id == commentId) {
-                    comment.copy(
-                        isLiked = !comment.isLiked,
-                        likesCount = if (comment.isLiked) comment.likesCount - 1 else comment.likesCount + 1
-                    )
-                } else {
-                    comment
-                }
-            }
-            _comments.value = updatedComments
-            
-            repository.likeComment(commentId)
+            // Real-time Firebase listener will automatically update the UI
+            repository.likeComment(commentId, currentUserId)
         }
     }
     
@@ -122,6 +130,10 @@ class CommentViewModel(
     
     fun isCurrentUserComment(userId: String): Boolean {
         return userId == currentUserId
+    }
+    
+    fun getCurrentUserId(): String {
+        return currentUserId
     }
 }
 

@@ -1,8 +1,16 @@
 package com.example.closetly.repository
 
-import com.example.closetly.model.SliderItem
+import com.example.closetly.model.SliderItemModel
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repository interface for slider items.
+ * Provides real-time updates from Firebase for the auto-carousel.
+ */
 interface SliderRepo {
-    fun getSliderItems(): Flow<List<SliderItem>>
+    /**
+     * Get slider items as a Flow for real-time updates.
+     * @return Flow emitting list of SliderItemModel whenever data changes in Firebase
+     */
+    fun getSliderItems(): Flow<List<SliderItemModel>>
 }
