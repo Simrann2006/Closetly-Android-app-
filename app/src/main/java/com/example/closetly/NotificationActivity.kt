@@ -306,7 +306,7 @@ fun NotificationItem(
                     onClick = {
                     when (notification.type) {
                         NotificationType.FOLLOW -> {
-                            val intent = Intent(context, PostActivity::class.java).apply {
+                            val intent = Intent(context, UserProfileActivity::class.java).apply {
                                 putExtra("userId", notification.senderId)
                                 putExtra("username", notification.userName)
                             }

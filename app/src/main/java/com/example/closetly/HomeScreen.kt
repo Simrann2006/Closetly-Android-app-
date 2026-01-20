@@ -150,7 +150,7 @@ fun HomeScreen(
                                     onItemClick = {
                                         // Navigate to user profile when clicking anywhere on slider
                                         try {
-                                            val intent = Intent(context, PostActivity::class.java).apply {
+                                            val intent = Intent(context, UserProfileActivity::class.java).apply {
                                                 putExtra("userId", sliderItem.userId)
                                                 putExtra("username", sliderItem.username)
                                             }
@@ -162,7 +162,7 @@ fun HomeScreen(
                                     onUsernameClick = {
                                         // Navigate to user profile when clicking username
                                         try {
-                                            val intent = Intent(context, PostActivity::class.java).apply {
+                                            val intent = Intent(context, UserProfileActivity::class.java).apply {
                                                 putExtra("userId", sliderItem.userId)
                                                 putExtra("username", sliderItem.username)
                                             }
@@ -402,7 +402,7 @@ fun PostCard(
                         .clickable {
                             if (postUI.post.userId.isNotEmpty()) {
                                 try {
-                                    val intent = Intent(context, PostActivity::class.java).apply {
+                                    val intent = Intent(context, UserProfileActivity::class.java).apply {
                                         putExtra("userId", postUI.post.userId)
                                         putExtra("username", postUI.post.username)
                                     }
@@ -441,7 +441,7 @@ fun PostCard(
                     modifier = Modifier.clickable {
                         if (postUI.post.userId.isNotEmpty()) {
                             try {
-                                val intent = Intent(context, PostActivity::class.java).apply {
+                                val intent = Intent(context, UserProfileActivity::class.java).apply {
                                     putExtra("userId", postUI.post.userId)
                                     putExtra("username", postUI.post.username)
                                 }

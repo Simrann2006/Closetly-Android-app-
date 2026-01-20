@@ -188,7 +188,7 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                             onUserClick = {
                                 if (user.userId == currentUserId) {
                                 } else {
-                                    val intent = Intent(context, PostActivity::class.java).apply {
+                                    val intent = Intent(context, UserProfileActivity::class.java).apply {
                                         putExtra("userId", user.userId)
                                         putExtra("username", user.username)
                                     }

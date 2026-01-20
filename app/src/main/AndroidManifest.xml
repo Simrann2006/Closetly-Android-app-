@@ -111,9 +111,9 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PostActivity"
+            android:name=".UserProfileActivity"
             android:exported="false"
-            android:label="PostActivity"
+            android:label="UserProfileActivity"
             android:theme="@style/Theme.Closetly">
         </activity>
         <activity

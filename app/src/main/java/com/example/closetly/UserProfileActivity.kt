@@ -67,7 +67,7 @@ import com.example.closetly.viewmodel.ProductViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
-class PostActivity : ComponentActivity() {
+class UserProfileActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -76,14 +76,14 @@ class PostActivity : ComponentActivity() {
         val username = intent.getStringExtra("username") ?: ""
 
         setContent {
-            PostBody(userId = userId, initialUsername = username)
+            UserProfielBody(userId = userId, initialUsername = username)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PostBody(userId: String, initialUsername: String) {
+fun UserProfielBody(userId: String, initialUsername: String) {
 
     val context = LocalContext.current
     val userRepo = remember { UserRepoImpl() }
@@ -615,8 +615,8 @@ fun UserProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
 
 @Preview
 @Composable
-fun PostBodyPreview(){
-    PostBody(
+fun PreviewUserProfile(){
+    UserProfielBody(
         userId = "",
         initialUsername = "username"
     )

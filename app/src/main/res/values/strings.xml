@@ -11,7 +11,7 @@
     <string name="title_activity_avatar">AvatarActivity</string>
     <string name="title_activity_virtual_try_on">VirtualTryOnActivity</string>
     <string name="title_activity_analysis">AnalysisActivity</string>
-    <string name="title_activity_post">PostActivity</string>
+    <string name="title_activity_post">UserProfileActivity</string>
     <string name="title_activity_setting">SettingActivity</string>
     <string name="title_activity_post_cration">PostCrationActivity</string>
     <string name="title_activity_listing">ListingActivity</string>

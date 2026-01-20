@@ -143,7 +143,7 @@ fun ChatBody(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
                             ) {
-                                val intent = Intent(context, PostActivity::class.java).apply {
+                                val intent = Intent(context, UserProfileActivity::class.java).apply {
                                     putExtra("userId", otherUserId)
                                     putExtra("username", otherUserName)
                                 }
