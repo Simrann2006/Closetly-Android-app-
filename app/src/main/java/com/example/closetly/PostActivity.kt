@@ -310,7 +310,7 @@ fun PostBody(userId: String, initialUsername: String) {
                         .weight(1f)
                         .height(34.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Black,
+                        containerColor = androidx.compose.ui.graphics.Color(0xFF8B6F6F),
                     ),
                     shape = RoundedCornerShape(8.dp),
 

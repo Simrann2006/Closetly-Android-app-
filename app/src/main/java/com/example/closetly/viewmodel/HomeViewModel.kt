@@ -57,8 +57,13 @@ class HomeViewModel(
                     _isLoading.value = false
                 }
                 .collectLatest { posts ->
-                    // Filter out current user's own posts
-                    val filteredPosts = posts.filter { it.userId != currentUserId }
+                    // Filter out current user's own posts and posts without valid data
+                    val filteredPosts = posts.filter { post ->
+                        post.userId != currentUserId &&
+                        post.userId.isNotEmpty() &&
+                        post.imageUrl.isNotEmpty() &&
+                        post.username.isNotEmpty()
+                    }
                     _isLoading.value = false
                     
                     // For each post, combine it with its real-time states

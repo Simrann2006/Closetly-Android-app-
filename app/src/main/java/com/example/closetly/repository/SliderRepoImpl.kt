@@ -41,18 +41,23 @@ class SliderRepoImpl : SliderRepo {
             userListingsMap: Map<String, List<ListingItem>>,
             userData: Map<String, Pair<String, String>>
         ) {
-            val sliderItems = userListingsMap.map { (userId, listings) ->
-                val (username, profilePic) = userData[userId] ?: Pair("User", "")
+            val sliderItems = userListingsMap.mapNotNull { (userId, listings) ->
+                val (username, profilePic) = userData[userId] ?: Pair("", "")
                 val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
                 
-                SliderItemModel(
-                    userId = userId,
-                    username = username,
-                    profilePictureUrl = profilePic,
-                    listings = listings,
-                    totalListings = listings.size,
-                    lastUpdated = lastUpdated
-                )
+                // Only create slider if user has profile picture, username, and listings
+                if (profilePic.isNotEmpty() && username.isNotEmpty() && listings.isNotEmpty()) {
+                    SliderItemModel(
+                        userId = userId,
+                        username = username,
+                        profilePictureUrl = profilePic,
+                        listings = listings,
+                        totalListings = listings.size,
+                        lastUpdated = lastUpdated
+                    )
+                } else {
+                    null
+                }
             }.sortedByDescending { it.lastUpdated }
             
             Log.d(TAG, "✅ Emitting ${sliderItems.size} slider items (newest users first)")
