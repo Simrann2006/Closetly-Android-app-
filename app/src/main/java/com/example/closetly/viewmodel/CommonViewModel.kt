@@ -10,4 +10,8 @@ class CommonViewModel (val repo : CommonRepo) : ViewModel() {
     fun uploadImage(context: Context, imageUri: Uri,callback: (String?) -> Unit){
         repo.uploadImage(context, imageUri, callback)
     }
+
+    fun uploadImageWithBackgroundRemoval(context: Context, imageUri: Uri, callback: (String?) -> Unit) {
+        repo.uploadImageWithBackgroundRemoval(context, imageUri, callback)
+    }
 }

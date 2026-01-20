@@ -103,4 +103,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-analytics")
+
+    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta5")
 }

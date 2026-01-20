@@ -12,11 +12,15 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -76,8 +80,19 @@ fun ClothesDetailsBody(
     var color by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var occasion by remember { mutableStateOf("") }
 
+    var isUploading by remember { mutableStateOf(false) }
     var showCategoryDropdown by remember { mutableStateOf(false) }
+
+    // Predefined options
+    val colorOptions = listOf("Red", "Blue", "Black", "White", "Green", "Yellow", "Pink", "Brown", "Gray", "Beige", "Navy")
+    val seasonOptions = listOf("Spring", "Summer", "Fall", "Winter", "All Season")
+    val occasionOptions = listOf("Casual", "Formal", "Party", "Work", "Sport", "Beach", "Date")
+
+    var selectedColors by remember { mutableStateOf(setOf<String>()) }
+    var selectedSeasons by remember { mutableStateOf(setOf<String>()) }
+    var selectedOccasions by remember { mutableStateOf(setOf<String>()) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
 
@@ -88,7 +103,7 @@ fun ClothesDetailsBody(
             if (success) {
                 if (data == null || data.isEmpty()) {
                     val defaultCategories = listOf("Tops", "Bottoms", "Shoes")
-                    
+
                     var addedCount = 0
                     defaultCategories.forEach { categoryName ->
                         val newCategory = CategoryModel(categoryName = categoryName)
@@ -133,44 +148,59 @@ fun ClothesDetailsBody(
                     }
                 },
                 actions = {
-                    TextButton(
-                        onClick = {
-                            if (imageUri != null) {
-                                commonViewModel.uploadImage(context, imageUri) { imageUrl ->
-                                    if (imageUrl != null) {
-                                        val model = ClothesModel(
-                                            clothesName = clothesName,
-                                            brand = brand,
-                                            season = season,
-                                            notes = notes,
-                                            categoryId = selectedCategoryId,
-                                            categoryName = selectedCategoryName,
-                                            image = imageUrl
-                                        )
-                                        clothesViewModel.addClothes(model) { success, message ->
-                                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                            if (success) activity?.finish()
-                                        }
-                                    } else {
-                                        Log.e("Upload Error", "Failed to upload image to Cloudinary")
-                                    }
-                                }
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Please select an image first",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        enabled = clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null
-                    ) {
-                        Text(
-                            "Save",
-                            color = if (clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null && color.isNotBlank() && price.isNotBlank())
-                                Brown else Grey,
-                            fontWeight = FontWeight.SemiBold
+                    if (isUploading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(end = 12.dp),
+                            color = Brown,
+                            strokeWidth = 2.dp
                         )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                if (imageUri != null && !isUploading) {
+                                    isUploading = true
+                                    // Use uploadImageWithBackgroundRemoval for clothes images
+                                    commonViewModel.uploadImageWithBackgroundRemoval(context, imageUri) { imageUrl ->
+                                        if (imageUrl != null) {
+                                            val model = ClothesModel(
+                                                clothesName = clothesName.trim(),
+                                                brand = brand.trim(),
+                                                season = season.trim(),
+                                                notes = notes.trim(),
+                                                categoryId = selectedCategoryId,
+                                                categoryName = selectedCategoryName,
+                                                image = imageUrl
+                                            )
+                                            clothesViewModel.addClothes(model) { success, message ->
+                                                isUploading = false
+                                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                                                if (success) activity?.finish()
+                                            }
+                                        } else {
+                                            isUploading = false
+                                            Toast.makeText(context, "Failed to process image", Toast.LENGTH_SHORT).show()
+                                            Log.e("Upload Error", "Failed to upload image to Cloudinary")
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Please select an image first",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            enabled = clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null && !isUploading
+                        ) {
+                            Text(
+                                "Save",
+                                color = if (clothesName.isNotBlank() && selectedCategoryId.isNotBlank() && imageUri != null && !isUploading)
+                                    Brown else Grey,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -300,7 +330,7 @@ fun ClothesDetailsBody(
                 OutlinedTextField(
                     value = color,
                     onValueChange = { color = it },
-                    label = { Text("Color *") },
+                    label = { Text("Color") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -314,7 +344,7 @@ fun ClothesDetailsBody(
                 OutlinedTextField(
                     value = price,
                     onValueChange = { price = it },
-                    label = { Text("Price *") },
+                    label = { Text("Price") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -421,10 +451,12 @@ fun ClothesDetailsBody(
                                         categoryViewModel.getAllCategories { _, _, data ->
                                             if (data != null) {
                                                 categories = data
-                                                val addedCategory = data.find { it.categoryName == categoryToAdd }
+                                                val addedCategory =
+                                                    data.find { it.categoryName == categoryToAdd }
                                                 if (addedCategory != null) {
                                                     selectedCategoryId = addedCategory.categoryId
-                                                    selectedCategoryName = addedCategory.categoryName
+                                                    selectedCategoryName =
+                                                        addedCategory.categoryName
                                                 }
                                             }
                                         }

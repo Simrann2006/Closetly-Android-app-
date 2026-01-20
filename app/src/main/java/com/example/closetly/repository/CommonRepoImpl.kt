@@ -8,6 +8,10 @@ import android.os.Looper
 import android.provider.OpenableColumns
 import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
+import com.example.closetly.utils.BackgroundRemovalUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.util.concurrent.Executors
 
@@ -53,6 +57,24 @@ class CommonRepoImpl : CommonRepo {
                 e.printStackTrace()
                 Handler(Looper.getMainLooper()).post {
                     callback(null)
+                }
+            }
+        }
+    }
+
+    override fun uploadImageWithBackgroundRemoval(
+        context: Context,
+        imageUri: Uri,
+        callback: (String?) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            BackgroundRemovalUtil.removeBackground(context, imageUri) { processedUri ->
+                if (processedUri != null) {
+                    // Upload the processed image (with white background)
+                    uploadImage(context, processedUri, callback)
+                } else {
+                    // If background removal fails, upload original image
+                    uploadImage(context, imageUri, callback)
                 }
             }
         }
