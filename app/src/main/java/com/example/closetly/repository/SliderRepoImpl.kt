@@ -31,7 +31,7 @@ class SliderRepoImpl : SliderRepo {
         private const val MAX_USERS_IN_SLIDER = 5    // Show only latest 5 users in slider
     }
 
-    override fun getSliderItems(): Flow<List<SliderItemModel>> = callbackFlow {
+    override fun getSliderItems(excludeUserId: String?): Flow<List<SliderItemModel>> = callbackFlow {
         val allPostsMap = mutableMapOf<String, Pair<String, ListingItem>>() // postId -> (userId, listing)
         val userDataCache = mutableMapOf<String, Pair<String, String>>() // userId -> (username, profilePic)
         var productsLoaded = false
@@ -64,8 +64,15 @@ class SliderRepoImpl : SliderRepo {
             
             Log.d(TAG, "Processing ${allPostsMap.size} total posts for slider")
             
+            // Filter out excluded user's posts
+            val filteredPosts = if (excludeUserId != null) {
+                allPostsMap.filterValues { it.first != excludeUserId }
+            } else {
+                allPostsMap
+            }
+            
             // Group all posts by userId
-            val postsByUser = allPostsMap.values.groupBy { it.first }
+            val postsByUser = filteredPosts.values.groupBy { it.first }
             
             Log.d(TAG, "Grouped into ${postsByUser.size} users")
             

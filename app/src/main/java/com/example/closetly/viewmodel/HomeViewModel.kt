@@ -45,6 +45,7 @@ class HomeViewModel(
     /**
      * Load all posts with real-time listeners
      * For each post, we also subscribe to its likes count, comments count, and user states
+     * Excludes current user's own posts from the feed
      */
     fun loadPosts() {
         viewModelScope.launch {
@@ -56,6 +57,8 @@ class HomeViewModel(
                     _isLoading.value = false
                 }
                 .collectLatest { posts ->
+                    // Filter out current user's own posts
+                    val filteredPosts = posts.filter { it.userId != currentUserId }
                     _isLoading.value = false
                     
                     // For each post, combine it with its real-time states

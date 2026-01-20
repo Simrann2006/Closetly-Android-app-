@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.closetly.model.SliderItemModel
 import com.example.closetly.repository.SliderRepo
 import com.example.closetly.repository.SliderRepoImpl
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -28,6 +29,8 @@ class SliderViewModel(
     companion object {
         private const val TAG = "SliderViewModel"
     }
+    
+    private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     
     // StateFlow for slider items - UI observes this for automatic updates
     private val _sliderItems = MutableStateFlow<List<SliderItemModel>>(emptyList())
@@ -57,7 +60,7 @@ class SliderViewModel(
             _isLoading.value = true
             _error.value = null
             
-            repository.getSliderItems()
+            repository.getSliderItems(excludeUserId = currentUserId)
                 .catch { e ->
                     Log.e(TAG, "Error loading slider items: ${e.message}", e)
                     _error.value = "Failed to load slider: ${e.message}"
