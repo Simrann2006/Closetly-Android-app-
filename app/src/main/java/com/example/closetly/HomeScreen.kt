@@ -393,13 +393,11 @@ fun PostCard(
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AsyncImage(
-                    model = postUI.post.userProfilePic,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
+                Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
+                        .background(Color(0xFFE8E8E8))
                         .border(1.5.dp, Color.LightGray, CircleShape)
                         .clickable {
                             if (postUI.post.userId.isNotEmpty()) {
@@ -413,8 +411,25 @@ fun PostCard(
                                     e.printStackTrace()
                                 }
                             }
-                        }
-                )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (postUI.post.userProfilePic.isNotEmpty()) {
+                        AsyncImage(
+                            model = postUI.post.userProfilePic,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_person_24),
+                            contentDescription = "Default profile",
+                            tint = Color(0xFF9E9E9E),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
@@ -524,7 +539,7 @@ fun PostCard(
                                 painter = painterResource(R.drawable.comment),
                                 contentDescription = "Comment",
                                 tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(26.dp)
                             )
                         }
                         if (postUI.commentsCount > 0) {
