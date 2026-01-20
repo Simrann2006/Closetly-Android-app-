@@ -62,7 +62,7 @@ class HomeViewModel(
                     _isLoading.value = false
                     
                     // For each post, combine it with its real-time states
-                    val postsWithStates = posts.map { post ->
+                    val postsWithStates = filteredPosts.map { post ->
                         createPostUIFlow(post)
                     }
                     
