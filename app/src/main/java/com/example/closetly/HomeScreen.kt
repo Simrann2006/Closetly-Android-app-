@@ -620,7 +620,7 @@ fun PostCard(
                         style = TextStyle(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = colorResource(R.color.purple_200)
+                            color = Color.Black
                         ),
                         modifier = Modifier.padding(top = 6.dp)
                     )
