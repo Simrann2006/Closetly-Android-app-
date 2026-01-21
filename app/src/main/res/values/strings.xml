@@ -13,7 +13,11 @@
     <string name="title_activity_analysis">AnalysisActivity</string>
     <string name="title_activity_post">UserProfileActivity</string>
     <string name="title_activity_setting">SettingActivity</string>
+<<<<<<< Updated upstream
     <string name="title_activity_post_cration">PostCrationActivity</string>
     <string name="title_activity_listing">ListingActivity</string>
     <string name="title_activity_post_feed">PostFeedActivity</string>
+=======
+    <string name="title_activity_change_password_screen">ChangePasswordScreen</string>
+>>>>>>> Stashed changes
 </resources>

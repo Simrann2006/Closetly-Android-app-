@@ -107,7 +107,7 @@ fun NotificationScreen() {
             }
         })
     }
-    
+
     LaunchedEffect(Unit) {
         database.get().addOnSuccessListener { snapshot ->
             for (child in snapshot.children) {
@@ -184,7 +184,7 @@ fun NotificationScreen() {
             }
         }
     }
-    
+
     if (showDeleteDialog && notificationToDelete != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -304,41 +304,41 @@ fun NotificationItem(
                 .background(White)
                 .combinedClickable(
                     onClick = {
-                    when (notification.type) {
-                        NotificationType.FOLLOW -> {
-                            val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                putExtra("userId", notification.senderId)
-                                putExtra("username", notification.userName)
+                        when (notification.type) {
+                            NotificationType.FOLLOW -> {
+                                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", notification.senderId)
+                                    putExtra("username", notification.userName)
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
-                        }
-                        NotificationType.LIKE, NotificationType.COMMENT -> {
-                            if (notification.postId.isNotEmpty()) {
-                                // For like/comment notifications, the current user is the post owner
-                                // We need to fetch the current user's posts to find the post index
-                                val postRepo = PostRepoImpl()
-                                val postViewModel = PostViewModel(postRepo)
-                                
-                                postViewModel.getUserPosts(currentUserId) { posts ->
-                                    val postIndex = posts.indexOfFirst { it.postId == notification.postId }
-                                    if (postIndex != -1) {
-                                        val intent = Intent(context, PostFeedActivity::class.java).apply {
-                                            putExtra("USER_ID", currentUserId)
-                                            putExtra("INITIAL_INDEX", postIndex)
+                            NotificationType.LIKE, NotificationType.COMMENT -> {
+                                if (notification.postId.isNotEmpty()) {
+                                    // For like/comment notifications, the current user is the post owner
+                                    // We need to fetch the current user's posts to find the post index
+                                    val postRepo = PostRepoImpl()
+                                    val postViewModel = PostViewModel(postRepo)
+
+                                    postViewModel.getUserPosts(currentUserId) { posts ->
+                                        val postIndex = posts.indexOfFirst { it.postId == notification.postId }
+                                        if (postIndex != -1) {
+                                            val intent = Intent(context, PostFeedActivity::class.java).apply {
+                                                putExtra("USER_ID", currentUserId)
+                                                putExtra("INITIAL_INDEX", postIndex)
+                                            }
+                                            context.startActivity(intent)
                                         }
-                                        context.startActivity(intent)
                                     }
                                 }
                             }
+                            else -> {}
                         }
-                        else -> {}
+                    },
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongPress()
                     }
-                },
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongPress()
-                }
-            )
+                )
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -385,9 +385,9 @@ fun NotificationItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(2.dp))
-                
+
                 Text(
                     text = notification.time,
                     fontSize = 12.sp,
@@ -439,7 +439,7 @@ fun NotificationItem(
                 else -> {}
             }
         }
-        
+
         Divider(
             color = Light_grey.copy(alpha = 0.5f),
             thickness = 0.5.dp,
@@ -549,7 +549,7 @@ fun SalePostNotificationCard(
 
             if (notification.postImage.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -563,7 +563,7 @@ fun SalePostNotificationCard(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
-                    
+
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -580,9 +580,9 @@ fun SalePostNotificationCard(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,

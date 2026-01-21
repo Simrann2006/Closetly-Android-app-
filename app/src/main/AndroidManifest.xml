@@ -47,6 +47,17 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ChangePasswordScreen"
+            android:exported="true"
+            android:label="ChangePasswordScreen"
+            android:theme="@style/Theme.Closetly">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".ListingViewerActivity"
             android:exported="false"
             android:label="ListingViewerActivity"
@@ -84,26 +95,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".SavedPostsActivity"
-            android:exported="false"
-            android:label="SavedPostsActivity"
-            android:theme="@style/Theme.Closetly" />
-        <activity
-            android:name=".SavedPostsFeedActivity"
-            android:exported="false"
-            android:label="SavedPostsFeedActivity"
-            android:theme="@style/Theme.Closetly" />
-        <activity
-            android:name=".LikedPostsActivity"
-            android:exported="false"
-            android:label="LikedPostsActivity"
-            android:theme="@style/Theme.Closetly" />
-        <activity
-            android:name=".LikedPostsFeedActivity"
-            android:exported="false"
-            android:label="LikedPostsFeedActivity"
-            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".MessageActivity"
             android:exported="true"
