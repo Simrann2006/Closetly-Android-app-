@@ -1,1 +1,4 @@
 /build
+
+# Firebase service account credentials (NEVER commit)
+/src/main/assets/service-account.json

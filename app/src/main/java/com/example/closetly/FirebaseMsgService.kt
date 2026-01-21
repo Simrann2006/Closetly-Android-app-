@@ -1,73 +1,80 @@
 package com.example.closetly
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.media.RingtoneManager
-import android.os.Build
-import androidx.core.app.NotificationCompat
+import android.util.Log
+import com.example.closetly.utils.NotificationHelper
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class FirebaseMsgService : FirebaseMessagingService() {
 
+    companion object {
+        private const val TAG = "FirebaseMsgService"
+    }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        val chatId = remoteMessage.data["chatId"]
+        
+        Log.d(TAG, "Message received from: ${remoteMessage.from}")
+        
+        if (remoteMessage.data.isNotEmpty()) {
+            Log.d(TAG, "Message data payload: ${remoteMessage.data}")
+            handleDataPayload(remoteMessage.data)
+        }
+        
         remoteMessage.notification?.let {
-            sendNotification(it.title, it.body, chatId)
+            Log.d(TAG, "Message notification: ${it.title} - ${it.body}")
+            handleNotificationPayload(it, remoteMessage.data)
         }
     }
 
-    private fun sendNotification(title: String?, messageBody: String?, chatId: String? = null) {
-        val intent = if (chatId != null) {
-            Intent(this, MessageActivity::class.java).apply {
-                putExtra("chatId", chatId)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-        } else {
-            Intent(this, DashboardActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+    private fun handleDataPayload(data: Map<String, String>) {
+        val title = data["title"]
+        val body = data["body"]
+        val type = data["type"] // chat, post, general
+        
+        NotificationHelper.showNotification(
+            context = this,
+            title = title,
+            message = body,
+            type = type,
+            data = data
         )
+    }
 
-        val channelId = "message_channel"
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.notification)
-            .setContentTitle(title ?: "New Message")
-            .setContentText(messageBody ?: "You have a new message.")
-            .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setContentIntent(pendingIntent)
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Message Notifications",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        notificationManager.notify(0, notificationBuilder.build())
+    private fun handleNotificationPayload(
+        notification: RemoteMessage.Notification,
+        data: Map<String, String>
+    ) {
+        val type = data["type"] ?: NotificationHelper.TYPE_GENERAL
+        
+        NotificationHelper.showNotification(
+            context = this,
+            title = notification.title,
+            message = notification.body,
+            type = type,
+            data = data
+        )
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
+        Log.d(TAG, "New FCM token: $token")
+        
+        sendTokenToServer(token)
+    }
+
+    private fun sendTokenToServer(token: String) {
         val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
                 .getReference("Users").child(userId)
             userRef.child("fcmToken").setValue(token)
+                .addOnSuccessListener {
+                    Log.d(TAG, "FCM token updated successfully")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Failed to update FCM token: ${e.message}")
+                }
         }
     }
 }
