@@ -266,4 +266,36 @@ class HomePostRepoImpl : HomePostRepo {
             savedRef.removeEventListener(listener)
         }
     }
+
+    override fun getLikedPosts(userId: String): Flow<List<PostModel>> = callbackFlow {
+        val postsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val likedPosts = mutableListOf<PostModel>()
+                
+                // Iterate through all posts and check if user liked them
+                snapshot.children.forEach { postSnapshot ->
+                    postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                        // Check if user liked this post
+                        val isLiked = postSnapshot.child("likes").child(userId).exists()
+                        if (isLiked) {
+                            likedPosts.add(post)
+                        }
+                    }
+                }
+                
+                // Sort by timestamp (newest first)
+                trySend(likedPosts.sortedByDescending { it.timestamp })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        postsRef.addValueEventListener(postsListener)
+
+        awaitClose {
+            postsRef.removeEventListener(postsListener)
+        }
+    }
 }

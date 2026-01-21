@@ -14,4 +14,5 @@ interface HomePostRepo {
     fun isPostSaved(postId: String, userId: String): Flow<Boolean>
     fun isUserFollowing(targetUserId: String, currentUserId: String): Flow<Boolean>
     fun getSavedPosts(userId: String): Flow<List<PostModel>>
+    fun getLikedPosts(userId: String): Flow<List<PostModel>>
 }

@@ -134,7 +134,10 @@ fun SettingsBody() {
             SettingsItem(
                 icon = R.drawable.baseline_favorite_border_24,
                 title = "Liked Posts",
-                onClick = { }
+                onClick = {
+                    val intent = Intent(context, LikedPostsActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
 
             HorizontalDivider(color = Light_grey1, thickness = 8.dp)
