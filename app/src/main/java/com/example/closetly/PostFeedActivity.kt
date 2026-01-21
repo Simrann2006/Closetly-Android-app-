@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,9 +27,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.closetly.model.PostModel
 import com.example.closetly.repository.PostRepoImpl
+import com.example.closetly.repository.HomePostRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.PostViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -160,13 +164,45 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
 
 @Composable
 fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
+    val context = LocalContext.current
+    val homePostRepo = remember { HomePostRepoImpl() }
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Real-time states from Firebase
     var isLiked by remember { mutableStateOf(false) }
-    var likesCount by remember { mutableStateOf(post.likesCount) }
+    var likesCount by remember { mutableStateOf(0) }
+    var commentsCount by remember { mutableStateOf(0) }
     var isSaved by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var currentCaption by remember { mutableStateOf(post.caption) }
+    
+    // Listen to real-time updates
+    LaunchedEffect(post.postId) {
+        homePostRepo.isPostLiked(post.postId, currentUserId).collectLatest { liked ->
+            isLiked = liked
+        }
+    }
+    
+    LaunchedEffect(post.postId) {
+        homePostRepo.getPostLikesCount(post.postId).collectLatest { count ->
+            likesCount = count
+        }
+    }
+    
+    LaunchedEffect(post.postId) {
+        homePostRepo.getPostCommentsCount(post.postId).collectLatest { count ->
+            commentsCount = count
+        }
+    }
+    
+    LaunchedEffect(post.postId) {
+        homePostRepo.isPostSaved(post.postId, currentUserId).collectLatest { saved ->
+            isSaved = saved
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -295,8 +331,9 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = {
-                            isLiked = !isLiked
-                            likesCount = if (isLiked) likesCount + 1 else likesCount - 1
+                            coroutineScope.launch {
+                                homePostRepo.toggleLike(post.postId, currentUserId)
+                            }
                         },
                         modifier = Modifier.size(32.dp)
                     ) {
@@ -316,16 +353,26 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable {
+                        val intent = android.content.Intent(context, CommentActivity::class.java).apply {
+                            putExtra("POST_ID", post.postId)
+                            putExtra("POST_USER_ID", post.userId)
+                            putExtra("USER_NAME", post.username)
+                        }
+                        context.startActivity(intent)
+                    }
+                ) {
                     Icon(
-                        painterResource(R.drawable.chat),
+                        painterResource(R.drawable.comment),
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
                         tint = Black
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "${post.commentsCount}",
+                        "$commentsCount",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Black
@@ -334,7 +381,11 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
             }
 
             IconButton(
-                onClick = { isSaved = !isSaved },
+                onClick = {
+                    coroutineScope.launch {
+                        homePostRepo.toggleSave(post.postId, currentUserId)
+                    }
+                },
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(

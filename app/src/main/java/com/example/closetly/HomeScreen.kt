@@ -250,16 +250,35 @@ fun SliderItemCard(
             .clickable { onItemClick() }
     ) {
         // Show user profile background with listings
-        // Background image = USER'S PROFILE PICTURE
-        AsyncImage(
-            model = sliderItem.profilePictureUrl,
-            contentDescription = "${sliderItem.username}'s profile",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp)
-                .clip(MaterialTheme.shapes.medium),
-            contentScale = ContentScale.Crop
-        )
+        // Background image = USER'S PROFILE PICTURE or default placeholder
+        if (sliderItem.profilePictureUrl.isNotEmpty()) {
+            AsyncImage(
+                model = sliderItem.profilePictureUrl,
+                contentDescription = "${sliderItem.username}'s profile",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .clip(MaterialTheme.shapes.medium),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // Default placeholder background for users without profile picture
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(Color(0xFFE8E8E8)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_person_24),
+                    contentDescription = "Default profile",
+                    tint = Color(0xFF9E9E9E),
+                    modifier = Modifier.size(120.dp)
+                )
+            }
+        }
 
         // Overlay content
         Box(
@@ -482,6 +501,13 @@ fun PostCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
+                    .clickable {
+                        val intent = Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", postUI.post.userId)
+                            putExtra("username", postUI.post.username)
+                        }
+                        context.startActivity(intent)
+                    }
             )
 
             // Action buttons row (Like, Comment, Save) - Instagram style
