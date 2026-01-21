@@ -209,4 +209,61 @@ class HomePostRepoImpl : HomePostRepo {
             followingRef.removeEventListener(listener)
         }
     }
+
+    override fun getSavedPosts(userId: String): Flow<List<PostModel>> = callbackFlow {
+        val savedRef = usersRef.child(userId).child("saved")
+        
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val savedPostIds = mutableListOf<String>()
+                
+                // Get all saved post IDs
+                snapshot.children.forEach { savedSnapshot ->
+                    savedSnapshot.key?.let { postId ->
+                        savedPostIds.add(postId)
+                    }
+                }
+                
+                // Fetch actual post data for each saved post ID
+                if (savedPostIds.isEmpty()) {
+                    trySend(emptyList())
+                } else {
+                    val savedPosts = mutableListOf<PostModel>()
+                    var processedCount = 0
+                    
+                    savedPostIds.forEach { postId ->
+                        postsRef.child(postId).get().addOnSuccessListener { postSnapshot ->
+                            postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                                savedPosts.add(post)
+                            }
+                            processedCount++
+                            
+                            // When all posts are processed, send the result
+                            if (processedCount == savedPostIds.size) {
+                                // Sort by timestamp (newest first)
+                                trySend(savedPosts.sortedByDescending { it.timestamp })
+                            }
+                        }.addOnFailureListener {
+                            processedCount++
+                            
+                            // Still send result even if one post fails
+                            if (processedCount == savedPostIds.size) {
+                                trySend(savedPosts.sortedByDescending { it.timestamp })
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        savedRef.addValueEventListener(listener)
+
+        awaitClose {
+            savedRef.removeEventListener(listener)
+        }
+    }
 }

@@ -125,7 +125,10 @@ fun SettingsBody() {
             SettingsItem(
                 icon = R.drawable.baseline_bookmark_border_24,
                 title = "Saved Posts",
-                onClick = { }
+                onClick = {
+                    val intent = Intent(context, SavedPostsActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
 
             SettingsItem(

@@ -84,6 +84,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".SavedPostsActivity"
+            android:exported="false"
+            android:label="SavedPostsActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".MessageActivity"
             android:exported="true"
             android:label="MessageActivity"
