@@ -89,6 +89,11 @@
             android:label="SavedPostsActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
+            android:name=".SavedPostsFeedActivity"
+            android:exported="false"
+            android:label="SavedPostsFeedActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".MessageActivity"
             android:exported="true"
             android:label="MessageActivity"
