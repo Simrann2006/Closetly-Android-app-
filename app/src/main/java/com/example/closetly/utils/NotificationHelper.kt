@@ -137,7 +137,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         notificationBuilder.addAction(
-            R.drawable.baseline_message_24,
+            R.drawable.chat,
             "Reply",
             replyPendingIntent
         )
