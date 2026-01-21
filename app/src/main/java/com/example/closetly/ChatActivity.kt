@@ -37,8 +37,11 @@ import coil.compose.AsyncImage
 import com.example.closetly.model.MessageModel
 import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.repository.CommonRepoImpl
+import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.NotificationHelper
 import com.example.closetly.viewmodel.ChatViewModel
+import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.*
@@ -103,6 +106,7 @@ fun ChatBody(
 ) {
     val context = LocalContext.current
     val chatViewModel = remember { ChatViewModel(ChatRepoImpl()) }
+    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     
     var messageText by remember { mutableStateOf("") }
@@ -111,6 +115,15 @@ fun ChatBody(
     var showFullScreenImage by remember { mutableStateOf(false) }
     var fullScreenImageUrls by remember { mutableStateOf<List<String>>(emptyList()) }
     var fullScreenImageIndex by remember { mutableStateOf(0) }
+    var currentUserName by remember { mutableStateOf("") }
+    
+    LaunchedEffect(currentUserId) {
+        userViewModel.getUserById(currentUserId) { success, _, user ->
+            if (success && user != null) {
+                currentUserName = user.fullName.ifEmpty { user.username }
+            }
+        }
+    }
     
     val listState = rememberLazyListState()
 
@@ -306,8 +319,17 @@ fun ChatBody(
                             )
                             chatViewModel.sendMessage(chatId, message) { success, msg ->
                                 if (success) {
+                                    NotificationHelper.sendChatNotification(
+                                        context = context,
+                                        receiverUserId = otherUserId,
+                                        senderName = currentUserName,
+                                        messageText = messageText.trim(),
+                                        chatId = chatId,
+                                        senderId = currentUserId
+                                    )
                                     messageText = ""
-                                } else {
+                                }else
+                                {
                                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -351,7 +373,19 @@ fun ChatBody(
                                     imageUrls = uploadedUrls,
                                     timestamp = System.currentTimeMillis()
                                 )
-                                chatViewModel.sendMessage(chatId, message) { _, _ -> }
+                                chatViewModel.sendMessage(chatId, message) { success, _ -> 
+                                    if (success) {
+                                        val imageText = if (uploadedUrls.size == 1) "📷 Photo" else "📷 ${uploadedUrls.size} Photos"
+                                        NotificationHelper.sendChatNotification(
+                                            context = context,
+                                            receiverUserId = otherUserId,
+                                            senderName = currentUserName,
+                                            messageText = imageText,
+                                            chatId = chatId,
+                                            senderId = currentUserId
+                                        )
+                                    }
+                                }
                             }
                             isUploading = false
                             onImagesSent()

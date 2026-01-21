@@ -58,6 +58,7 @@ import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
+import com.example.closetly.utils.NotificationHelper
 import com.example.closetly.viewmodel.ChatViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -70,6 +71,7 @@ class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
         setContent {
             DashboardBody()
         }

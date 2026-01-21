@@ -1,13 +1,17 @@
 package com.example.closetly
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +51,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -63,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
@@ -71,6 +75,7 @@ import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Red
 import com.example.closetly.ui.theme.White
+import com.example.closetly.utils.NotificationHelper
 import com.example.closetly.viewmodel.UserViewModel
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -82,17 +87,48 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class LoginActivity : ComponentActivity() {
+    
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            NotificationHelper.createNotificationChannels(this)
+        }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            LoginBody()
+            LoginBody(
+                requestNotificationPermission = {
+                    requestNotificationPermission()
+                }
+            )
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    NotificationHelper.createNotificationChannels(this)
+                }
+                else -> {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        } else {
+            NotificationHelper.createNotificationChannels(this)
         }
     }
 }
 
 @Composable
-fun LoginBody(){
+fun LoginBody(requestNotificationPermission: () -> Unit = {}){
 
     val userViewModel = remember { UserViewModel(UserRepoImpl()) }
 
@@ -355,6 +391,8 @@ fun LoginBody(){
                                         sharedPreferences.edit().clear().apply()
                                     }
 
+                                    requestNotificationPermission()
+
                                     com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                                         if (task.isSuccessful) {
                                             val token = task.result
@@ -444,6 +482,8 @@ fun LoginBody(){
 
                                 userViewModel.signInWithGoogle(idToken) { success, message ->
                                     if (success) {
+                                        requestNotificationPermission()
+                                        
                                         com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                                             if (task.isSuccessful) {
                                                 val token = task.result
