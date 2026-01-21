@@ -5,6 +5,7 @@
       <SelectionState runConfigName="DashboardActivity">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+<<<<<<< Updated upstream
       <SelectionState runConfigName="DashboardActivity (2)">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
@@ -14,6 +15,14 @@
       <SelectionState runConfigName="LoginActivity (1)">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+=======
+      <SelectionState runConfigName="ChangePasswordScreen">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="ChangePasswordPreview">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+>>>>>>> Stashed changes
     </selectionStates>
   </component>
 </project>

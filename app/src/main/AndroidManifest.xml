@@ -24,9 +24,15 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
+<<<<<<< Updated upstream
             android:name=".PostFeedActivity"
             android:exported="true"
             android:label="@string/title_activity_post_feed"
+=======
+            android:name=".ChangePasswordScreen"
+            android:exported="true"
+            android:label="@string/title_activity_change_password_screen"
+>>>>>>> Stashed changes
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,6 +41,7 @@
             </intent-filter>
         </activity>
         <activity
+<<<<<<< Updated upstream
             android:name=".ListingDetailsActivity"
             android:exported="true"
             android:label="ListingDetailsActivity"
@@ -73,6 +80,8 @@
         </provider>
 
         <activity
+=======
+>>>>>>> Stashed changes
             android:name=".SettingsActivity"
             android:exported="true"
             android:label="SettingsActivity"

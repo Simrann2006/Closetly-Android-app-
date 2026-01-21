@@ -32,7 +32,11 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+<<<<<<< Updated upstream
 import androidx.compose.ui.text.style.TextOverflow
+=======
+import androidx.compose.ui.tooling.preview.Preview
+>>>>>>> Stashed changes
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -605,4 +609,9 @@ fun SalePostNotificationCard(
             }
         }
     }
+}
+@Composable
+@Preview
+fun PreviewNotification() {
+    NotificationScreen()
 }
