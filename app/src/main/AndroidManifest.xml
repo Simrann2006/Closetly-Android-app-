@@ -160,6 +160,11 @@
             android:label="LikedPostsFeedActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
+            android:name=".FullScreenImageActivity"
+            android:exported="false"
+            android:label="FullScreenImageActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".ClothesDetailsActivity"
             android:exported="true"
             android:label="@string/title_activity_clothes_detail"

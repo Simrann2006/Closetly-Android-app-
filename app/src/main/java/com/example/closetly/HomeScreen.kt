@@ -3,6 +3,7 @@ package com.example.closetly
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -418,19 +419,33 @@ fun PostCard(
                         .clip(CircleShape)
                         .background(Color(0xFFE8E8E8))
                         .border(1.5.dp, Color.LightGray, CircleShape)
-                        .clickable {
-                            if (postUI.post.userId.isNotEmpty()) {
-                                try {
-                                    val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                        putExtra("userId", postUI.post.userId)
-                                        putExtra("username", postUI.post.username)
+                        .combinedClickable(
+                            onClick = {
+                                if (postUI.post.userId.isNotEmpty()) {
+                                    try {
+                                        val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                            putExtra("userId", postUI.post.userId)
+                                            putExtra("username", postUI.post.username)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
                                     }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
+                                }
+                            },
+                            onLongClick = {
+                                if (postUI.post.userProfilePic.isNotEmpty()) {
+                                    try {
+                                        val intent = Intent(context, FullScreenImageActivity::class.java).apply {
+                                            putExtra("IMAGE_URL", postUI.post.userProfilePic)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
                                 }
                             }
-                        },
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     if (postUI.post.userProfilePic.isNotEmpty()) {
