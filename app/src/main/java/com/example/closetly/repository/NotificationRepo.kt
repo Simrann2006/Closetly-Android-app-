@@ -33,6 +33,7 @@ interface NotificationRepo {
     )
     
     fun sendPostNotification(
+        context: Context,
         postOwnerId: String,
         postOwnerName: String,
         postOwnerImage: String,

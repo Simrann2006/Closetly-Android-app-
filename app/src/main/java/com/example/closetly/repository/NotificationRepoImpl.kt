@@ -134,6 +134,7 @@ class NotificationRepoImpl : NotificationRepo {
     }
     
     override fun sendPostNotification(
+        context: Context,
         postOwnerId: String,
         postOwnerName: String,
         postOwnerImage: String,
@@ -143,31 +144,47 @@ class NotificationRepoImpl : NotificationRepo {
     ) {
         if (!postCaption.contains("sale", ignoreCase = true)) return
         
-        usersRef.child(postOwnerId).child("followers").get().addOnSuccessListener { snapshot ->
+        // Get followers of the post owner
+        usersRef.child(postOwnerId).child("followers").get().addOnSuccessListener { followersSnapshot ->
             val timestamp = System.currentTimeMillis()
             
-            snapshot.children.forEach { followerSnapshot ->
+            followersSnapshot.children.forEach { followerSnapshot ->
                 val followerId = followerSnapshot.key ?: return@forEach
                 if (followerId == postOwnerId) return@forEach
                 
-                val notificationId = notificationsRef.child(followerId).push().key ?: return@forEach
-                
-                val notification = mapOf(
-                    "notificationId" to notificationId,
-                    "senderId" to postOwnerId,
-                    "userName" to postOwnerName,
-                    "userProfileImage" to postOwnerImage,
-                    "type" to NotificationType.POST.name,
-                    "message" to "posted a new sale",
-                    "time" to getTimeAgo(timestamp),
-                    "timestamp" to timestamp,
-                    "isRead" to false,
-                    "postId" to postId,
-                    "postImage" to postImage,
-                    "commentText" to ""
-                )
-                
-                notificationsRef.child(followerId).child(notificationId).setValue(notification)
+                // Check if post owner also follows this follower (mutual follow)
+                usersRef.child(postOwnerId).child("following").child(followerId).get().addOnSuccessListener { followingSnapshot ->
+                    if (followingSnapshot.exists()) {
+                        // They follow each other, send notification
+                        val notificationId = notificationsRef.child(followerId).push().key ?: return@addOnSuccessListener
+                        
+                        val notification = mapOf(
+                            "notificationId" to notificationId,
+                            "senderId" to postOwnerId,
+                            "userName" to postOwnerName,
+                            "userProfileImage" to postOwnerImage,
+                            "type" to NotificationType.POST.name,
+                            "message" to "posted a new sale",
+                            "time" to getTimeAgo(timestamp),
+                            "timestamp" to timestamp,
+                            "isRead" to false,
+                            "postId" to postId,
+                            "postImage" to postImage,
+                            "commentText" to ""
+                        )
+                        
+                        notificationsRef.child(followerId).child(notificationId).setValue(notification)
+                        
+                        // Send FCM push notification
+                        NotificationHelper.sendPostNotification(
+                            context = context,
+                            receiverUserId = followerId,
+                            actorName = postOwnerName,
+                            notificationType = "sale",
+                            postId = postId
+                        )
+                    }
+                }
             }
         }
     }

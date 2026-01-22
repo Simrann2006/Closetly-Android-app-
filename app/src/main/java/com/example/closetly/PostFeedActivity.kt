@@ -54,7 +54,7 @@ class PostFeedActivity : ComponentActivity() {
 @Composable
 fun PostFeedBody(userId: String, initialIndex: Int) {
     val context = LocalContext.current
-    val postRepo = remember { PostRepoImpl() }
+    val postRepo = remember { PostRepoImpl(context) }
     val postViewModel = remember { PostViewModel(postRepo) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
@@ -484,7 +484,7 @@ fun EditPostDialog(
     onSave: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val postRepo = remember { PostRepoImpl() }
+    val postRepo = remember { PostRepoImpl(context) }
     val postViewModel = remember { PostViewModel(postRepo) }
     
     var caption by remember { mutableStateOf(post.caption) }

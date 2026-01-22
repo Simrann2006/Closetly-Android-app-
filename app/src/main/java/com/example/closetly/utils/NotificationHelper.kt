@@ -291,6 +291,7 @@ object NotificationHelper {
                     "like" -> "New Like ❤️"
                     "comment" -> "New Comment 💬"
                     "share" -> "Post Shared 🔄"
+                    "sale" -> "New Sale Post 🛍️"
                     else -> "New Activity"
                 }
 
@@ -298,6 +299,7 @@ object NotificationHelper {
                     "like" -> "$actorName liked your post"
                     "comment" -> "$actorName commented on your post"
                     "share" -> "$actorName shared your post"
+                    "sale" -> "$actorName posted a new sale item"
                     else -> "$actorName interacted with your post"
                 }
 

@@ -88,14 +88,15 @@ fun NotificationScreen() {
                         NotificationType.FOLLOW
                     }
                     val message = child.child("message").getValue(String::class.java) ?: ""
-                    val time = child.child("time").getValue(String::class.java) ?: ""
+                    val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
+                    val time = com.example.closetly.utils.getTimeAgoShort(timestamp)
                     val isRead = child.child("isRead").getValue(Boolean::class.java) ?: false
                     val senderId = child.child("senderId").getValue(String::class.java) ?: ""
                     val postId = child.child("postId").getValue(String::class.java) ?: ""
                     val postImage = child.child("postImage").getValue(String::class.java) ?: ""
                     val commentText = child.child("commentText").getValue(String::class.java) ?: ""
 
-                    val notificationModel = NotificationModel(userName, userProfileImage, type, message, time, isRead, senderId, postId, postImage, commentText)
+                    val notificationModel = NotificationModel(userName, userProfileImage, type, message, time, isRead, senderId, postId, postImage, commentText, timestamp)
                     list.add(Pair(notificationId, notificationModel))
                 }
                 notifications = list.reversed()
@@ -316,7 +317,7 @@ fun NotificationItem(
                                 if (notification.postId.isNotEmpty()) {
                                     // For like/comment notifications, the current user is the post owner
                                     // We need to fetch the current user's posts to find the post index
-                                    val postRepo = PostRepoImpl()
+                                    val postRepo = PostRepoImpl(context)
                                     val postViewModel = PostViewModel(postRepo)
 
                                     postViewModel.getUserPosts(currentUserId) { posts ->

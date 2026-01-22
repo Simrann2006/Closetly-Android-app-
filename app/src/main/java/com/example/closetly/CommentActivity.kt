@@ -63,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -94,9 +95,10 @@ class CommentActivity : ComponentActivity() {
 @Composable
 fun CommentScreen(
     postId: String,
-    onBackClick: () -> Unit,
-    viewModel: CommentViewModel = viewModel()
+    onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val viewModel = remember { CommentViewModel(context) }
     val comments by viewModel.comments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()

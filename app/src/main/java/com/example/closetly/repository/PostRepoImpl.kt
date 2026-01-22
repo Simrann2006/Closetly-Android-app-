@@ -1,10 +1,11 @@
 package com.example.closetly.repository
 
+import android.content.Context
 import com.example.closetly.model.PostModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
-class PostRepoImpl : PostRepo {
+class PostRepoImpl(private val context: Context) : PostRepo {
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
     private val ref: DatabaseReference = database.getReference("Posts")
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -32,6 +33,7 @@ class PostRepoImpl : PostRepo {
                     if (it.isSuccessful) {
                         if (post.caption.contains("sale", ignoreCase = true)) {
                             notificationRepo.sendPostNotification(
+                                context = context,
                                 postOwnerId = currentUserId,
                                 postOwnerName = userName,
                                 postOwnerImage = profilePic,

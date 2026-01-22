@@ -48,7 +48,7 @@ fun PostCreationBody(imageUri: String?) {
     val context = LocalContext.current
     val commonRepo = remember { CommonRepoImpl() }
     val commonViewModel = remember { CommonViewModel(commonRepo) }
-    val postRepo = remember { PostRepoImpl() }
+    val postRepo = remember { PostRepoImpl(context) }
     val postViewModel = remember { PostViewModel(postRepo) }
     
     var caption by remember { mutableStateOf("") }

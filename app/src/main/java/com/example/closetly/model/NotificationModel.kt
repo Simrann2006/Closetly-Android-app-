@@ -16,7 +16,8 @@ data class NotificationModel(
     var senderId: String = "",
     var postId: String = "",
     var postImage: String = "",
-    var commentText: String = ""
+    var commentText: String = "",
+    var timestamp: Long = 0L
 
 ) {
     fun toMap(): Map<String, Any> {

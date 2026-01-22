@@ -88,7 +88,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     val context = LocalContext.current
     val userRepo = remember { UserRepoImpl(context) }
     val userViewModel = remember { UserViewModel(userRepo) }
-    val postRepo = remember { PostRepoImpl() }
+    val postRepo = remember { PostRepoImpl(context) }
     val postViewModel = remember { PostViewModel(postRepo) }
     val productRepo = remember { ProductRepoImpl() }
     val productViewModel = remember { ProductViewModel(productRepo) }

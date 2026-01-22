@@ -48,7 +48,7 @@ fun ProfileScreen() {
     val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
     val productRepo = remember { ProductRepoImpl() }
     val productViewModel = remember { ProductViewModel(productRepo) }
-    val postRepo = remember { PostRepoImpl() }
+    val postRepo = remember { PostRepoImpl(context) }
     val postViewModel = remember { PostViewModel(postRepo) }
     val currentUser = remember { FirebaseAuth.getInstance().currentUser }
     
