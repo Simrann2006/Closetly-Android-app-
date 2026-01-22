@@ -315,8 +315,6 @@ fun NotificationItem(
                             }
                             NotificationType.LIKE, NotificationType.COMMENT -> {
                                 if (notification.postId.isNotEmpty()) {
-                                    // For like/comment notifications, the current user is the post owner
-                                    // We need to fetch the current user's posts to find the post index
                                     val postRepo = PostRepoImpl(context)
                                     val postViewModel = PostViewModel(postRepo)
 

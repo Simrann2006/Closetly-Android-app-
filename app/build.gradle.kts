@@ -92,6 +92,9 @@ dependencies {
     implementation("androidx.credentials:credentials:1.2.2")
     implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+    
+    // RemoveBg - Background removal using U2Net
+    implementation("com.github.erenalpaslan:removebg:1.0.4")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -119,5 +122,11 @@ dependencies {
 
     implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0")
 
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta5")
 }

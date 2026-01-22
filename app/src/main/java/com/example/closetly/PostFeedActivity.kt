@@ -169,7 +169,6 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val coroutineScope = rememberCoroutineScope()
     
-    // Real-time states from Firebase
     var isLiked by remember { mutableStateOf(false) }
     var likesCount by remember { mutableStateOf(0) }
     var commentsCount by remember { mutableStateOf(0) }
@@ -179,7 +178,6 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
     var showEditDialog by remember { mutableStateOf(false) }
     var currentCaption by remember { mutableStateOf(post.caption) }
     
-    // Listen to real-time updates
     LaunchedEffect(post.postId) {
         homePostRepo.isPostLiked(post.postId, currentUserId).collectLatest { liked ->
             isLiked = liked
