@@ -137,7 +137,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         notificationBuilder.addAction(
-            R.drawable.baseline_message_24,
+            R.drawable.chat,
             "Reply",
             replyPendingIntent
         )
@@ -397,18 +397,18 @@ object NotificationHelper {
         return withContext(Dispatchers.IO) {
             try {
                 val serviceAccountStream = context.assets.open("service-account.json")
-                
+
                 val credentials = GoogleCredentials
                     .fromStream(serviceAccountStream)
                     .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
-                
+
                 credentials.refresh()
-                
+
                 val accessToken = credentials.accessToken.tokenValue
-                
+
                 Log.d(TAG, "OAuth 2.0 access token generated successfully")
                 accessToken
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error generating OAuth token: ${e.message}")
                 throw e

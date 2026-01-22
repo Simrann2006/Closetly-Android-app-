@@ -477,7 +477,7 @@ fun PostCard(
                     onClick = onFollowClick,
                     modifier = Modifier.height(30.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (postUI.isFollowing) Color(0xFFD3C1C1) else Color(0xFF8B6F6F),
+                        containerColor = Color(0xFF8B6F6F),
                     ),
                     shape = RoundedCornerShape(6.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
