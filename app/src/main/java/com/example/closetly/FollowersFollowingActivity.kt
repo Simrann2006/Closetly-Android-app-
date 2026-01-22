@@ -50,7 +50,7 @@ class FollowersFollowingActivity : ComponentActivity() {
 @Composable
 fun FollowersFollowingScreen(userId: String, username: String, initialTab: String) {
     val context = LocalContext.current
-    val userRepo = remember { UserRepoImpl() }
+    val userRepo = remember { UserRepoImpl(context) }
     val userViewModel = remember { UserViewModel(userRepo) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     

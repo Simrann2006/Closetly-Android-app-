@@ -49,7 +49,7 @@ class SavedPostsFeedActivity : ComponentActivity() {
 @Composable
 fun SavedPostsFeedBody(initialIndex: Int) {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     
     var savedPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
@@ -143,7 +143,7 @@ fun SavedPostsFeedBody(initialIndex: Int) {
 @Composable
 fun SavedPostItem(post: PostModel) {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val coroutineScope = rememberCoroutineScope()
     

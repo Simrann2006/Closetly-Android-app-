@@ -44,7 +44,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun ProfileScreen() {
     val context = LocalContext.current
-    val userRepo = remember { UserRepoImpl() }
+    val userRepo = remember { UserRepoImpl(context) }
     val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
     val productRepo = remember { ProductRepoImpl() }
     val productViewModel = remember { ProductViewModel(productRepo) }

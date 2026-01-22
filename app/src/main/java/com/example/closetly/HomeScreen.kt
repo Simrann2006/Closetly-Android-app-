@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,10 +73,10 @@ import kotlinx.coroutines.delay
 @Composable
 fun HomeScreen(
     onPostClick: (String, String) -> Unit = { _, _ -> },
-    viewModel: HomeViewModel = viewModel(),
     sliderViewModel: SliderViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val viewModel: HomeViewModel = remember { HomeViewModel(context) }
     val postsUI by viewModel.postsUI.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()

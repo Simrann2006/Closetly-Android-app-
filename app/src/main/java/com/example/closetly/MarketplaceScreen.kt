@@ -376,7 +376,7 @@ fun ProductDetailsDialog(
 ) {
     val context = LocalContext.current
     val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    val userRepo = remember { UserRepoImpl() }
+    val userRepo = remember { UserRepoImpl(context) }
     
     var sellerName by remember { mutableStateOf(product.sellerName) }
     var sellerProfilePic by remember { mutableStateOf(product.sellerProfilePic) }

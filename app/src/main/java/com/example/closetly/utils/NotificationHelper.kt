@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.example.closetly.ChatActivity
 import com.example.closetly.DashboardActivity
 import com.example.closetly.NotificationActivity
+import com.example.closetly.UserProfileActivity
 import com.example.closetly.R
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.database.FirebaseDatabase
@@ -153,18 +154,32 @@ object NotificationHelper {
         message: String?,
         data: Map<String, String>
     ) {
-        val postId = data["postId"]
-        val notificationType = data["notificationType"]
+        val postId = data["postId"] ?: ""
+        val notificationType = data["notificationType"] ?: ""
+        val followerId = data["followerId"]
 
-        val intent = Intent(context, NotificationActivity::class.java).apply {
-            putExtra("postId", postId)
-            putExtra("type", notificationType)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val intent = if (notificationType == "follow" && followerId != null) {
+            Intent(context, UserProfileActivity::class.java).apply {
+                putExtra("userId", followerId)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+        } else {
+            Intent(context, NotificationActivity::class.java).apply {
+                putExtra("postId", postId)
+                putExtra("type", notificationType)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+        }
+
+        val notificationId = if (notificationType == "follow" && followerId != null) {
+            followerId.hashCode()
+        } else {
+            postId.hashCode()
         }
 
         val pendingIntent = PendingIntent.getActivity(
             context,
-            postId.hashCode(),
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -181,7 +196,7 @@ object NotificationHelper {
 
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(postId.hashCode(), notificationBuilder.build())
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
     /**
@@ -310,6 +325,55 @@ object NotificationHelper {
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending post notification: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Send follow notification push (similar to chat notifications)
+     */
+    fun sendFollowNotification(
+        context: Context,
+        receiverUserId: String,
+        followerName: String,
+        followerId: String
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val token = getUserFcmToken(receiverUserId) ?: return@launch
+
+                val title = "New Follower 👤"
+                val body = "$followerName started following you"
+
+                val payload = JSONObject().apply {
+                    put("message", JSONObject().apply {
+                        put("token", token)
+
+                        put("notification", JSONObject().apply {
+                            put("title", title)
+                            put("body", body)
+                        })
+
+                        put("data", JSONObject().apply {
+                            put("type", TYPE_POST)
+                            put("title", title)
+                            put("body", body)
+                            put("followerId", followerId)
+                            put("followerName", followerName)
+                            put("notificationType", "follow")
+                            put("postId", "")
+                        })
+
+                        put("android", JSONObject().apply {
+                            put("priority", "HIGH")
+                        })
+                    })
+                }
+
+                sendFcmV1Request(context, payload)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending follow notification: ${e.message}")
             }
         }
     }

@@ -165,7 +165,7 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
 @Composable
 fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val coroutineScope = rememberCoroutineScope()
     

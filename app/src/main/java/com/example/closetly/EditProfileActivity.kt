@@ -49,7 +49,7 @@ class EditProfileActivity : ComponentActivity() {
 @Composable
 fun EditProfileScreen() {
     val context = LocalContext.current
-    val userRepo = remember { com.example.closetly.repository.UserRepoImpl() }
+    val userRepo = remember { com.example.closetly.repository.UserRepoImpl(context) }
     val userViewModel = remember { com.example.closetly.viewmodel.UserViewModel(userRepo) }
     val commonRepo = remember { com.example.closetly.repository.CommonRepoImpl() }
     val commonViewModel = remember { com.example.closetly.viewmodel.CommonViewModel(commonRepo) }

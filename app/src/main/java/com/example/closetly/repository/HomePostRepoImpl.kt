@@ -1,5 +1,6 @@
 package com.example.closetly.repository
 
+import android.content.Context
 import com.example.closetly.model.PostModel
 import com.google.firebase.database.*
 import kotlinx.coroutines.channels.awaitClose
@@ -7,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class HomePostRepoImpl : HomePostRepo {
+class HomePostRepoImpl(private val context: Context) : HomePostRepo {
 
     private val database = FirebaseDatabase.getInstance()
     private val postsRef = database.getReference("Posts")
@@ -55,6 +56,7 @@ class HomePostRepoImpl : HomePostRepo {
 
                 if (post != null && user != null) {
                     notificationRepo.sendLikeNotification(
+                        context = context,
                         senderId = userId,
                         senderName = user.username,
                         senderImage = user.profilePicture,

@@ -1,5 +1,6 @@
 package com.example.closetly.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.closetly.model.PostModel
@@ -23,7 +24,8 @@ data class PostUI(
 )
 
 class HomeViewModel(
-    private val repository: HomePostRepo = HomePostRepoImpl()
+    context: Context,
+    private val repository: HomePostRepo = HomePostRepoImpl(context)
 ) : ViewModel() {
     
     private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest_user"

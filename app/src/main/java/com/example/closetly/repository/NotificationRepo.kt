@@ -1,7 +1,10 @@
 package com.example.closetly.repository
 
+import android.content.Context
+
 interface NotificationRepo {
     fun sendFollowNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,
@@ -9,6 +12,7 @@ interface NotificationRepo {
     )
     
     fun sendLikeNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,
@@ -18,6 +22,7 @@ interface NotificationRepo {
     )
     
     fun sendCommentNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,

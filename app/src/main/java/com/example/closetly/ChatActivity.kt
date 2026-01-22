@@ -106,7 +106,7 @@ fun ChatBody(
 ) {
     val context = LocalContext.current
     val chatViewModel = remember { ChatViewModel(ChatRepoImpl()) }
-    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+    val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
     
     var messageText by remember { mutableStateOf("") }

@@ -47,7 +47,7 @@ class LikedPostsActivity : ComponentActivity() {
 @Composable
 fun LikedPostsBody() {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     
     var likedPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }

@@ -67,8 +67,8 @@ class ForgotActivity : ComponentActivity() {
 
 @Composable
 fun ForgotBody(){
-
-    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+    val context = LocalContext.current
+    val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
 
     var email by remember { mutableStateOf("") }
     var isLoginClicked by remember { mutableStateOf(false) }
@@ -76,7 +76,6 @@ fun ForgotBody(){
     var isError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    val context = LocalContext.current
     val activity = context as Activity
 
     Box(

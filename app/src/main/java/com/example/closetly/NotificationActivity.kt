@@ -285,7 +285,7 @@ fun NotificationItem(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    val userRepo = remember { UserRepoImpl() }
+    val userRepo = remember { UserRepoImpl(context) }
     val userViewModel = remember { UserViewModel(userRepo) }
     var isFollowing by remember { mutableStateOf(false) }
 

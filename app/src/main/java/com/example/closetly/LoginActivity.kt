@@ -130,14 +130,14 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginBody(requestNotificationPermission: () -> Unit = {}){
 
-    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+    val context = LocalContext.current
+    val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var visibility by remember { mutableStateOf(false) }
     var terms by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
     val activity = context as Activity
 
     var isforgotClicked by remember { mutableStateOf(false) }

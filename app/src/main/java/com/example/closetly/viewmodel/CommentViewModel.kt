@@ -1,5 +1,6 @@
 package com.example.closetly.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.closetly.model.CommentModel
@@ -15,7 +16,8 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 
 class CommentViewModel(
-    private val repository: CommentRepo = CommentRepoImpl()
+    context: Context,
+    private val repository: CommentRepo = CommentRepoImpl(context)
 ) : ViewModel() {
     
     private val _comments = MutableStateFlow<List<CommentModel>>(emptyList())

@@ -50,7 +50,7 @@ class SettingsActivity : ComponentActivity() {
 @Composable
 fun SettingsBody() {
     val context = LocalContext.current
-    val userRepo = remember { UserRepoImpl() }
+    val userRepo = remember { UserRepoImpl(context) }
     val userViewModel = remember { UserViewModel(userRepo) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }

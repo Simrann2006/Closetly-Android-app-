@@ -1,6 +1,8 @@
 package com.example.closetly.repository
 
+import android.content.Context
 import com.example.closetly.model.NotificationType
+import com.example.closetly.utils.NotificationHelper
 import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.*
@@ -11,6 +13,7 @@ class NotificationRepoImpl : NotificationRepo {
     private val usersRef = database.getReference("Users")
 
     override fun sendFollowNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,
@@ -37,9 +40,18 @@ class NotificationRepoImpl : NotificationRepo {
         )
         
         notificationsRef.child(receiverId).child(notificationId).setValue(notification)
+        
+        // Send push notification
+        NotificationHelper.sendFollowNotification(
+            context = context,
+            receiverUserId = receiverId,
+            followerName = senderName,
+            followerId = senderId
+        )
     }
     
     override fun sendLikeNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,
@@ -68,9 +80,19 @@ class NotificationRepoImpl : NotificationRepo {
         )
         
         notificationsRef.child(postOwnerId).child(notificationId).setValue(notification)
+        
+        // Send push notification
+        NotificationHelper.sendPostNotification(
+            context = context,
+            receiverUserId = postOwnerId,
+            actorName = senderName,
+            notificationType = "like",
+            postId = postId
+        )
     }
     
     override fun sendCommentNotification(
+        context: Context,
         senderId: String,
         senderName: String,
         senderImage: String,
@@ -100,6 +122,15 @@ class NotificationRepoImpl : NotificationRepo {
         )
         
         notificationsRef.child(postOwnerId).child(notificationId).setValue(notification)
+        
+        // Send push notification
+        NotificationHelper.sendPostNotification(
+            context = context,
+            receiverUserId = postOwnerId,
+            actorName = senderName,
+            notificationType = "comment",
+            postId = postId
+        )
     }
     
     override fun sendPostNotification(

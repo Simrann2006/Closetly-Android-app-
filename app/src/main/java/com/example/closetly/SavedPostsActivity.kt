@@ -47,7 +47,7 @@ class SavedPostsActivity : ComponentActivity() {
 @Composable
 fun SavedPostsBody() {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     
     var savedPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }

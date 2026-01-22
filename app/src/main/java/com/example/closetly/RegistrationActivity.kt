@@ -109,8 +109,8 @@ fun getCountryFlagEmoji(countryCode: String): String {
 
 @Composable
 fun RegistrationBody() {
-
-    val userViewModel = remember { UserViewModel(UserRepoImpl()) }
+    val context = LocalContext.current
+    val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -138,7 +138,6 @@ fun RegistrationBody() {
     var selectedCountry by remember { mutableStateOf(nepalCountry) }
     var expanded by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
     val activity = context as Activity
 
     val scrollState = rememberScrollState()

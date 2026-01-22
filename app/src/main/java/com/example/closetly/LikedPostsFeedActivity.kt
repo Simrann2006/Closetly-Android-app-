@@ -49,7 +49,7 @@ class LikedPostsFeedActivity : ComponentActivity() {
 @Composable
 fun LikedPostsFeedBody(initialIndex: Int) {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     
     var likedPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
@@ -143,7 +143,7 @@ fun LikedPostsFeedBody(initialIndex: Int) {
 @Composable
 fun LikedPostItem(post: PostModel) {
     val context = LocalContext.current
-    val homePostRepo = remember { HomePostRepoImpl() }
+    val homePostRepo = remember { HomePostRepoImpl(context) }
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val coroutineScope = rememberCoroutineScope()
     

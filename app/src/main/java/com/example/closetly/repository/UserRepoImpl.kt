@@ -1,5 +1,6 @@
 package com.example.closetly.repository
 
+import android.content.Context
 import com.example.closetly.model.UserModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -11,7 +12,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlin.collections.toMap
 
-class UserRepoImpl : UserRepo{
+class UserRepoImpl(private val context: Context) : UserRepo{
 
     val auth : FirebaseAuth = FirebaseAuth.getInstance()
     val database : FirebaseDatabase = FirebaseDatabase.getInstance()
@@ -229,6 +230,7 @@ class UserRepoImpl : UserRepo{
                                     val currentUser = userSnapshot.getValue(UserModel::class.java)
                                     if (currentUser != null) {
                                         notificationRepo.sendFollowNotification(
+                                            context = context,
                                             senderId = currentUserId,
                                             senderName = currentUser.username,
                                             senderImage = currentUser.profilePicture,

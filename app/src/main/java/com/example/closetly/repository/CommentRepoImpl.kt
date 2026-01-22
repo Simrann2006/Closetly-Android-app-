@@ -1,5 +1,6 @@
 package com.example.closetly.repository
 
+import android.content.Context
 import com.example.closetly.model.CommentModel
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class CommentRepoImpl : CommentRepo {
+class CommentRepoImpl(private val context: Context) : CommentRepo {
 
     private val database = FirebaseDatabase.getInstance()
     private val commentsRef = database.getReference("Comments")
@@ -84,6 +85,7 @@ class CommentRepoImpl : CommentRepo {
 
             if (post != null && user != null) {
                 notificationRepo.sendCommentNotification(
+                    context = context,
                     senderId = comment.userId,
                     senderName = user.username,
                     senderImage = user.profilePicture,
