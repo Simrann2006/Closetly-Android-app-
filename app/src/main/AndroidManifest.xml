@@ -140,6 +140,31 @@
             android:label="CommentActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
+            android:name=".SavedPostsActivity"
+            android:exported="false"
+            android:label="SavedPostsActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
+            android:name=".SavedPostsFeedActivity"
+            android:exported="false"
+            android:label="SavedPostsFeedActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
+            android:name=".LikedPostsActivity"
+            android:exported="false"
+            android:label="LikedPostsActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
+            android:name=".LikedPostsFeedActivity"
+            android:exported="false"
+            android:label="LikedPostsFeedActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
+            android:name=".FullScreenImageActivity"
+            android:exported="false"
+            android:label="FullScreenImageActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".ClothesDetailsActivity"
             android:exported="true"
             android:label="@string/title_activity_clothes_detail"

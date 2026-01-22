@@ -235,7 +235,18 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                             modifier = Modifier
                                 .size(90.dp)
                                 .clip(CircleShape)
-                                .background(Light_grey),
+                                .background(Light_grey)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    if (profilePicture.isNotEmpty()) {
+                                        val intent = Intent(context, FullScreenImageActivity::class.java).apply {
+                                            putExtra("IMAGE_URL", profilePicture)
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             if (profilePicture.isNotEmpty()) {
