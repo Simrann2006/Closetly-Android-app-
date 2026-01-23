@@ -1,6 +1,7 @@
 package com.example.closetly
 
 import android.app.DatePickerDialog
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -12,7 +13,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,16 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +37,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.closetly.model.ClothesModel
 import com.example.closetly.model.OutfitItemModel
@@ -49,7 +47,6 @@ import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.viewmodel.OutfitViewModel
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -96,6 +93,7 @@ fun PlanOutfitScreen(
     var selectedClothes by remember { mutableStateOf<List<PositionedClothesItem>>(emptyList()) }
     var selectedItemId by remember { mutableStateOf<String?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
+    var tempSelectedItems by remember { mutableStateOf<Set<String>>(emptySet()) }
     var isLoading by remember { mutableStateOf(true) }
     var canvasWidth by remember { mutableStateOf(0f) }
     var canvasHeight by remember { mutableStateOf(0f) }
@@ -186,15 +184,6 @@ fun PlanOutfitScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
-                        isFavorite = !isFavorite
-                    }) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (isFavorite) Color.Red else Grey
-                        )
-                    }
                     IconButton(onClick = { showSaveDialog = true }) {
                         Icon(Icons.Default.Save, contentDescription = "Save", tint = Brown)
                     }
@@ -462,12 +451,57 @@ fun PlanOutfitScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    Text(
-                        text = "Your Closet",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Your Closet",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black
+                        )
+                        
+                        if (tempSelectedItems.isNotEmpty()) {
+                            TextButton(
+                                onClick = { 
+                                    tempSelectedItems = emptySet()
+                                }
+                            ) {
+                                Text(
+                                    "Clear Selection",
+                                    color = Brown
+                                )
+                            }
+                        }
+                    }
+                    
+                    if (tempSelectedItems.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                tempSelectedItems.forEach { clothesId ->
+                                    allClothes.find { it.clothesId == clothesId }?.let { clothes ->
+                                        val baseX = if (canvasWidth > 0) (canvasWidth / 2 - 60) else 100f
+                                        val baseY = 40f + selectedClothes.size * 20
+                                        
+                                        selectedClothes = selectedClothes + PositionedClothesItem(
+                                            clothes = clothes,
+                                            offsetX = baseX,
+                                            offsetY = if (canvasHeight > 0) baseY.coerceAtMost(canvasHeight - 200) else baseY
+                                        )
+                                    }
+                                }
+                                tempSelectedItems = emptySet()
+                                showBottomSheet = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Brown)
+                        ) {
+                            Text("Add ${tempSelectedItems.size} Items")
+                        }
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
@@ -524,19 +558,42 @@ fun PlanOutfitScreen(
                                 .heightIn(max = 500.dp)
                         ) {
                             items(filteredClothes) { clothes ->
-                                DraggableClothesItem(
-                                    clothes = clothes,
-                                    onAddToOutfit = {
-                                        val randomX = (0..250).random().toFloat()
-                                        val randomY = (0..250).random().toFloat()
-                                        selectedClothes = selectedClothes + PositionedClothesItem(
-                                            clothes = clothes,
-                                            offsetX = randomX,
-                                            offsetY = randomY
-                                        )
-                                        showBottomSheet = false
-                                    }
-                                )
+                                val isSelectedForAdd = tempSelectedItems.contains(clothes.clothesId)
+                                
+                                Box {
+                                    DraggableClothesItem(
+                                        clothes = clothes,
+                                        onAddToOutfit = {
+                                            tempSelectedItems = if (isSelectedForAdd) {
+                                                tempSelectedItems - clothes.clothesId
+                                            } else {
+                                                tempSelectedItems + clothes.clothesId
+                                            }
+                                        }
+                                    )
+                                    
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(24.dp)
+                                                .background(
+                                                    if (isSelectedForAdd) Brown else Color.White.copy(alpha = 0.8f),
+                                                    CircleShape
+                                                )
+                                                .border(2.dp, Brown, CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (isSelectedForAdd) {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = White,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                }
                             }
                             
                             if (filteredClothes.isEmpty()) {
@@ -612,18 +669,6 @@ fun DraggableClothesItem(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp)
-                        .size(24.dp)
-                        .background(Brown, CircleShape)
-                        .padding(4.dp),
-                    tint = White
-                )
             }
             
             Column(
@@ -664,42 +709,25 @@ fun DraggableOutfitItem(
     var scale by remember { mutableStateOf(positionedItem.scale) }
     
     val baseSize = 120.dp
-    val baseSizePx = with(LocalDensity.current) { baseSize.toPx() }
     
     Box(
         modifier = Modifier
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .size(baseSize)
+            .size((baseSize.value * scale).dp)
+            .zIndex(if (isSelected) 1f else 0f)
             .graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
+                scaleX = 1f,
+                scaleY = 1f,
+                transformOrigin = TransformOrigin(0.5f, 0.5f)
             )
-            .pointerInput(Unit) {
+            .pointerInput(isSelected) {
+                if (!isSelected) return@pointerInput
+                
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.3f, 5f)
+                    scale = (scale * zoom).coerceIn(0.3f, 3.5f)
                     
-                    if (canvasWidth > 0 && canvasHeight > 0) {
-                        val visualSize = baseSizePx * scale
-                        val minX = (visualSize - baseSizePx) / 2
-                        val maxX = canvasWidth - baseSizePx + (baseSizePx - visualSize) / 2
-                        val minY = (visualSize - baseSizePx) / 2
-                        val maxY = canvasHeight - baseSizePx + (baseSizePx - visualSize) / 2
-                        
-                        offsetX = if (minX <= maxX) {
-                            (offsetX + pan.x).coerceIn(minX, maxX)
-                        } else {
-                            (offsetX + pan.x).coerceIn(maxX, minX)
-                        }
-                        offsetY = if (minY <= maxY) {
-                            (offsetY + pan.y).coerceIn(minY, maxY)
-                        } else {
-                            (offsetY + pan.y).coerceIn(maxY, minY)
-                        }
-                    } else {
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    }
+                    offsetX += pan.x
+                    offsetY += pan.y
                     
                     onPositionChange(offsetX, offsetY, scale)
                 }
@@ -710,64 +738,64 @@ fun DraggableOutfitItem(
                 }
             }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(
-                    if (isSelected) {
-                        Modifier.border(2.dp, Color(0xFFBEFF00), RoundedCornerShape(8.dp))
-                    } else Modifier
-                )
-        ) {
-            AsyncImage(
-                model = positionedItem.clothes.image,
-                contentDescription = positionedItem.clothes.clothesName,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+        AsyncImage(
+            model = positionedItem.clothes.image,
+            contentDescription = positionedItem.clothes.clothesName,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+        
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .border(1.dp, Color(0xFFBEFF00), RoundedCornerShape(4.dp))
             )
+            
+            ResizeHandles()
         }
     }
 }
 
 @Composable
-fun SelectedClothesItem(
-    clothes: ClothesModel,
-    onRemove: () -> Unit
-) {
+fun BoxScope.ResizeHandles() {
+    val handleSize = 12.dp
+    
     Box(
         modifier = Modifier
-            .aspectRatio(1f)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(8.dp),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            AsyncImage(
-                model = clothes.image,
-                contentDescription = clothes.clothesName,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
-        
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(24.dp)
-                .offset(x = 4.dp, y = (-4).dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Cancel,
-                contentDescription = "Remove",
-                modifier = Modifier
-                    .size(20.dp)
-                    .background(Color.Red, CircleShape),
-                tint = White
-            )
-        }
-    }
+            .align(Alignment.TopStart)
+            .offset((-6).dp, (-6).dp)
+            .size(handleSize)
+            .background(CalendarBlue, CircleShape)
+            .border(2.dp, Color.White, CircleShape)
+    )
+    
+    Box(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .offset(6.dp, (-6).dp)
+            .size(handleSize)
+            .background(CalendarBlue, CircleShape)
+            .border(2.dp, Color.White, CircleShape)
+    )
+    
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomStart)
+            .offset((-6).dp, 6.dp)
+            .size(handleSize)
+            .background(CalendarBlue, CircleShape)
+            .border(2.dp, Color.White, CircleShape)
+    )
+    
+    Box(
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .offset(6.dp, 6.dp)
+            .size(handleSize)
+            .background(CalendarBlue, CircleShape)
+            .border(2.dp, Color.White, CircleShape)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -800,7 +828,7 @@ fun OutfitSaveDialog(
                 .fillMaxWidth()
                 .heightIn(max = 600.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
                 modifier = Modifier
@@ -1008,7 +1036,7 @@ fun CategoryFilterDialog(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
                 modifier = Modifier
@@ -1056,7 +1084,7 @@ fun CategoryFilterDialog(
     }
 }
 
-private fun showDatePicker(context: android.content.Context, onDateSelected: (String) -> Unit) {
+private fun showDatePicker(context: Context, onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
     val datePickerDialog = DatePickerDialog(
         context,

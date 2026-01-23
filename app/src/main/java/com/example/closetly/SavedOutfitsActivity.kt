@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -19,14 +18,15 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -296,9 +296,7 @@ fun SavedOutfitsScreen() {
         if (showDeleteDialog && outfitToDelete != null) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                icon = {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
-                },
+                containerColor = Color.White,
                 title = {
                     Text("Delete Outfit?")
                 },
@@ -348,7 +346,7 @@ fun OutfitCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.8f)
+            .aspectRatio(0.75f)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { showMenu = true }
@@ -363,85 +361,10 @@ fun OutfitCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .background(Light_grey)
+                        .background(Color.White)
                 ) {
                     if (outfit.items.isNotEmpty()) {
-                        when (outfit.items.size) {
-                            1 -> {
-                                AsyncImage(
-                                    model = outfit.items[0].image,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                            2 -> {
-                                Row(modifier = Modifier.fillMaxSize()) {
-                                    outfit.items.take(2).forEach { item ->
-                                        AsyncImage(
-                                            model = item.image,
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxHeight(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                }
-                            }
-                            else -> {
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                    ) {
-                                        outfit.items.take(2).forEach { item ->
-                                            AsyncImage(
-                                                model = item.image,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .fillMaxHeight(),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        }
-                                    }
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                    ) {
-                                        outfit.items.drop(2).take(2).forEach { item ->
-                                            AsyncImage(
-                                                model = item.image,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .fillMaxHeight(),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        }
-                                        if (outfit.items.size > 4) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .fillMaxHeight()
-                                                    .background(Black.copy(alpha = 0.7f)),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = "+${outfit.items.size - 4}",
-                                                    color = White,
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        OutfitLayoutPreview(outfit)
                     }
                 }
 
@@ -520,10 +443,7 @@ fun OutfitCard(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More",
-                    tint = White,
-                    modifier = Modifier
-                        .background(Black.copy(alpha = 0.5f), CircleShape)
-                        .padding(4.dp)
+                    tint = Black
                 )
             }
 
@@ -581,37 +501,21 @@ fun OutfitDetailDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 600.dp),
+                .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .background(Light_grey)
+                        .weight(0.5f)
+                        .background(Color.White)
                 ) {
                     if (outfit.items.isNotEmpty()) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(outfit.items.take(4)) { item ->
-                                AsyncImage(
-                                    model = item.image,
-                                    contentDescription = item.clothesName,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(1f),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                        }
+                        OutfitLayoutPreview(outfit)
                     }
 
                     IconButton(
@@ -623,9 +527,9 @@ fun OutfitDetailDialog(
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = White,
+                            tint = Grey,
                             modifier = Modifier
-                                .background(Black.copy(alpha = 0.5f), CircleShape)
+                                .background(White.copy(alpha = 0.9f), CircleShape)
                                 .padding(4.dp)
                         )
                     }
@@ -634,6 +538,8 @@ fun OutfitDetailDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .weight(0.5f)
+                        .verticalScroll(rememberScrollState())
                         .padding(20.dp)
                 ) {
                     Row(
@@ -751,7 +657,7 @@ fun OutfitDetailDialog(
 }
 
 @Composable
-fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+fun DetailRow(icon: ImageVector, label: String, value: String) {
     Row(
         verticalAlignment = Alignment.Top,
         modifier = Modifier.fillMaxWidth()
@@ -775,6 +681,51 @@ fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
                 fontSize = 14.sp,
                 color = Black
             )
+        }
+    }
+}
+
+@Composable
+fun OutfitLayoutPreview(outfit: OutfitModel) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        val baseCanvasSize = 400f
+        
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            val previewWidth = constraints.maxWidth.toFloat()
+            val previewHeight = constraints.maxHeight.toFloat()
+            val scaleFactor = minOf(previewWidth / baseCanvasSize, previewHeight / baseCanvasSize).coerceAtMost(1f)
+            
+            outfit.items.forEach { item ->
+                val scaledOffsetX = item.offsetX * scaleFactor
+                val scaledOffsetY = item.offsetY * scaleFactor
+                val scaledSize = 120.dp.value * scaleFactor * item.scale
+                
+                Box(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                scaledOffsetX.toInt(),
+                                scaledOffsetY.toInt()
+                            )
+                        }
+                        .size(scaledSize.dp)
+                ) {
+                    AsyncImage(
+                        model = item.image,
+                        contentDescription = item.clothesName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
         }
     }
 }
