@@ -1,5 +1,9 @@
-package com.example.closetl
+package com.example.closetly
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -8,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,33 +27,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.example.closetly.model.ActivityStats
+import com.example.closetly.model.ClosetCategory
+import com.example.closetly.model.UnderusedItem
+import com.example.closetly.model.WornColor
+import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.White
 
-// Data Models
-data class ActivityStats(
-    val items: Int,
-    val outfits: Int,
-    val reuse: Int
-)
-
-data class ClosetCategory(
-    val name: String,
-    val percentage: Float,
-    val color: Color
-)
-
-data class WornColor(
-    val name: String,
-    val color: Color
-)
-
-data class UnderusedItem(
-    val name: String,
-    val imageUrl: String = ""
-)
+class AnalysisActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            AnalysisScreen()
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,8 +69,10 @@ fun AnalysisScreen(
         WornColor("Yellow", Color(0xFFFDD835))
     ),
     underusedItem: UnderusedItem = UnderusedItem("Blue Dress"),
-    onCalculateCPW: () -> Unit = {}
+
 ) {
+    var showCPWDialog by remember { mutableStateOf(false) }
+
     Scaffold(
     ) { paddingValues ->
         Column(
@@ -108,28 +111,220 @@ fun AnalysisScreen(
 
             // Calculate CPW Button
             Button(
-                onClick = onCalculateCPW,
+                onClick = { showCPWDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFEFD9DC)
+                    containerColor = Brown
                 )
             ) {
                 Text(
                     text = "Calculate CPW",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF6B4F54)
+                    color = White
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+    if (showCPWDialog) {
+        CPWCalculatorDialog(
+            onDismiss = { showCPWDialog = false }
+        )
+    }
 }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CPWCalculatorDialog(
+    onDismiss: () -> Unit
+) {
+    var cost by remember { mutableStateOf("") }
+    var timesWorn by remember { mutableStateOf("") }
+    var calculatedCPW by remember { mutableStateOf<Double?>(null) }
+    var showError by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFF5E6E8)
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Text(
+                    text = "Calculate Cost Per Wear",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF6B4F54),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Cost Input
+                OutlinedTextField(
+                    value = cost,
+                    onValueChange = {
+                        cost = it
+                        calculatedCPW = null
+                        showError = false
+                    },
+                    label = { Text("Cost of the Dress") },
+                    placeholder = { Text("Enter cost (e.g., 50)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Times Worn Input
+                OutlinedTextField(
+                    value = timesWorn,
+                    onValueChange = {
+                        timesWorn = it
+                        calculatedCPW = null
+                        showError = false
+                    },
+                    label = { Text("Times Worn") },
+                    placeholder = { Text("Enter number of times") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                // Error Message
+                if (showError) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Please enter valid numbers",
+                        color = Color(0xFFD32F2F),
+                        fontSize = 12.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Calculate Button
+                Button(
+                    onClick = {
+                        val costValue = cost.toDoubleOrNull()
+                        val wornValue = timesWorn.toIntOrNull()
+
+                        if (costValue != null && wornValue != null && wornValue > 0) {
+                            calculatedCPW = costValue / wornValue
+                            showError = false
+                        } else {
+                            showError = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    )
+                ) {
+                    Text(
+                        text = "Calculate",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = White
+                    )
+                }
+
+                // Result Display
+                if (calculatedCPW != null) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFEFD9DC)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Cost Per Wear",
+                                fontSize = 14.sp,
+                                color = Color(0xFF8B7075)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "$${String.format("%.2f", calculatedCPW)}",
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF6B4F54)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = when {
+                                    calculatedCPW!! < 5 -> "Excellent value! 🌟"
+                                    calculatedCPW!! < 10 -> "Great value! 👍"
+                                    calculatedCPW!! < 20 -> "Good value 👌"
+                                    else -> "Consider wearing more often!"
+                                },
+                                fontSize = 12.sp,
+                                color = Color(0xFF8B7075),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Close Button
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Close",
+                        color = Color(0xFF6B4F54),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun HeaderSection(

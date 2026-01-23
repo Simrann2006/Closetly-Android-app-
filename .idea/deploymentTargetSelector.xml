@@ -2,7 +2,11 @@
 <project version="4">
   <component name="deploymentTargetSelector">
     <selectionStates>
+<<<<<<< Updated upstream
       <SelectionState runConfigName="DashboardActivity">
+=======
+      <SelectionState runConfigName="DashboardActivity (1)">
+>>>>>>> Stashed changes
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
       <SelectionState runConfigName="DashboardActivity (2)">
@@ -11,6 +15,12 @@
       <SelectionState runConfigName="LoginActivity">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+<<<<<<< Updated upstream
+=======
+      <SelectionState runConfigName="AnalysisActivity">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+>>>>>>> Stashed changes
       <SelectionState runConfigName="LoginActivity (1)">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
