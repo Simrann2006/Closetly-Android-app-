@@ -252,6 +252,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".PlanOutfitActivity"
+            android:exported="true"
+            android:label="PlanOutfitActivity"
+            android:theme="@style/Theme.Closetly"
+            android:windowSoftInputMode="adjustResize">
+        </activity>
+        <activity
+            android:name=".SavedOutfitsActivity"
+            android:exported="true"
+            android:label="SavedOutfitsActivity"
+            android:theme="@style/Theme.Closetly">
+        </activity>
 
         <service
             android:name=".FirebaseMsgService"

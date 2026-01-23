@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,9 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocationOn
@@ -38,6 +46,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -66,11 +75,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.example.closetly.model.ClothesModel
+import com.example.closetly.model.OutfitModel
 import com.example.closetly.model.WeatherData
 import com.example.closetly.repository.ClothesRepoImpl
+import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.repository.WeatherRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.ClothesViewModel
+import com.example.closetly.viewmodel.OutfitViewModel
 import com.example.closetly.viewmodel.WeatherViewModel
 import com.google.android.gms.location.LocationServices
 import java.time.LocalDate
@@ -116,10 +128,15 @@ fun CalendarScreen() {
 
     val clothesRepo = remember { ClothesRepoImpl() }
     val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
+    
+    val outfitRepo = remember { OutfitRepoImpl() }
+    val outfitViewModel = remember { OutfitViewModel(outfitRepo) }
 
     val weatherData by weatherViewModel.weatherData.observeAsState()
     val weatherLoading by weatherViewModel.loading.observeAsState(false)
     val allClothes = remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
+    var monthOutfits by remember { mutableStateOf<List<OutfitModel>>(emptyList()) }
+    var selectedDateOutfits by remember { mutableStateOf<List<OutfitModel>>(emptyList()) }
     
     var aiRecommendation by remember { mutableStateOf<String?>(null) }
     var aiLoading by remember { mutableStateOf(false) }
@@ -179,6 +196,16 @@ fun CalendarScreen() {
         clothesViewModel.getAllClothes { success, _, data ->
             if (success && data != null) {
                 allClothes.value = data
+            }
+        }
+    }
+    
+    LaunchedEffect(currentMonth) {
+        val startDate = currentMonth.atDay(1).toString()
+        val endDate = currentMonth.atEndOfMonth().toString()
+        outfitViewModel.getOutfitsByDateRange(startDate, endDate) { success, _, outfits ->
+            if (success && outfits != null) {
+                monthOutfits = outfits
             }
         }
     }
@@ -336,40 +363,92 @@ fun CalendarScreen() {
                                     val date = currentMonth.atDay(dayCounter)
                                     val isToday = date == today
                                     val isSelected = date == selectedDate
+                                    val dateString = date.toString()
+                                    val dayOutfits = monthOutfits.filter { 
+                                        it.plannedDate == dateString || 
+                                        (it.startDate <= dateString && it.endDate >= dateString)
+                                    }
+                                    val hasOutfit = dayOutfits.isNotEmpty()
 
                                     Box(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .padding(4.dp)
-                                            .size(40.dp)
-                                            .clip(CircleShape)
+                                            .padding(2.dp)
+                                            .aspectRatio(1f)
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(
                                                 when {
-                                                    isToday -> CalendarPurple
-                                                    isSelected -> CalendarBlue
+                                                    isToday -> CalendarPurple.copy(alpha = 0.3f)
+                                                    isSelected -> CalendarBlue.copy(alpha = 0.3f)
                                                     else -> Color.Transparent
                                                 }
                                             )
                                             .border(
                                                 width = if (isToday) 2.dp else 0.dp,
                                                 color = if (isToday) CalendarPurple else Color.Transparent,
-                                                shape = CircleShape
+                                                shape = RoundedCornerShape(8.dp)
                                             )
                                             .clickable {
                                                 selectedDate = date
+                                                selectedDateOutfits = dayOutfits
                                                 showDialog = true
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = dayCounter.toString(),
-                                            fontSize = 14.sp,
-                                            fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = when {
-                                                isToday || isSelected -> White
-                                                else -> DarkGrey
+                                        if (hasOutfit) {
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                AsyncImage(
+                                                    model = dayOutfits.first().thumbnailUrl,
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(2.dp),
+                                                    contentScale = ContentScale.Fit
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .align(Alignment.TopEnd)
+                                                        .padding(2.dp)
+                                                        .size(16.dp)
+                                                        .background(Brown.copy(alpha = 0.9f), CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = dayCounter.toString(),
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = White
+                                                    )
+                                                }
+                                                if (dayOutfits.size > 1) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.BottomEnd)
+                                                            .padding(2.dp)
+                                                            .size(16.dp)
+                                                            .background(CalendarPurple.copy(alpha = 0.9f), CircleShape),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = "+${dayOutfits.size - 1}",
+                                                            fontSize = 8.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = White
+                                                        )
+                                                    }
+                                                }
                                             }
-                                        )
+                                        } else {
+                                            Text(
+                                                text = dayCounter.toString(),
+                                                fontSize = 13.sp,
+                                                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = when {
+                                                    isToday || isSelected -> Brown
+                                                    else -> DarkGrey
+                                                }
+                                            )
+                                        }
                                     }
                                     dayCounter++
                                 } else {
@@ -446,80 +525,23 @@ fun CalendarScreen() {
     }
 
     if (showDialog && selectedDate != null) {
-            Dialog(onDismissRequest = { showDialog = false }) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            IconButton(
-                                onClick = { showDialog = false },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Text("×", fontSize = 24.sp, color = DarkGrey1)
-                            }
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Text(
-                            text = "${
-                                selectedDate!!.month.getDisplayName(
-                                    TextStyle.FULL,
-                                    Locale.getDefault()
-                                )
-                            } ${selectedDate!!.dayOfMonth}, ${selectedDate!!.year}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkGrey
-                        )
-
-                        Spacer(Modifier.height(24.dp))
-
-                        Text(
-                            text = "No outfit scheduled",
-                            fontSize = 15.sp,
-                            color = LightGrey1
-                        )
-
-                        Spacer(Modifier.height(24.dp))
-
-                        Button(
-                            onClick = {
-                                showDialog = false
-                                TODO("Navigate to Avatar section")
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = CalendarPurple
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = "Plan Outfit",
-                                color = White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
+        CalendarDateDialog(
+            selectedDate = selectedDate!!,
+            outfits = selectedDateOutfits,
+            onDismiss = { showDialog = false },
+            onPlanOutfit = {
+                val intent = Intent(context, PlanOutfitActivity::class.java)
+                intent.putExtra("selectedDate", selectedDate.toString())
+                context.startActivity(intent)
+                showDialog = false
+            },
+            onViewOutfit = { outfit ->
+                val intent = Intent(context, SavedOutfitsActivity::class.java)
+                context.startActivity(intent)
+                showDialog = false
             }
-        }
+        )
+    }
     }
 
 @Composable
@@ -945,6 +967,213 @@ fun AIInsightsCard(
                         color = White,
                         fontSize = 14.sp
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CalendarDateDialog(
+    selectedDate: LocalDate,
+    outfits: List<OutfitModel>,
+    onDismiss: () -> Unit,
+    onPlanOutfit: () -> Unit,
+    onViewOutfit: (OutfitModel) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 600.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${selectedDate.dayOfMonth}, ${selectedDate.year}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkGrey,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Grey)
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                if (outfits.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_checkroom_24),
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Grey.copy(alpha = 0.5f)
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = "No outfit planned for this day",
+                            fontSize = 15.sp,
+                            color = Grey,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(24.dp))
+                        Button(
+                            onClick = onPlanOutfit,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Brown),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Plan Outfit",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "Planned Outfits (${outfits.size})",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Black
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    outfits.forEach { outfit ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .clickable { onViewOutfit(outfit) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Light_grey),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(White)
+                                ) {
+                                    if (outfit.items.isNotEmpty()) {
+                                        if (outfit.items.size == 1) {
+                                            AsyncImage(
+                                                model = outfit.items[0].image,
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Column(modifier = Modifier.fillMaxSize()) {
+                                                Row(modifier = Modifier.weight(1f)) {
+                                                    outfit.items.take(2).forEach { item ->
+                                                        AsyncImage(
+                                                            model = item.image,
+                                                            contentDescription = null,
+                                                            modifier = Modifier
+                                                                .weight(1f)
+                                                                .fillMaxHeight(),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
+                                                }
+                                                if (outfit.items.size > 2) {
+                                                    Row(modifier = Modifier.weight(1f)) {
+                                                        outfit.items.drop(2).take(2).forEach { item ->
+                                                            AsyncImage(
+                                                                model = item.image,
+                                                                contentDescription = null,
+                                                                modifier = Modifier
+                                                                    .weight(1f)
+                                                                    .fillMaxHeight(),
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Spacer(Modifier.width(12.dp))
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = outfit.outfitName,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Black,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    if (outfit.occasion.isNotEmpty()) {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = outfit.occasion,
+                                            fontSize = 13.sp,
+                                            color = Brown
+                                        )
+                                    }
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "${outfit.items.size} items",
+                                        fontSize = 12.sp,
+                                        color = Grey
+                                    )
+                                }
+                                
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = Grey
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    OutlinedButton(
+                        onClick = onPlanOutfit,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Brown),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Plan Another Outfit")
+                    }
                 }
             }
         }
