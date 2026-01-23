@@ -27,12 +27,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.example.closetly.model.ActivityStats
 import com.example.closetly.model.ClosetCategory
@@ -42,8 +45,11 @@ import com.example.closetly.model.ClothesModel
 import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.utils.AnalysisUtils
+import com.example.closetly.repository.UserRepoImpl
+import com.example.closetly.viewmodel.UserViewModel
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.White
+import com.google.firebase.auth.FirebaseAuth
 
 class AnalysisActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,9 +69,24 @@ fun AnalysisScreen(
     clothesViewModel: ClothesViewModel,
     userImageUrl: String = ""
 ) {
+    val context = LocalContext.current
+    val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
     var showCPWDialog by remember { mutableStateOf(false) }
     var clothesList by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var userProfilePicture by remember { mutableStateOf("") }
+    
+    // Fetch current user's profile picture
+    LaunchedEffect(Unit) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUserId != null) {
+            userViewModel.getUserById(currentUserId) { success, _, user ->
+                if (success && user != null) {
+                    userProfilePicture = user.profilePicture
+                }
+            }
+        }
+    }
     
     // Fetch all clothes for the current user
     LaunchedEffect(Unit) {
@@ -95,6 +116,34 @@ fun AnalysisScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Analysis",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Cursive,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFF5E6E8),
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black
+                )
+            )
+        },
+        containerColor = Color(0xFFF5E6E8)
     ) { paddingValues ->
         if (isLoading) {
             Box(
@@ -115,7 +164,7 @@ fun AnalysisScreen(
                     .verticalScroll(rememberScrollState())
             ) {
                 HeaderSection(
-                    userImageUrl = userImageUrl,
+                    userImageUrl = userProfilePicture,
                     activityStats = activityStats
                 )
                 Spacer(modifier = Modifier.height(24.dp))
