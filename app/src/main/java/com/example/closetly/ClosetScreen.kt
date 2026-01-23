@@ -33,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -366,6 +367,25 @@ fun ClosetScreen() {
                     strokeWidth = 4.dp
                 )
             }
+        }
+        
+        // Floating Action Button for Analysis
+        FloatingActionButton(
+            onClick = {
+                val intent = Intent(context, AnalysisActivity::class.java)
+                context.startActivity(intent)
+            },
+            containerColor = Brown,
+            contentColor = White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = androidx.compose.material.icons.Icons.Filled.BarChart,
+                contentDescription = "View Analysis",
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

@@ -38,6 +38,10 @@ import com.example.closetly.model.ActivityStats
 import com.example.closetly.model.ClosetCategory
 import com.example.closetly.model.UnderusedItem
 import com.example.closetly.model.WornColor
+import com.example.closetly.model.ClothesModel
+import com.example.closetly.repository.ClothesRepoImpl
+import com.example.closetly.viewmodel.ClothesViewModel
+import com.example.closetly.utils.AnalysisUtils
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.White
 
@@ -46,7 +50,9 @@ class AnalysisActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AnalysisScreen()
+            val clothesRepo = remember { ClothesRepoImpl() }
+            val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
+            AnalysisScreen(clothesViewModel = clothesViewModel)
         }
     }
 }
@@ -54,82 +60,124 @@ class AnalysisActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalysisScreen(
-    userImageUrl: String = "",
-    activityStats: ActivityStats = ActivityStats(128, 24, 12),
-    closetCategories: List<ClosetCategory> = listOf(
-        ClosetCategory("Tops", 35f, Color(0xFFE8B4BC)),
-        ClosetCategory("Bottoms", 25f, Color(0xFFD4A5AE)),
-        ClosetCategory("Dresses", 20f, Color(0xFFC096A0)),
-        ClosetCategory("Outerwear", 12f, Color(0xFFAC8792)),
-        ClosetCategory("Accessories", 8f, Color(0xFF987884))
-    ),
-    mostWornColors: List<WornColor> = listOf(
-        WornColor("White", Color.White),
-        WornColor("Black", Color.Black),
-        WornColor("Yellow", Color(0xFFFDD835))
-    ),
-    underusedItem: UnderusedItem = UnderusedItem("Blue Dress"),
-
+    clothesViewModel: ClothesViewModel,
+    userImageUrl: String = ""
 ) {
     var showCPWDialog by remember { mutableStateOf(false) }
+    var clothesList by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    
+    // Fetch all clothes for the current user
+    LaunchedEffect(Unit) {
+        clothesViewModel.getAllClothes { success, _, data ->
+            if (success && data != null) {
+                clothesList = data
+            }
+            isLoading = false
+        }
+    }
+    
+    // Calculate analysis data
+    val activityStats = remember(clothesList) {
+        AnalysisUtils.calculateActivityStats(clothesList)
+    }
+    
+    val closetCategories = remember(clothesList) {
+        AnalysisUtils.calculateClosetBreakdown(clothesList)
+    }
+    
+    val mostWornColors = remember(clothesList) {
+        AnalysisUtils.calculateMostWornColors(clothesList)
+    }
+    
+    val underusedItem = remember(clothesList) {
+        AnalysisUtils.findUnderusedItem(clothesList)
+    }
 
     Scaffold(
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5E6E8))
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
-            HeaderSection(
-                userImageUrl = userImageUrl,
-                activityStats = activityStats
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            ClosetBreakdownCard(categories = closetCategories)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Most Worn Color and Underused Item Row
-            Row(
+        if (isLoading) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxSize()
+                    .background(Color(0xFFF5E6E8))
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
             ) {
-                MostWornColorCard(
-                    colors = mostWornColors,
-                    modifier = Modifier.weight(1f)
-                )
-                UnderusedItemCard(
-                    item = underusedItem,
-                    modifier = Modifier.weight(1f)
-                )
+                CircularProgressIndicator(color = Brown)
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Calculate CPW Button
-            Button(
-                onClick = { showCPWDialog = true },
+        } else {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Brown
-                )
+                    .fillMaxSize()
+                    .background(Color(0xFFF5E6E8))
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "Calculate CPW",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = White
+                HeaderSection(
+                    userImageUrl = userImageUrl,
+                    activityStats = activityStats
                 )
-            }
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                if (closetCategories.isNotEmpty()) {
+                    ClosetBreakdownCard(categories = closetCategories)
+                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    EmptyStateCard(message = "No clothes added yet. Start adding items to see your closet breakdown!")
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                // Most Worn Color and Underused Item Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (mostWornColors.isNotEmpty()) {
+                        MostWornColorCard(
+                            colors = mostWornColors,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        EmptyColorCard(modifier = Modifier.weight(1f))
+                    }
+                    
+                    if (underusedItem != null) {
+                        UnderusedItemCard(
+                            item = underusedItem,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        EmptyUnderusedCard(modifier = Modifier.weight(1f))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Calculate CPW Button
+                Button(
+                    onClick = { showCPWDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    )
+                ) {
+                    Text(
+                        text = "Calculate CPW",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = White
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
     if (showCPWDialog) {
@@ -707,7 +755,103 @@ private fun UnderusedItemCard(
 }
 
 @Composable
-@Preview
-fun PreviewAnalysisActivity(){
-    AnalysisScreen()
+private fun EmptyStateCard(message: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEFD9DC)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = message,
+                fontSize = 14.sp,
+                color = Color(0xFF6B4F54),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
 }
+
+@Composable
+private fun EmptyColorCard(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(200.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEFD9DC)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Most Worn Color",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF6B4F54)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Add colors to your clothes",
+                fontSize = 12.sp,
+                color = Color(0xFF6B4F54).copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyUnderusedCard(modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(200.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFEFD9DC)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Underused Item",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF6B4F54)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "No items yet",
+                fontSize = 12.sp,
+                color = Color(0xFF6B4F54).copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+//@Composable
+//@Preview
+//fun PreviewAnalysisActivity(){
+//    AnalysisScreen()
+//}

@@ -167,7 +167,10 @@ fun ClothesDetailsBody(
                                             val model = ClothesModel(
                                                 clothesName = clothesName.trim(),
                                                 brand = brand.trim(),
-                                                season = season.trim(),
+                                                season = selectedSeasons.joinToString(", "),
+                                                color = selectedColors.joinToString(", "),
+                                                occasion = selectedOccasions.joinToString(", "),
+                                                price = price.trim(),
                                                 notes = notes.trim(),
                                                 categoryId = selectedCategoryId,
                                                 categoryName = selectedCategoryName,
@@ -328,20 +331,6 @@ fun ClothesDetailsBody(
                 }
 
                 OutlinedTextField(
-                    value = color,
-                    onValueChange = { color = it },
-                    label = { Text("Color") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
-                    )
-                )
-
-                OutlinedTextField(
                     value = price,
                     onValueChange = { price = it },
                     label = { Text("Price") },
@@ -355,19 +344,122 @@ fun ClothesDetailsBody(
                     )
                 )
 
-                OutlinedTextField(
-                    value = season,
-                    onValueChange = { season = it },
-                    label = { Text("Season") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                // Color Selection
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Colors",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Brown
                     )
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(colorOptions) { colorOption ->
+                            FilterChip(
+                                selected = selectedColors.contains(colorOption),
+                                onClick = {
+                                    selectedColors = if (selectedColors.contains(colorOption)) {
+                                        selectedColors - colorOption
+                                    } else {
+                                        selectedColors + colorOption
+                                    }
+                                },
+                                label = { Text(colorOption) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Brown,
+                                    selectedLabelColor = White,
+                                    containerColor = White,
+                                    labelColor = Brown
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = selectedColors.contains(colorOption),
+                                    borderColor = Brown
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Season Selection
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Seasons",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Brown
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(seasonOptions) { seasonOption ->
+                            FilterChip(
+                                selected = selectedSeasons.contains(seasonOption),
+                                onClick = {
+                                    selectedSeasons = if (selectedSeasons.contains(seasonOption)) {
+                                        selectedSeasons - seasonOption
+                                    } else {
+                                        selectedSeasons + seasonOption
+                                    }
+                                },
+                                label = { Text(seasonOption) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Brown,
+                                    selectedLabelColor = White,
+                                    containerColor = White,
+                                    labelColor = Brown
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = selectedSeasons.contains(seasonOption),
+                                    borderColor = Brown
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Occasion Selection
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Occasions",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Brown
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(occasionOptions) { occasionOption ->
+                            FilterChip(
+                                selected = selectedOccasions.contains(occasionOption),
+                                onClick = {
+                                    selectedOccasions = if (selectedOccasions.contains(occasionOption)) {
+                                        selectedOccasions - occasionOption
+                                    } else {
+                                        selectedOccasions + occasionOption
+                                    }
+                                },
+                                label = { Text(occasionOption) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Brown,
+                                    selectedLabelColor = White,
+                                    containerColor = White,
+                                    labelColor = Brown
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = selectedOccasions.contains(occasionOption),
+                                    borderColor = Brown
+                                )
+                            )
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = brand,
