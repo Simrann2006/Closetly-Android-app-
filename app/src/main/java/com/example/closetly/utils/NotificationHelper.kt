@@ -9,10 +9,10 @@ import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.closetly.ChatActivity
-import com.example.closetly.DashboardActivity
-import com.example.closetly.NotificationActivity
-import com.example.closetly.UserProfileActivity
+import com.example.closetly.view.ChatActivity
+import com.example.closetly.view.DashboardActivity
+import com.example.closetly.view.NotificationActivity
+import com.example.closetly.view.UserProfileActivity
 import com.example.closetly.R
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.database.FirebaseDatabase

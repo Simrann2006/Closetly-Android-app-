@@ -25,7 +25,7 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
-            android:name=".PostFeedActivity"
+            android:name=".view.PostFeedActivity"
             android:exported="true"
             android:label="@string/title_activity_post_feed"
             android:theme="@style/Theme.Closetly">
@@ -36,7 +36,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ListingDetailsActivity"
+            android:name=".view.ListingDetailsActivity"
             android:exported="true"
             android:label="ListingDetailsActivity"
             android:theme="@style/Theme.Closetly">
@@ -47,7 +47,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ChangePasswordScreen"
+            android:name=".view.ChangePasswordScreen"
             android:exported="true"
             android:label="ChangePasswordScreen"
             android:theme="@style/Theme.Closetly">
@@ -58,12 +58,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ListingViewerActivity"
+            android:name=".view.ListingViewerActivity"
             android:exported="false"
             android:label="ListingViewerActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".PostCreationActivity"
+            android:name=".view.PostCreationActivity"
             android:exported="true"
             android:label="PostCreationActivity"
             android:theme="@style/Theme.Closetly">
@@ -85,7 +85,7 @@
         </provider>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".view.SettingsActivity"
             android:exported="true"
             android:label="SettingsActivity"
             android:theme="@style/Theme.Closetly">
@@ -96,7 +96,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MessageActivity"
+            android:name=".view.MessageActivity"
             android:exported="true"
             android:label="MessageActivity"
             android:theme="@style/Theme.Closetly">
@@ -107,12 +107,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ChatActivity"
+            android:name=".view.ChatActivity"
             android:exported="false"
             android:label="ChatActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".NotificationActivity"
+            android:name=".view.NotificationActivity"
             android:exported="true"
             android:label="NotificationActivity"
             android:theme="@style/Theme.Closetly">
@@ -123,49 +123,49 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".UserProfileActivity"
+            android:name=".view.UserProfileActivity"
             android:exported="false"
             android:label="UserProfileActivity"
             android:theme="@style/Theme.Closetly">
         </activity>
         <activity
-            android:name=".FollowersFollowingActivity"
+            android:name=".view.FollowersFollowingActivity"
             android:exported="false"
             android:label="FollowersFollowingActivity"
             android:theme="@style/Theme.Closetly">
         </activity>
         <activity
-            android:name=".CommentActivity"
+            android:name=".view.CommentActivity"
             android:exported="false"
             android:label="CommentActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".SavedPostsActivity"
+            android:name=".view.SavedPostsActivity"
             android:exported="false"
             android:label="SavedPostsActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".SavedPostsFeedActivity"
+            android:name=".view.SavedPostsFeedActivity"
             android:exported="false"
             android:label="SavedPostsFeedActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".LikedPostsActivity"
+            android:name=".view.LikedPostsActivity"
             android:exported="false"
             android:label="LikedPostsActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".LikedPostsFeedActivity"
+            android:name=".view.LikedPostsFeedActivity"
             android:exported="false"
             android:label="LikedPostsFeedActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".FullScreenImageActivity"
+            android:name=".view.FullScreenImageActivity"
             android:exported="false"
             android:label="FullScreenImageActivity"
             android:theme="@style/Theme.Closetly" />
         <activity
-            android:name=".ClothesDetailsActivity"
+            android:name=".view.ClothesDetailsActivity"
             android:exported="true"
             android:label="@string/title_activity_clothes_detail"
             android:theme="@style/Theme.Closetly">
@@ -176,7 +176,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AddActivity"
+            android:name=".view.AddActivity"
             android:exported="true"
             android:label="AddActivity"
             android:theme="@style/Theme.Closetly">
@@ -187,7 +187,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".RegistrationActivity"
+            android:name=".view.RegistrationActivity"
             android:exported="true"
             android:label="RegistrationActivity"
             android:theme="@style/Theme.Closetly">
@@ -198,7 +198,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".DashboardActivity"
+            android:name=".view.DashboardActivity"
             android:exported="true"
             android:label="@string/title_activity_dashboard"
             android:theme="@style/Theme.Closetly">
@@ -209,7 +209,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ForgotActivity"
+            android:name=".view.ForgotActivity"
             android:exported="true"
             android:label="ForgotActivity"
             android:theme="@style/Theme.Closetly">
@@ -220,7 +220,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SplashActivity"
+            android:name=".view.SplashActivity"
             android:exported="true"
             android:label="@string/title_activity_splash"
             android:theme="@style/Theme.Closetly">
@@ -231,7 +231,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".LoginActivity"
+            android:name=".view.LoginActivity"
             android:exported="true"
             android:label="@string/title_activity_login"
             android:theme="@style/Theme.Closetly">
@@ -242,7 +242,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".EditProfileActivity"
+            android:name=".view.EditProfileActivity"
             android:exported="true"
             android:label="EditProfileActivity"
             android:theme="@style/Theme.Closetly">
@@ -253,7 +253,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AnalysisActivity"
+            android:name=".view.AnalysisActivity"
             android:exported="true"
             android:label="AnalysisActivity"
             android:theme="@style/Theme.Closetly">
@@ -264,21 +264,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PlanOutfitActivity"
+            android:name=".view.PlanOutfitActivity"
             android:exported="true"
             android:label="PlanOutfitActivity"
             android:theme="@style/Theme.Closetly"
             android:windowSoftInputMode="adjustResize">
         </activity>
         <activity
-            android:name=".SavedOutfitsActivity"
+            android:name=".view.SavedOutfitsActivity"
             android:exported="true"
             android:label="SavedOutfitsActivity"
             android:theme="@style/Theme.Closetly">
         </activity>
 
         <service
-            android:name=".FirebaseMsgService"
+            android:name=".view.FirebaseMsgService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

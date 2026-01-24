@@ -1,6 +1,6 @@
 package com.example.closetly.utils
 
-import com.example.closetly.AIRecommendationCache
+import com.example.closetly.view.AIRecommendationCache
 import com.example.closetly.BuildConfig
 import com.example.closetly.R
 import com.example.closetly.model.ClothesModel
