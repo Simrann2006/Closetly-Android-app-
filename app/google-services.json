@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "233120554772-a6adfcre1ebsh86erv3eomsj983rhfve.apps.googleusercontent.com",
+          "client_id": "233120554772-v13gvpfiobaq3asa83p6llp4tsf1k0a3.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.closetly",
-            "certificate_hash": "ef23a3d9878ff296b1a8438834b876d19f07fed3"
+            "certificate_hash": "18f0b583209d090688c1cb107ede78fdb3e3e7f1"
           }
         },
         {

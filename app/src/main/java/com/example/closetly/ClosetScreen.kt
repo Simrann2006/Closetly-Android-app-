@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
@@ -72,6 +73,7 @@ import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.ClothesViewModel
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.window.Dialog
 
 @Composable
@@ -227,20 +229,58 @@ fun ClosetScreen() {
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = { },
+                onClick = {
+                    context.startActivity(Intent(context, PlanOutfitActivity::class.java))
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(45.dp),
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Skin
+                    containerColor = Brown
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_checkroom_24),
+                    contentDescription = null,
+                    tint = White,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Try on Avatar",
+                    text = "Plan Outfit",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = White
+                )
+            }
+            
+            Spacer(Modifier.height(8.dp))
+            
+            OutlinedButton(
+                onClick = {
+                    context.startActivity(Intent(context, SavedOutfitsActivity::class.java))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(45.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Brown
+                ),
+                border = BorderStroke(1.5.dp, Brown),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_folder_special_24),
+                    contentDescription = null,
+                    tint = Brown,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Saved Outfits",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
