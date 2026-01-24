@@ -617,12 +617,30 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     }
     
     if (showBlockDialog) {
-        AlertDialog(
-            onDismissRequest = { showBlockDialog = false },
-            containerColor = White,
-            text = {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { showBlockDialog = false },
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFD3D3D3))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { }
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -651,17 +669,18 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
                     Text(
                         text = "If you block this user, they won't be able to message you or see your profile or posts anymore.",
                         fontSize = 14.sp,
                         color = Black,
                         textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
                     
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
                         text = "You can unblock them at anytime.",
@@ -669,32 +688,32 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         color = Black,
                         textAlign = TextAlign.Center
                     )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showBlockDialog = false
-                        // TODO: Implement block user functionality
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Brown
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Block",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = White
-                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Button(
+                        onClick = {
+                            showBlockDialog = false
+                            // TODO: Implement block user functionality
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Brown
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Block",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = White
+                        )
+                    }
                 }
             }
-        )
+        }
     }
 }
 
