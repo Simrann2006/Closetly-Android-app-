@@ -88,7 +88,7 @@ class ClothesRepoImpl : ClothesRepo {
             callback(false, "User not authenticated", null)
             return
         }
-        
+
         ref.orderByChild("userId").equalTo(currentUserId)
             .addValueEventListener(object : ValueEventListener{
                 override fun onDataChange(snapshot: DataSnapshot) {

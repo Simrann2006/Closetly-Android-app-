@@ -56,9 +56,11 @@ import androidx.compose.ui.unit.sp
 import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.ClosetlyTheme
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
 import com.example.closetly.utils.NotificationHelper
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -70,10 +72,13 @@ import kotlinx.coroutines.launch
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
         
         setContent {
-            DashboardBody()
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                DashboardBody()
+            }
         }
     }
 }

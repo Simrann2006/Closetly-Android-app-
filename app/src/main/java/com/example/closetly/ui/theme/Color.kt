@@ -1,7 +1,30 @@
 package com.example.closetly.ui.theme
 
-import android.hardware.lights.Light
 import androidx.compose.ui.graphics.Color
+
+// Light Theme Colors
+val Primary_Light = Color(0xFF8C5C59)
+val PrimaryVariant_Light = Color(0xFFC78783)
+val Secondary_Light = Color(0xFF625b71)
+val Background_Light = Color(0xFFFFFBFE)
+val Surface_Light = Color(0xFFFFFFFF)
+val OnPrimary_Light = Color(0xFFFFFFFF)
+val OnSecondary_Light = Color(0xFFFFFFFF)
+val OnBackground_Light = Color(0xFF1C1B1F)
+val OnSurface_Light = Color(0xFF1C1B1F)
+val Error_Light = Color(0xFFD50B00)
+
+// Dark Theme Colors
+val Primary_Dark = Color(0xFFC78783)
+val PrimaryVariant_Dark = Color(0xFF8C5C59)
+val Secondary_Dark = Color(0xFFCCC2DC)
+val Background_Dark = Color(0xFF1C1B1F)
+val Surface_Dark = Color(0xFF2D2D2D)
+val OnPrimary_Dark = Color(0xFF000000)
+val OnSecondary_Dark = Color(0xFF000000)
+val OnBackground_Dark = Color(0xFFE6E1E5)
+val OnSurface_Dark = Color(0xFFE6E1E5)
+val Error_Dark = Color(0xFFFF5449)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

@@ -99,6 +99,8 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     override fun logout(callback: (Boolean, String) -> Unit) {
         try{
             auth.signOut()
+            // Note: To fully sign out from Google, the app should clear Credential Manager cache
+            // This requires clearing saved credentials on the device
             callback(true, "Logout successfully")
         } catch (e : Exception){
             callback(false, e.message.toString())

@@ -261,9 +261,10 @@ fun LoginBody(requestNotificationPermission: () -> Unit = {}){
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        "Your Personal Style Assistant",
+                        "Your Personalized Digital Wardrobe & Style Assistant",
                         style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            textAlign = TextAlign.Center,
                             fontSize = 14.sp,
                             color = if (ThemeManager.isDarkMode)
                                 OnBackground_Dark.copy(alpha = 0.7f)
@@ -313,7 +314,7 @@ fun LoginBody(requestNotificationPermission: () -> Unit = {}){
                         },
                         placeholder = {
                             Text(
-                                "you@example.com",
+                                "Enter your email",
                                 style = TextStyle(
                                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                                     fontSize = 14.sp

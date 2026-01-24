@@ -26,12 +26,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.closetly.repository.UserRepoImpl
-import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.ClosetlyTheme
 import com.example.closetly.ui.theme.Grey
-import com.example.closetly.ui.theme.Light_grey1
-import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.White
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -39,9 +38,12 @@ import com.google.firebase.database.FirebaseDatabase
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
         setContent {
-            SettingsBody()
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                SettingsBody()
+            }
         }
     }
 }
@@ -56,27 +58,30 @@ fun SettingsBody() {
     var showDeleteDialog by remember { mutableStateOf(false) }
     
     var notificationsEnabled by remember { mutableStateOf(true) }
+    var darkModeEnabled by remember { mutableStateOf(ThemeManager.isDarkMode) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Settings",
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold) },
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
                     IconButton(onClick = { 
                         (context as Activity).finish()
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black,
-                    navigationIconContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         }
@@ -85,16 +90,16 @@ fun SettingsBody() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
         ) {
-            HorizontalDivider(color = Light_grey1, thickness = 0.5.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 0.5.dp)
 
             Text(
                 "ACCOUNT",style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
@@ -114,13 +119,13 @@ fun SettingsBody() {
                 }
             )
 
-            HorizontalDivider(color = Light_grey1, thickness = 8.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
 
             Text(
                 "CONTENT",style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
@@ -143,15 +148,27 @@ fun SettingsBody() {
                 }
             )
 
-            HorizontalDivider(color = Light_grey1, thickness = 8.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
 
             Text(
                 "PREFERENCES",style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+
+            SettingsToggleItem(
+                icon = R.drawable.baseline_dark_mode_24,
+                title = "Dark Mode",
+                subtitle = "Switch between light and dark theme",
+                checked = darkModeEnabled,
+                onCheckedChange = { 
+                    darkModeEnabled = it
+                    ThemeManager.setDarkMode(context, it)
+                    (context as Activity).recreate()
+                }
             )
 
             SettingsToggleItem(
@@ -162,13 +179,13 @@ fun SettingsBody() {
                 onCheckedChange = { notificationsEnabled = it }
             )
 
-            HorizontalDivider(color = Light_grey1, thickness = 8.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
 
             Text(
                 "ABOUT",style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
@@ -179,13 +196,13 @@ fun SettingsBody() {
                 onClick = { }
             )
 
-            HorizontalDivider(color = Light_grey1, thickness = 8.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
 
             Text(
                 "ACTIONS", style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 ),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
@@ -194,7 +211,7 @@ fun SettingsBody() {
                 icon = R.drawable.baseline_logout_24,
                 title = "Logout",
                 onClick = { showLogoutDialog = true },
-                textColor = Color.Black
+                textColor = MaterialTheme.colorScheme.onBackground
             )
 
             SettingsItem(
@@ -210,13 +227,13 @@ fun SettingsBody() {
 
     if (showLogoutDialog) {
         AlertDialog(
-            containerColor = White,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout", color = Black) },
+            title = { Text("Logout", color = MaterialTheme.colorScheme.onSurface) },
 
 
-            text = { Text("Are you sure you want to logout?", color = Color.Black) },
+            text = { Text("Are you sure you want to logout?", color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -233,12 +250,12 @@ fun SettingsBody() {
                         }
                     }
                 ) {
-                    Text("Logout", color = Pink40)
+                    Text("Logout", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                 }
             }
         )
@@ -246,11 +263,11 @@ fun SettingsBody() {
 
     if (showDeleteDialog) {
         AlertDialog(
-            containerColor = White,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Account", color = Black) },
-            text = { Text("Are you sure you want to delete your account? This action cannot be undone.", color = Color.Black) },
+            title = { Text("Delete Account", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Are you sure you want to delete your account? This action cannot be undone.", color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -279,12 +296,12 @@ fun SettingsBody() {
                         }
                     }
                 ) {
-                    Text("Delete", color = Color.Red)
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel", color = Color.Gray)
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                 }
             }
         )
@@ -296,7 +313,7 @@ fun SettingsItem(
     icon: Int,
     title: String,
     onClick: () -> Unit,
-    textColor: Color = Color.Black
+    textColor: Color = MaterialTheme.colorScheme.onBackground
 ) {
     Row(
         modifier = Modifier
@@ -308,7 +325,7 @@ fun SettingsItem(
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = if (textColor == Color.Red) Color.Red else Color.Gray,
+            tint = if (textColor == MaterialTheme.colorScheme.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
 
@@ -324,7 +341,7 @@ fun SettingsItem(
         Icon(
             painter = painterResource(R.drawable.baseline_arrow_forward_ios_24),
             contentDescription = null,
-            tint = Color.LightGray,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
             modifier = Modifier.size(16.dp)
         )
     }
@@ -348,7 +365,7 @@ fun SettingsToggleItem(
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
-            tint = Color.Gray,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
 
@@ -359,12 +376,12 @@ fun SettingsToggleItem(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = subtitle,
                 fontSize = 13.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )
         }
         
@@ -373,7 +390,7 @@ fun SettingsToggleItem(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = White,
-                checkedTrackColor = Brown,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
                 uncheckedThumbColor = White,
                 uncheckedTrackColor = Grey.copy(alpha = 0.4f)
             )
