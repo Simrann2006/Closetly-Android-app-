@@ -2,6 +2,7 @@ package com.example.closetly.repository
 
 import com.example.closetly.model.UserModel
 import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.Flow
 
 interface UserRepo {
 
@@ -115,4 +116,8 @@ interface UserRepo {
         userId: String,
         callback: (List<UserModel>) -> Unit
     )
+    
+    fun getBlockedUsersListFlow(
+        userId: String
+    ): Flow<List<UserModel>>
 }

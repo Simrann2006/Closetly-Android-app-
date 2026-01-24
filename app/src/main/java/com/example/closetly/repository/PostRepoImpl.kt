@@ -91,22 +91,40 @@ class PostRepoImpl(private val context: Context) : PostRepo {
     }
 
     override fun getAllPosts(callback: (Boolean, String, List<PostModel>?) -> Unit) {
-        ref.orderByChild("timestamp").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val posts = mutableListOf<PostModel>()
-                for (data in snapshot.children) {
-                    val post = data.getValue(PostModel::class.java)
-                    if (post != null) {
-                        posts.add(post)
-                    }
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            callback(false, "User not authenticated", null)
+            return
+        }
+        
+        // Get blocked users first
+        database.getReference("Users").child(currentUserId).child("blocked")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(blockedSnapshot: DataSnapshot) {
+                    val blockedIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+                    
+                    ref.orderByChild("timestamp").addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val posts = mutableListOf<PostModel>()
+                            for (data in snapshot.children) {
+                                val post = data.getValue(PostModel::class.java)
+                                if (post != null && !blockedIds.contains(post.userId)) {
+                                    posts.add(post)
+                                }
+                            }
+                            posts.reverse()
+                            callback(true, "Posts fetched", posts)
+                        }
+                        override fun onCancelled(error: DatabaseError) {
+                            callback(false, error.message, null)
+                        }
+                    })
                 }
-                posts.reverse()
-                callback(true, "Posts fetched", posts)
-            }
-            override fun onCancelled(error: DatabaseError) {
-                callback(false, error.message, null)
-            }
-        })
+                
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false, error.message, null)
+                }
+            })
     }
 
     override fun getUserPosts(userId: String, callback: (Boolean, String, List<PostModel>?) -> Unit) {

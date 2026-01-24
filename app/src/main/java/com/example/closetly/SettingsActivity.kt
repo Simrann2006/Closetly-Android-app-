@@ -108,7 +108,10 @@ fun SettingsBody() {
             SettingsItem(
                 icon = R.drawable.baseline_block_24,
                 title = "Blocked Users",
-                onClick = { }
+                onClick = {
+                    val intent = Intent(context, BlockedUsersActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
 
             HorizontalDivider(color = Light_grey1, thickness = 8.dp)

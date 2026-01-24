@@ -2,6 +2,7 @@ package com.example.closetly.repository
 
 import android.content.Context
 import com.example.closetly.model.PostModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -14,14 +15,37 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
     private val postsRef = database.getReference("Posts")
     private val usersRef = database.getReference("Users")
     private val notificationRepo = NotificationRepoImpl()
+    private val auth = FirebaseAuth.getInstance()
 
     override fun getAllPostsRealTime(): Flow<List<PostModel>> = callbackFlow {
+        val currentUserId = auth.currentUser?.uid
+        var blockedUserIds = setOf<String>()
+        
+        // Listen for blocked users changes
+        val blockedListener = if (currentUserId != null) {
+            object : ValueEventListener {
+                override fun onDataChange(blockedSnapshot: DataSnapshot) {
+                    blockedUserIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+                    // After updating blocked list, fetch posts again to trigger filtering
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            }
+        } else null
+        
+        // Attach blocked users listener
+        if (currentUserId != null && blockedListener != null) {
+            usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
+        }
+        
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val posts = mutableListOf<PostModel>()
                 snapshot.children.forEach { postSnapshot ->
                     postSnapshot.getValue(PostModel::class.java)?.let { post ->
-                        posts.add(post)
+                        // Filter out posts from blocked users
+                        if (!blockedUserIds.contains(post.userId)) {
+                            posts.add(post)
+                        }
                     }
                 }
                 trySend(posts.sortedByDescending { it.timestamp })
@@ -36,6 +60,9 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
 
         awaitClose {
             postsRef.removeEventListener(listener)
+            if (currentUserId != null && blockedListener != null) {
+                usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
+            }
         }
     }
 

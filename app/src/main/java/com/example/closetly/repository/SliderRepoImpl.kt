@@ -34,8 +34,10 @@ class SliderRepoImpl : SliderRepo {
     override fun getSliderItems(excludeUserId: String?): Flow<List<SliderItemModel>> = callbackFlow {
         val allPostsMap = mutableMapOf<String, Pair<String, ListingItem>>() // postId -> (userId, listing)
         val userDataCache = mutableMapOf<String, Pair<String, String>>() // userId -> (username, profilePic)
+        val blockedUserIds = mutableSetOf<String>() // Blocked users list
         var productsLoaded = false
         var rentLoaded = false
+        var blockedUsersLoaded = false
         
         fun emitSliderItems(
             userListingsMap: Map<String, List<ListingItem>>,
@@ -65,15 +67,15 @@ class SliderRepoImpl : SliderRepo {
         }
         
         fun processAndEmitItems() {
-            if (!productsLoaded || !rentLoaded) return
+            if (!productsLoaded || !rentLoaded || !blockedUsersLoaded) return
             
             Log.d(TAG, "Processing ${allPostsMap.size} total posts for slider")
             
-            // Filter out excluded user's posts
+            // Filter out excluded user's posts and blocked users
             val filteredPosts = if (excludeUserId != null) {
-                allPostsMap.filterValues { it.first != excludeUserId }
+                allPostsMap.filterValues { it.first != excludeUserId && !blockedUserIds.contains(it.first) }
             } else {
-                allPostsMap
+                allPostsMap.filterValues { !blockedUserIds.contains(it.first) }
             }
             
             // Group all posts by userId
@@ -145,6 +147,29 @@ class SliderRepoImpl : SliderRepo {
                     }
                 }
             }
+        }
+        
+        // Fetch blocked users list for current user (if logged in)
+        if (excludeUserId != null) {
+            usersRef.child(excludeUserId).child("blocked").get().addOnSuccessListener { blockedSnapshot ->
+                if (blockedSnapshot.exists()) {
+                    for (blockedChild in blockedSnapshot.children) {
+                        blockedChild.key?.let { blockedUserIds.add(it) }
+                    }
+                    Log.d(TAG, "Loaded ${blockedUserIds.size} blocked users")
+                } else {
+                    Log.d(TAG, "No blocked users found")
+                }
+                blockedUsersLoaded = true
+                processAndEmitItems()
+            }.addOnFailureListener {
+                Log.e(TAG, "Failed to load blocked users: ${it.message}")
+                blockedUsersLoaded = true
+                processAndEmitItems()
+            }
+        } else {
+            // No current user, skip blocked users loading
+            blockedUsersLoaded = true
         }
         
         // Listener for Products (sale/thrift items)
