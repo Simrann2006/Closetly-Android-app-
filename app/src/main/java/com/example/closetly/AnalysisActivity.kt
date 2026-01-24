@@ -75,8 +75,7 @@ fun AnalysisScreen(
     var clothesList by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var userProfilePicture by remember { mutableStateOf("") }
-    
-    // Fetch current user's profile picture
+
     LaunchedEffect(Unit) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         if (currentUserId != null) {
@@ -87,8 +86,7 @@ fun AnalysisScreen(
             }
         }
     }
-    
-    // Fetch all clothes for the current user
+
     LaunchedEffect(Unit) {
         clothesViewModel.getAllClothes { success, _, data ->
             if (success && data != null) {
@@ -97,8 +95,7 @@ fun AnalysisScreen(
             isLoading = false
         }
     }
-    
-    // Calculate analysis data
+
     val activityStats = remember(clothesList) {
         AnalysisUtils.calculateActivityStats(clothesList)
     }
@@ -137,19 +134,19 @@ fun AnalysisScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF5E6E8),
+                    containerColor = White,
                     titleContentColor = Color.Black,
                     navigationIconContentColor = Color.Black
                 )
             )
         },
-        containerColor = Color(0xFFF5E6E8)
+        containerColor = White
     ) { paddingValues ->
         if (isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF5E6E8))
+                    .background(White)
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
@@ -159,7 +156,7 @@ fun AnalysisScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF5E6E8))
+                    .background(White)
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
@@ -177,7 +174,6 @@ fun AnalysisScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Most Worn Color and Underused Item Row
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -205,7 +201,6 @@ fun AnalysisScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Calculate CPW Button
                 Button(
                     onClick = { showCPWDialog = true },
                     modifier = Modifier
@@ -252,7 +247,7 @@ fun CPWCalculatorDialog(
                 .padding(16.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF5E6E8)
+                containerColor = White
             )
         ) {
             Column(
@@ -261,7 +256,6 @@ fun CPWCalculatorDialog(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
                 Text(
                     text = "Calculate Cost Per Wear",
                     fontSize = 20.sp,
@@ -272,7 +266,6 @@ fun CPWCalculatorDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Cost Input
                 OutlinedTextField(
                     value = cost,
                     onValueChange = {
@@ -295,7 +288,6 @@ fun CPWCalculatorDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Times Worn Input
                 OutlinedTextField(
                     value = timesWorn,
                     onValueChange = {
@@ -316,7 +308,6 @@ fun CPWCalculatorDialog(
                     )
                 )
 
-                // Error Message
                 if (showError) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -329,7 +320,6 @@ fun CPWCalculatorDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Calculate Button
                 Button(
                     onClick = {
                         val costValue = cost.toDoubleOrNull()
@@ -358,7 +348,6 @@ fun CPWCalculatorDialog(
                     )
                 }
 
-                // Result Display
                 if (calculatedCPW != null) {
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -405,7 +394,6 @@ fun CPWCalculatorDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Close Button
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
@@ -560,7 +548,6 @@ private fun ClosetBreakdownCard(categories: List<ClosetCategory>) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Pie Chart
             PieChart(
                 categories = categories,
                 modifier = Modifier
@@ -570,7 +557,6 @@ private fun ClosetBreakdownCard(categories: List<ClosetCategory>) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Legend
             CategoryLegend(categories = categories)
         }
     }
@@ -610,7 +596,6 @@ private fun PieChart(
             categories.forEach { category ->
                 val sweepAngle = (category.percentage / totalPercentage * 360f) * animatable.value
 
-                // Draw pie slice
                 drawArc(
                     color = category.color,
                     startAngle = startAngle,
@@ -620,7 +605,6 @@ private fun PieChart(
                     size = Size(radius * 2, radius * 2)
                 )
 
-                // Draw border between slices
                 drawArc(
                     color = Color.White,
                     startAngle = startAngle,
