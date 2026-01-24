@@ -24,18 +24,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -115,6 +116,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     var followingCount by remember { mutableStateOf(0) }
     var theyFollowUs by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
@@ -194,45 +196,12 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     }
                 },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_more_vert_24),
-                                contentDescription = null,
-                                tint = Black
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { 
-                                    Text(
-                                        text = "Block",
-                                        fontSize = 16.sp,
-                                        color = Black
-                                    ) 
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    // TODO: Implement block functionality
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { 
-                                    Text(
-                                        text = "Share this profile",
-                                        fontSize = 16.sp,
-                                        color = Black
-                                    ) 
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    // TODO: Implement share functionality
-                                }
-                            )
-                        }
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_more_vert_24),
+                            contentDescription = null,
+                            tint = Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -606,6 +575,126 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 }
             }
         }
+    }
+    
+    if (showMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showMenu = false },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = White
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "Block",
+                    fontSize = 16.sp,
+                    color = Black,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showMenu = false
+                            showBlockDialog = true
+                        }
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                )
+                Text(
+                    text = "Share this profile",
+                    fontSize = 16.sp,
+                    color = Black,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showMenu = false
+                            // TODO: Implement share functionality
+                        }
+                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                )
+            }
+        }
+    }
+    
+    if (showBlockDialog) {
+        AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            containerColor = White,
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(Light_grey),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (profilePicture.isNotEmpty()) {
+                            AsyncImage(
+                                model = profilePicture,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_person_24),
+                                contentDescription = null,
+                                tint = Grey,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "If you block this user, they won't be able to message you or see your profile or posts anymore.",
+                        fontSize = 14.sp,
+                        color = Black,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Text(
+                        text = "You can unblock them at anytime.",
+                        fontSize = 14.sp,
+                        color = Black,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBlockDialog = false
+                        // TODO: Implement block user functionality
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Block",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = White
+                    )
+                }
+            }
+        )
     }
 }
 
