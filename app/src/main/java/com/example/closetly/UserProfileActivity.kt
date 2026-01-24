@@ -28,6 +28,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -112,6 +114,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     var followersCount by remember { mutableStateOf(0) }
     var followingCount by remember { mutableStateOf(0) }
     var theyFollowUs by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
@@ -191,12 +194,45 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_more_vert_24),
-                            contentDescription = null,
-                            tint = Black
-                        )
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_more_vert_24),
+                                contentDescription = null,
+                                tint = Black
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = "Block",
+                                        fontSize = 16.sp,
+                                        color = Black
+                                    ) 
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    // TODO: Implement block functionality
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { 
+                                    Text(
+                                        text = "Share this profile",
+                                        fontSize = 16.sp,
+                                        color = Black
+                                    ) 
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    // TODO: Implement share functionality
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
