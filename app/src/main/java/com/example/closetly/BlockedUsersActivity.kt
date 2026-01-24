@@ -38,7 +38,12 @@ class BlockedUsersActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            BlockedUsersBody()
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color(0xFF121212)
+            ) {
+                BlockedUsersBody()
+            }
         }
     }
 }
@@ -60,10 +65,16 @@ fun BlockedUsersBody() {
     // Load blocked users in real-time
     LaunchedEffect(currentUserId) {
         if (currentUserId.isNotEmpty()) {
-            userRepo.getBlockedUsersListFlow(currentUserId).collectLatest { users ->
-                blockedUsers = users
+            try {
+                userRepo.getBlockedUsersListFlow(currentUserId).collectLatest { users ->
+                    blockedUsers = users
+                    isLoading = false
+                }
+            } catch (e: Exception) {
                 isLoading = false
             }
+        } else {
+            isLoading = false
         }
     }
     
@@ -149,7 +160,9 @@ fun BlockedUsersBody() {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .background(Color(0xFF121212))
+                    .padding(padding),
+                userScrollEnabled = true
             ) {
                 items(
                     items = blockedUsers,
@@ -246,7 +259,9 @@ fun BlockedUserItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .background(Color(0xFF121212))
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .clickable(enabled = false) { /* Disable click */ },
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Profile picture
