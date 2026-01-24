@@ -117,6 +117,8 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     var theyFollowUs by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
+    var showUnblockDialog by remember { mutableStateOf(false) }
+    var isBlocked by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
@@ -301,44 +303,46 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                 textAlign = TextAlign.Center
                             )
                         }
+                        
+                        if (!isBlocked) {
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            UserProfileStat(
-                                count = "${userPosts.size}",
-                                label = "Posts",
-                                onClick = {}
-                            )
-                            UserProfileStat(
-                                count = "$followersCount",
-                                label = "Followers",
-                                onClick = {
-                                    val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
-                                        putExtra("userId", userId)
-                                        putExtra("username", username)
-                                        putExtra("type", "followers")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                UserProfileStat(
+                                    count = "${userPosts.size}",
+                                    label = "Posts",
+                                    onClick = {}
+                                )
+                                UserProfileStat(
+                                    count = "$followersCount",
+                                    label = "Followers",
+                                    onClick = {
+                                        val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                            putExtra("userId", userId)
+                                            putExtra("username", username)
+                                            putExtra("type", "followers")
+                                        }
+                                        context.startActivity(intent)
                                     }
-                                    context.startActivity(intent)
-                                }
-                            )
-                            UserProfileStat(
-                                count = "$followingCount",
-                                label = "Following",
-                                onClick = {
-                                    val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
-                                        putExtra("userId", userId)
-                                        putExtra("username", username)
-                                        putExtra("type", "following")
+                                )
+                                UserProfileStat(
+                                    count = "$followingCount",
+                                    label = "Following",
+                                    onClick = {
+                                        val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
+                                            putExtra("userId", userId)
+                                            putExtra("username", username)
+                                            putExtra("type", "following")
+                                        }
+                                        context.startActivity(intent)
                                     }
-                                    context.startActivity(intent)
-                                }
-                            )
+                                )
+                            }
                         }
-
+                        
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
@@ -347,7 +351,9 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         ) {
                             Button(
                                 onClick = {
-                                    if (currentUserId.isNotEmpty() && currentUserId != userId) {
+                                    if (isBlocked) {
+                                        showUnblockDialog = true
+                                    } else if (currentUserId.isNotEmpty() && currentUserId != userId) {
                                         userViewModel.toggleFollow(currentUserId, userId) { success, message ->
                                         }
                                     }
@@ -356,11 +362,13 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                     .weight(1f)
                                     .height(40.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isFollowing) Light_grey else Brown
+                                    containerColor = if (isBlocked) Brown else if (isFollowing) Light_grey else Brown
                                 ),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                val buttonText = if (isFollowing) {
+                                val buttonText = if (isBlocked) {
+                                    "Unblock"
+                                } else if (isFollowing) {
                                     "Following"
                                 } else if (theyFollowUs) {
                                     "Follow Back"
@@ -373,7 +381,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                     style = TextStyle(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isFollowing) Black else White
+                                        color = if (isBlocked) White else if (isFollowing) Black else White
                                     )
                                 )
                             }
@@ -413,34 +421,35 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                stickyHeader {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(White)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        UserProfileTab(
-                            text = "Posts",
-                            selected = selectedTabIndex == 0,
-                            onClick = { selectedTabIndex = 0 }
-                        )
-                        UserProfileTab(
-                            text = "Listings",
-                            selected = selectedTabIndex == 1,
-                            onClick = { selectedTabIndex = 1 }
-                        )
+                if (!isBlocked) {
+                    stickyHeader {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(White)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            UserProfileTab(
+                                text = "Posts",
+                                selected = selectedTabIndex == 0,
+                                onClick = { selectedTabIndex = 0 }
+                            )
+                            UserProfileTab(
+                                text = "Listings",
+                                selected = selectedTabIndex == 1,
+                                onClick = { selectedTabIndex = 1 }
+                            )
+                        }
                     }
-                }
 
-                val maxRows = maxOf(
-                    if (userPosts.isEmpty()) 1 else userPosts.chunked(3).size,
-                    if (userListings.isEmpty()) 1 else userListings.chunked(3).size
-                )
+                    val maxRows = maxOf(
+                        if (userPosts.isEmpty()) 1 else userPosts.chunked(3).size,
+                        if (userListings.isEmpty()) 1 else userListings.chunked(3).size
+                    )
 
-                items(maxRows) { rowIndex ->
-                    when (selectedTabIndex) {
+                    items(maxRows) { rowIndex ->
+                        when (selectedTabIndex) {
                         0 -> {
                             if (userPosts.isEmpty() && rowIndex == 0) {
                                 Box(
@@ -573,6 +582,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         }
                     }
                 }
+                }
             }
         }
     }
@@ -679,7 +689,8 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Button(
                     onClick = {
                         showBlockDialog = false
-                        // TODO: Implement block user functionality
+                        isBlocked = true
+                        isFollowing = false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
@@ -691,6 +702,90 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 ) {
                     Text(
                         text = "Block",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = White
+                    )
+                }
+            }
+        }
+    }
+    
+    if (showUnblockDialog) {
+        ModalBottomSheet(
+            onDismissRequest = { showUnblockDialog = false },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = Color(0xFFD3D3D3)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Light_grey),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (profilePicture.isNotEmpty()) {
+                        AsyncImage(
+                            model = profilePicture,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_person_24),
+                            contentDescription = null,
+                            tint = Grey,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Text(
+                    text = "Unblock this user?",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Black,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "They'll be able to contact you again.",
+                    fontSize = 14.sp,
+                    color = Black,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Button(
+                    onClick = {
+                        showUnblockDialog = false
+                        isBlocked = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Unblock",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = White
