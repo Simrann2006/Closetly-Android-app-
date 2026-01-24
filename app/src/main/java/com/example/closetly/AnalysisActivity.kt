@@ -48,6 +48,7 @@ import com.example.closetly.utils.AnalysisUtils
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.viewmodel.UserViewModel
 import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
 import com.google.firebase.auth.FirebaseAuth
 
@@ -273,16 +274,28 @@ fun CPWCalculatorDialog(
                         calculatedCPW = null
                         showError = false
                     },
-                    label = { Text("Cost of the Dress") },
+                    label = { Text("Cost of the Dress", fontSize = 14.sp) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.AttachMoney,
+                            contentDescription = "Cost",
+                            tint = Brown
+                        )
+                    },
                     placeholder = { Text("Enter cost (e.g., 50)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        focusedLabelColor = Brown,
+                        focusedContainerColor = White,
                         unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey.copy(alpha = 0.3f),
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
                     )
                 )
 
@@ -295,16 +308,28 @@ fun CPWCalculatorDialog(
                         calculatedCPW = null
                         showError = false
                     },
-                    label = { Text("Times Worn") },
+                    label = { Text("Times Worn", fontSize = 14.sp) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Loop,
+                            contentDescription = "Times Worn",
+                            tint = Brown
+                        )
+                    },
                     placeholder = { Text("Enter number of times") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Brown,
-                        focusedLabelColor = Brown,
+                        focusedContainerColor = White,
                         unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = Brown,
+                        unfocusedBorderColor = Grey.copy(alpha = 0.3f),
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
                     )
                 )
 
