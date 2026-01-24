@@ -149,6 +149,10 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     userViewModel.isFollowing(userId, currentUserId) { theyFollow ->
                         theyFollowUs = theyFollow
                     }
+                    
+                    userViewModel.isUserBlocked(currentUserId, userId) { blocked ->
+                        isBlocked = blocked
+                    }
                 }
 
                 userViewModel.getFollowersCount(userId) { count ->
@@ -689,8 +693,12 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Button(
                     onClick = {
                         showBlockDialog = false
-                        isBlocked = true
-                        isFollowing = false
+                        userViewModel.blockUser(currentUserId, userId) { success, message ->
+                            if (success) {
+                                isBlocked = true
+                                isFollowing = false
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown
@@ -774,7 +782,11 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Button(
                     onClick = {
                         showUnblockDialog = false
-                        isBlocked = false
+                        userViewModel.unblockUser(currentUserId, userId) { success, message ->
+                            if (success) {
+                                isBlocked = false
+                            }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Brown

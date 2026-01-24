@@ -92,4 +92,27 @@ interface UserRepo {
         userId: String,
         callback: (List<UserModel>) -> Unit
     )
+    
+    fun blockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun unblockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun isUserBlocked(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    )
+    
+    fun getBlockedUsersList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    )
 }

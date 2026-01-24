@@ -122,4 +122,35 @@ class UserViewModel (val repo : UserRepo) : ViewModel(){
     ){
         repo.getFollowingList(userId, callback)
     }
+    
+    fun blockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ){
+        repo.blockUser(currentUserId, targetUserId, callback)
+    }
+    
+    fun unblockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ){
+        repo.unblockUser(currentUserId, targetUserId, callback)
+    }
+    
+    fun isUserBlocked(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    ){
+        repo.isUserBlocked(currentUserId, targetUserId, callback)
+    }
+    
+    fun getBlockedUsersList(
+        userId: String,
+        callback: (List<UserModel>) -> Unit
+    ){
+        repo.getBlockedUsersList(userId, callback)
+    }
 }

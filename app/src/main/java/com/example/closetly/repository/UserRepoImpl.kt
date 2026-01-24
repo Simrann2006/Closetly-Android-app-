@@ -378,4 +378,103 @@ class UserRepoImpl(private val context: Context) : UserRepo{
                 }
             })
     }
+    
+    override fun blockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // First, add to blocked list
+        ref.child(currentUserId).child("blocked").child(targetUserId).setValue(true)
+            .addOnSuccessListener {
+                // Then remove follow relationships
+                val updates = hashMapOf<String, Any?>(
+                    "$currentUserId/following/$targetUserId" to null,
+                    "$targetUserId/followers/$currentUserId" to null
+                )
+                
+                ref.updateChildren(updates)
+                    .addOnSuccessListener {
+                        callback(true, "User blocked successfully")
+                    }
+                    .addOnFailureListener { e ->
+                        callback(false, e.message ?: "Failed to block user")
+                    }
+            }
+            .addOnFailureListener { e ->
+                callback(false, e.message ?: "Failed to block user")
+            }
+    }
+    
+    override fun unblockUser(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        ref.child(currentUserId).child("blocked").child(targetUserId).removeValue()
+            .addOnSuccessListener {
+                callback(true, "User unblocked successfully")
+            }
+            .addOnFailureListener { e ->
+                callback(false, e.message ?: "Failed to unblock user")
+            }
+    }
+    
+    override fun isUserBlocked(
+        currentUserId: String,
+        targetUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        ref.child(currentUserId).child("blocked").child(targetUserId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    callback(snapshot.exists())
+                }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
+    }
+    
+    override fun getBlockedUsersList(userId: String, callback: (List<UserModel>) -> Unit) {
+        ref.child(userId).child("blocked")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val blockedList = mutableListOf<UserModel>()
+                    val blockedIds = snapshot.children.mapNotNull { it.key }
+                    
+                    if (blockedIds.isEmpty()) {
+                        callback(emptyList())
+                        return
+                    }
+                    
+                    var processedCount = 0
+                    blockedIds.forEach { blockedId ->
+                        ref.child(blockedId).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(userSnapshot: DataSnapshot) {
+                                userSnapshot.getValue(UserModel::class.java)?.let {
+                                    blockedList.add(it)
+                                }
+                                processedCount++
+                                if (processedCount == blockedIds.size) {
+                                    callback(blockedList)
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                processedCount++
+                                if (processedCount == blockedIds.size) {
+                                    callback(blockedList)
+                                }
+                            }
+                        })
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    callback(emptyList())
+                }
+            })
+    }
 }
