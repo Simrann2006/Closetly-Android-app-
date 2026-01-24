@@ -2,6 +2,7 @@ package com.example.closetly
 
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -379,14 +380,17 @@ fun PlanOutfitScreen(
                         return@OutfitSaveDialog
                     }
                     
-                    if (outfitName.isEmpty()) {
-                        Toast.makeText(context, "Please enter outfit name", Toast.LENGTH_SHORT).show()
-                        return@OutfitSaveDialog
+                    // Generate default name if empty
+                    val finalOutfitName = if (outfitName.isEmpty()) {
+                        val timestamp = java.text.SimpleDateFormat("MMM dd, HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                        "Outfit - $timestamp"
+                    } else {
+                        outfitName
                     }
                     
                     val outfit = OutfitModel(
                         outfitId = outfitId ?: "",
-                        outfitName = outfitName,
+                        outfitName = finalOutfitName,
                         items = selectedClothes.mapIndexed { index, positionedItem ->
                             OutfitItemModel(
                                 clothesId = positionedItem.clothes.clothesId,
@@ -422,6 +426,12 @@ fun PlanOutfitScreen(
                         outfitViewModel.addOutfit(outfit) { success, message ->
                             if (success) {
                                 Toast.makeText(context, "Outfit saved successfully", Toast.LENGTH_SHORT).show()
+                                context.startActivity(
+                                    Intent(context,
+                                        SavedOutfitsActivity::class.java
+                                    ).apply {
+                                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                })
                                 (context as? ComponentActivity)?.finish()
                             } else {
                                 Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
@@ -936,7 +946,7 @@ fun OutfitSaveDialog(
                         Icon(Icons.Default.CalendarToday, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (selectedDate.isEmpty()) "Select Date (Optional)" else selectedDate,
+                            text = if (selectedDate.isEmpty()) "Select Date" else selectedDate,
                             fontSize = 14.sp
                         )
                     }
@@ -952,7 +962,7 @@ fun OutfitSaveDialog(
                         value = occasion,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Occasion (Optional)") },
+                        label = { Text("Occasion") },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showOccasionMenu)
                         },
@@ -986,7 +996,7 @@ fun OutfitSaveDialog(
                 OutlinedTextField(
                     value = occasionNotes,
                     onValueChange = onOccasionNotesChange,
-                    label = { Text("Notes (Optional)") },
+                    label = { Text("Notes") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),

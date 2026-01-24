@@ -14,10 +14,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialogDefaults.containerColor
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.example.closetly.model.OutfitItemModel
 import com.example.closetly.model.OutfitModel
 import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
@@ -40,7 +43,7 @@ class SavedOutfitsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         setContent {
             SavedOutfitsScreen()
         }
@@ -364,7 +367,7 @@ fun OutfitCard(
                         .background(Color.White)
                 ) {
                     if (outfit.items.isNotEmpty()) {
-                        OutfitLayoutPreview(outfit)
+                        OutfitLayoutPreview(outfit, isGridPreview = true)
                     }
                 }
 
@@ -381,7 +384,7 @@ fun OutfitCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    
+
                     if (outfit.occasion.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -391,7 +394,7 @@ fun OutfitCard(
                             maxLines = 1
                         )
                     }
-                    
+
                     if (outfit.hasDate() || outfit.isMultiDay()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -410,7 +413,7 @@ fun OutfitCard(
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${outfit.items.size} items",
@@ -430,7 +433,7 @@ fun OutfitCard(
                         .size(24.dp)
                         .background(White.copy(alpha = 0.9f), CircleShape)
                         .padding(4.dp),
-                    tint = Color.Red
+                    tint = Red
                 )
             }
 
@@ -449,7 +452,8 @@ fun OutfitCard(
 
             DropdownMenu(
                 expanded = showMenu,
-                onDismissRequest = { showMenu = false }
+                onDismissRequest = { showMenu = false },
+                containerColor = White
             ) {
                 DropdownMenuItem(
                     text = { Text("Edit") },
@@ -515,7 +519,7 @@ fun OutfitDetailDialog(
                         .background(Color.White)
                 ) {
                     if (outfit.items.isNotEmpty()) {
-                        OutfitLayoutPreview(outfit)
+                        OutfitLayoutPreview(outfit, isGridPreview = false)
                     }
 
                     IconButton(
@@ -685,38 +689,94 @@ fun DetailRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
+data class Bounds(
+    val minX: Float,
+    val minY: Float,
+    val maxX: Float,
+    val maxY: Float
+)
+
+fun calculateBounds(
+    items: List<OutfitItemModel>,
+    baseItemSize: Float
+): Bounds {
+    val lefts = items.map { it.offsetX }
+    val rights = items.map { it.offsetX + baseItemSize * it.scale }
+    val tops = items.map { it.offsetY }
+    val bottoms = items.map { it.offsetY + baseItemSize * it.scale }
+
+    return Bounds(
+        minX = lefts.minOrNull() ?: 0f,
+        maxX = rights.maxOrNull() ?: 0f,
+        minY = tops.minOrNull() ?: 0f,
+        maxY = bottoms.maxOrNull() ?: 0f
+    )
+}
+
 @Composable
-fun OutfitLayoutPreview(outfit: OutfitModel) {
-    Box(
+fun OutfitLayoutPreview(
+    outfit: OutfitModel,
+    isGridPreview: Boolean
+) {
+
+    val baseItemSize = 120f
+
+    if (outfit.items.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        )
+        return
+    }
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
-        contentAlignment = Alignment.Center
+            .background(Color.White)
     ) {
-        val baseCanvasSize = 400f
+
+        val containerWidth = constraints.maxWidth.toFloat()
+        val containerHeight = constraints.maxHeight.toFloat()
+
+        val bounds = calculateBounds(outfit.items, baseItemSize)
+        val outfitWidth = bounds.maxX - bounds.minX
+        val outfitHeight = bounds.maxY - bounds.minY
+
+        if (outfitWidth <= 0 || outfitHeight <= 0) return@BoxWithConstraints
+
+        val scaleFactor = minOf(
+            containerWidth / outfitWidth,
+            containerHeight / outfitHeight
+        )
         
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        val finalScale = if (isGridPreview) scaleFactor * 0.75f else scaleFactor * 0.90f
+
+        val scaledOutfitWidth = outfitWidth * finalScale
+        val scaledOutfitHeight = outfitHeight * finalScale
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .wrapContentSize(Alignment.Center)
+                .size(scaledOutfitWidth.dp, scaledOutfitHeight.dp)
         ) {
-            val previewWidth = constraints.maxWidth.toFloat()
-            val previewHeight = constraints.maxHeight.toFloat()
-            val scaleFactor = minOf(previewWidth / baseCanvasSize, previewHeight / baseCanvasSize).coerceAtMost(1f)
-            
             outfit.items.forEach { item ->
-                val scaledOffsetX = item.offsetX * scaleFactor
-                val scaledOffsetY = item.offsetY * scaleFactor
-                val scaledSize = 120.dp.value * scaleFactor * item.scale
-                
+
+                val size = baseItemSize * item.scale * finalScale
+
+                val x = (item.offsetX - bounds.minX) * finalScale
+                val y = (item.offsetY - bounds.minY) * finalScale
+
                 Box(
                     modifier = Modifier
                         .offset {
                             IntOffset(
-                                scaledOffsetX.toInt(),
-                                scaledOffsetY.toInt()
+                                x.toInt(),
+                                y.toInt()
                             )
                         }
-                        .size(scaledSize.dp)
+                        .size(size.dp)
                 ) {
                     AsyncImage(
                         model = item.image,
