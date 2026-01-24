@@ -34,6 +34,25 @@ android {
         )
     }
 
+    signingConfigs {
+        // Shared debug keystore for all team members
+        getByName("debug") {
+            storeFile = file("../closetly-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        
+        create("release") {
+            // Store keystore file in project root or secure location
+            // NEVER commit keystore passwords to git - use environment variables or gradle.properties
+            storeFile = file("../closetly-release.keystore") // Update path to your keystore
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: project.findProperty("KEYSTORE_PASSWORD") as String?
+            keyAlias = System.getenv("KEY_ALIAS") ?: project.findProperty("KEY_ALIAS") as String? ?: "closetly"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: project.findProperty("KEY_PASSWORD") as String?
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -41,6 +60,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Sign release builds with your release keystore
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // All team members will use the shared debug keystore
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
