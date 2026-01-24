@@ -581,12 +581,12 @@ fun UserProfielBody(userId: String, initialUsername: String) {
         ModalBottomSheet(
             onDismissRequest = { showMenu = false },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = White
+            containerColor = Color(0xFFD3D3D3)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .padding(vertical = 40.dp)
             ) {
                 Text(
                     text = "Block",
@@ -598,7 +598,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                             showMenu = false
                             showBlockDialog = true
                         }
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .padding(horizontal = 24.dp, vertical = 20.dp)
                 )
                 Text(
                     text = "Share this profile",
@@ -610,7 +610,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                             showMenu = false
                             // TODO: Implement share functionality
                         }
-                        .padding(horizontal = 24.dp, vertical = 16.dp)
+                        .padding(horizontal = 24.dp, vertical = 20.dp)
                 )
             }
         }
