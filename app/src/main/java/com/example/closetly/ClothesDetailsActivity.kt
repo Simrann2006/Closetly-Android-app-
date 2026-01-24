@@ -168,6 +168,9 @@ fun ClothesDetailsBody(
                                                 clothesName = clothesName.trim(),
                                                 brand = brand.trim(),
                                                 season = season.trim(),
+                                                color = color.trim(),
+                                                occasion = occasion.trim(),
+                                                price = price.trim(),
                                                 notes = notes.trim(),
                                                 categoryId = selectedCategoryId,
                                                 categoryName = selectedCategoryName,
@@ -359,6 +362,20 @@ fun ClothesDetailsBody(
                     value = season,
                     onValueChange = { season = it },
                     label = { Text("Season") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Brown,
+                        focusedLabelColor = Brown,
+                        unfocusedContainerColor = White,
+                        focusedContainerColor = White
+                    )
+                )
+
+                OutlinedTextField(
+                    value = occasion,
+                    onValueChange = { occasion = it },
+                    label = { Text("Occasion") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(

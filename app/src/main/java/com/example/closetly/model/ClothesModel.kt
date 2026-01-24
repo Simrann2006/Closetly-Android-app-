@@ -8,10 +8,12 @@ data class ClothesModel(
     val color : String = "",
     val price : String = "",
     val notes : String = "",
+    val occasion : String = "",
     val categoryId : String = "",
     val categoryName : String = "",
     var image : String = "",
-    var userId : String = ""
+    var userId : String = "",
+    var wearCount : Int = 0
 ) {
     fun toMap(): Map<String, Any> {
         return mapOf(
@@ -22,10 +24,12 @@ data class ClothesModel(
             "color" to color,
             "price" to price,
             "notes" to notes,
+            "occasion" to occasion,
             "categoryId" to categoryId,
             "categoryName" to categoryName,
             "image" to image,
-            "userId" to userId
+            "userId" to userId,
+            "wearCount" to wearCount
         )
     }
 }
