@@ -34,12 +34,16 @@ import com.example.closetly.viewmodel.ProductViewModel
 import com.example.closetly.viewmodel.PostViewModel
 import com.example.closetly.model.ProductModel
 import com.example.closetly.model.PostModel
+import com.example.closetly.ui.theme.Background_Dark
+import com.example.closetly.ui.theme.Background_Light
 import com.example.closetly.ui.theme.Pink40
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.White
 import com.example.closetly.ui.theme.Black
+import com.example.closetly.ui.theme.DarkGrey
 import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.Light_grey
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -124,7 +128,7 @@ fun ProfileScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White),
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator(color = Pink40)
@@ -136,7 +140,7 @@ fun ProfileScreen() {
         state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .background(White)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
     ) {
         item {
             Column(
@@ -149,7 +153,7 @@ fun ProfileScreen() {
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(Light_grey)
+                        .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey)
                 ) {
                     if (profilePicture.isNotEmpty()) {
                         AsyncImage(
@@ -179,7 +183,7 @@ fun ProfileScreen() {
                     text = name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
                 
                 Text(
@@ -193,7 +197,7 @@ fun ProfileScreen() {
                     Text(
                         text = bio,
                         fontSize = 14.sp,
-                        color = Black,
+                        color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -277,7 +281,7 @@ fun ProfileScreen() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -445,7 +449,8 @@ fun ProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             text = text,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            fontSize = 16.sp
+            fontSize = 16.sp,
+            color = if (ThemeManager.isDarkMode) White else Black
         )
         Spacer(modifier = Modifier.height(4.dp))
         Box(
@@ -471,7 +476,7 @@ fun ProfileStat(count: String, label: String, onClick: () -> Unit = {}) {
             text = count,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
-            color = Black
+            color = if (com.example.closetly.utils.ThemeManager.isDarkMode) White else Black
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(

@@ -50,7 +50,11 @@ val Red = Color(0xFFD50B00)
 val Light_grey1 = Color(0xFFE0E0E0)
 
 val WeatherBlue = Color(0xFF6BA4E8)
+val WeatherDarkBlue = Color(0xFF2E5984)
+
 val LightBlue = Color(0xFFE3F2FD)
+
+val DarkBlue = Color(0xFF1E3A5F)
 val SkyBlue = Color(0xFF87CEEB)
 
 val CalendarPurple = Color(0xFF8B5FBF)
@@ -59,9 +63,12 @@ val CalendarBlue = Color(0xFF4A6FDC)
 val DarkGrey = Color(0xFF333333)
 
 val DarkGrey1 = Color(0xFF666666)
-val LightGrey1 = Color(0xFF999999)
 
 val AICardColor1 = Color(0xFFE91E63)
 val AICardColor2 =Color(0xFF9C27B0)
 val AICardColor3 =Color(0xFF673AB7)
+
+val AICardDarkColor1 = Color(0xFF4A148C)
+val AICardDarkColor2 = Color(0xFF6A1B9A)
+val AICardDarkColor3 = Color(0xFF7B1FA2)
 val DarkYellow =Color(0xFFFFA500)

@@ -97,6 +97,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.example.closetly.R
 import com.example.closetly.utils.OutfitRecommendationHelper
 import com.example.closetly.utils.OutfitRecommendationHelper.aiCache
+import com.example.closetly.utils.ThemeManager
 import kotlin.math.abs
 
 data class AIRecommendationCache(
@@ -275,7 +276,7 @@ fun CalendarScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(White)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
     ) {
         item {
             Spacer(Modifier.height(20.dp))
@@ -288,7 +289,7 @@ fun CalendarScreen() {
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                 ),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
@@ -317,7 +318,7 @@ fun CalendarScreen() {
                             } ${currentMonth.year}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = DarkGrey
+                            color = if (ThemeManager.isDarkMode) White else DarkGrey
                         )
 
                         IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
@@ -342,7 +343,7 @@ fun CalendarScreen() {
                                 textAlign = TextAlign.Center,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = DarkGrey1
+                                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else DarkGrey1
                             )
                         }
                     }
@@ -382,14 +383,14 @@ fun CalendarScreen() {
                                             .clip(RoundedCornerShape(8.dp))
                                             .background(
                                                 when {
-                                                    isToday -> CalendarPurple.copy(alpha = 0.3f)
-                                                    isSelected -> CalendarBlue.copy(alpha = 0.3f)
+                                                    isToday -> Skin.copy(alpha = 0.3f)
+                                                    isSelected -> Pink40.copy(alpha = 0.3f)
                                                     else -> Color.Transparent
                                                 }
                                             )
                                             .border(
                                                 width = if (isToday) 2.dp else 0.dp,
-                                                color = if (isToday) CalendarPurple else Color.Transparent,
+                                                color = if (isToday) Skin else Color.Transparent,
                                                 shape = RoundedCornerShape(8.dp)
                                             )
                                             .clickable {
@@ -475,8 +476,8 @@ fun CalendarScreen() {
                                                 fontSize = 13.sp,
                                                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                                                 color = when {
-                                                    isToday || isSelected -> Brown
-                                                    else -> DarkGrey
+                                                    isToday || isSelected -> if (ThemeManager.isDarkMode) Light_brown else Brown
+                                                    else -> if (ThemeManager.isDarkMode) White else DarkGrey
                                                 }
                                             )
                                         }
@@ -577,166 +578,175 @@ fun CalendarScreen() {
 
 @Composable
 fun WeatherCard(
-        weatherData: WeatherData?,
-        isLoading: Boolean,
-        onRefresh: () -> Unit,
-        onRequestLocation: () -> Unit
+    weatherData: WeatherData?,
+    isLoading: Boolean,
+    onRefresh: () -> Unit,
+    onRequestLocation: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        )
     ) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(6.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
+                .background(
+                    Brush.verticalGradient(
+                        colors = if (ThemeManager.isDarkMode)
+                            listOf(
+                                DarkBlue,
+                                WeatherDarkBlue
+                            )
+                        else
+                            listOf(
                                 WeatherBlue,
                                 SkyBlue
                             )
-                        )
                     )
-                    .padding(20.dp)
-            ) {
-                if (isLoading) {
-                    Column(
+                )
+                .padding(20.dp)
+        ) {
+            if (isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(color = White, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text("Fetching weather...", color = White, fontSize = 14.sp)
+                }
+            } else if (weatherData != null) {
+                Column {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(color = White, modifier = Modifier.size(40.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("Fetching weather...", color = White, fontSize = 14.sp)
-                    }
-                } else if (weatherData != null) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = weatherData.cityName,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = White
-                                )
-                            }
-
-                            IconButton(onClick = onRefresh) {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = null,
-                                    tint = White
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = OutfitRecommendationHelper.formatTemperature(weatherData.temperature),
-                                    fontSize = 52.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = White
-                                )
-
-                                Text(
-                                    text = "${
-                                        OutfitRecommendationHelper.formatTemperatureFahrenheit(
-                                            weatherData.temperature
-                                        )
-                                    }",
-                                    fontSize = 18.sp,
-                                    color = White.copy(alpha = 0.9f)
-                                )
-
-                                Spacer(Modifier.height(8.dp))
-
-                                Text(
-                                    text = weatherData.description.uppercase(),
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = White
-                                )
-                            }
-
-                            Image(
-                                painter = painterResource(id = OutfitRecommendationHelper.getWeatherIcon(
-                                    weatherData.condition,
-                                    weatherData.weatherIcon
-                                )),
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
-                                modifier = Modifier.size(80.dp)
+                                tint = White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = weatherData.cityName,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = White
                             )
                         }
 
-                        Spacer(Modifier.height(20.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround
-                        ) {
-                            WeatherDetailItem(
-                                iconRes = R.drawable.humidity,
-                                label = "Humidity",
-                                value = "${weatherData.humidity}%"
-                            )
-
-                            WeatherDetailItem(
-                                iconRes = R.drawable.thermometer,
-                                label = "Feels Like",
-                                value = OutfitRecommendationHelper.formatTemperature(weatherData.feelsLike)
-                            )
-
-                            WeatherDetailItem(
-                                iconRes = R.drawable.wind,
-                                label = "Wind",
-                                value = "${weatherData.windSpeed} m/s"
+                        IconButton(onClick = onRefresh) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_refresh_24),
+                                contentDescription = null,
+                                tint = White
                             )
                         }
                     }
-                } else {
-                    Column(
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "Weather Unavailable",
-                            color = White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = onRequestLocation,
-                            colors = ButtonDefaults.buttonColors(containerColor = White)
-                        ) {
-                            Text("Enable Location", color = WeatherBlue)
+                        Column {
+                            Text(
+                                text = OutfitRecommendationHelper.formatTemperature(weatherData.temperature),
+                                fontSize = 52.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
+
+                            Text(
+                                text = "${
+                                    OutfitRecommendationHelper.formatTemperatureFahrenheit(
+                                        weatherData.temperature
+                                    )
+                                }",
+                                fontSize = 18.sp,
+                                color = White.copy(alpha = 0.9f)
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                text = weatherData.description.uppercase(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = White
+                            )
                         }
+
+                        Image(
+                            painter = painterResource(id = OutfitRecommendationHelper.getWeatherIcon(
+                                weatherData.condition,
+                                weatherData.weatherIcon
+                            )),
+                            contentDescription = null,
+                            modifier = Modifier.size(80.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        WeatherDetailItem(
+                            iconRes = R.drawable.humidity,
+                            label = "Humidity",
+                            value = "${weatherData.humidity}%"
+                        )
+
+                        WeatherDetailItem(
+                            iconRes = R.drawable.thermometer,
+                            label = "Feels Like",
+                            value = OutfitRecommendationHelper.formatTemperature(weatherData.feelsLike)
+                        )
+
+                        WeatherDetailItem(
+                            iconRes = R.drawable.wind,
+                            label = "Wind",
+                            value = "${weatherData.windSpeed} m/s"
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Weather Unavailable",
+                        color = White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = onRequestLocation,
+                        colors = ButtonDefaults.buttonColors(containerColor = White)
+                    ) {
+                        Text("Enable Location", color = if (ThemeManager.isDarkMode) DarkBlue else WeatherBlue)
                     }
                 }
             }
         }
     }
+}
 
 @Composable
 fun WeatherDetailItem(iconRes: Int, label: String, value: String) {
@@ -775,7 +785,9 @@ fun OutfitRecommendationsCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+        ),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
@@ -795,7 +807,7 @@ fun OutfitRecommendationsCard(
                     text = "AI Outfit Picks",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
             }
 
@@ -855,11 +867,10 @@ fun RecommendedClothesItem(clothes: ClothesModel) {
                 .fillMaxWidth()
                 .height(125.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = LightBlue),
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Secondary_Light  else LightBlue),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
+            Column(                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AsyncImage(
@@ -876,15 +887,15 @@ fun RecommendedClothesItem(clothes: ClothesModel) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .background(White)
-                        .padding(4.dp),
+                        .background(if(ThemeManager.isDarkMode) Surface_Dark else White)
+                        .padding(1.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = clothes.clothesName,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Black,
+                        color = if(ThemeManager.isDarkMode) White else Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
@@ -905,18 +916,28 @@ fun AIInsightsCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(
-                            AICardColor1,
-                            AICardColor2,
-                            AICardColor3
-                        )
+                        colors = if (ThemeManager.isDarkMode)
+                            listOf(
+                                AICardDarkColor1,
+                                AICardDarkColor2,
+                                AICardDarkColor3
+                            )
+                        else
+                            listOf(
+                                AICardColor1,
+                                AICardColor2,
+                                AICardColor3
+                            )
                     )
                 )
                 .padding(20.dp)
@@ -955,7 +976,7 @@ fun AIInsightsCard(
                                 color = White
                             )
                         }
-                        
+
                         IconButton(
                             onClick = onRefresh,
                             modifier = Modifier.size(32.dp)
@@ -968,9 +989,9 @@ fun AIInsightsCard(
                             )
                         }
                     }
-                    
+
                     Spacer(Modifier.height(16.dp))
-                    
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -1018,7 +1039,9 @@ fun CalendarDateDialog(
                 .fillMaxWidth()
                 .heightIn(max = 600.dp),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -1035,7 +1058,7 @@ fun CalendarDateDialog(
                         text = "${selectedDate.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${selectedDate.dayOfMonth}, ${selectedDate.year}",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = DarkGrey,
+                        color = if (ThemeManager.isDarkMode) White else DarkGrey,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(
@@ -1075,12 +1098,13 @@ fun CalendarDateDialog(
                             colors = ButtonDefaults.buttonColors(containerColor = Brown),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
+                            Icon(Icons.Default.Add, contentDescription = null, tint = White)
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "Plan Outfit",
                                 fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                color = White
                             )
                         }
                     }
@@ -1089,11 +1113,11 @@ fun CalendarDateDialog(
                         text = "Planned Outfits (${outfits.size})",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
-                    
+
                     Spacer(Modifier.height(16.dp))
-                    
+
                     outfits.forEach { outfit ->
                         Card(
                             modifier = Modifier
@@ -1101,7 +1125,9 @@ fun CalendarDateDialog(
                                 .padding(vertical = 6.dp)
                                 .clickable { onViewOutfit(outfit) },
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Light_grey),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (ThemeManager.isDarkMode) Background_Dark else Light_grey
+                            ),
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Row(
@@ -1114,7 +1140,7 @@ fun CalendarDateDialog(
                                     modifier = Modifier
                                         .size(60.dp)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(White)
+                                        .background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                                 ) {
                                     if (outfit.items.isNotEmpty()) {
                                         if (outfit.items.size == 1) {
@@ -1156,15 +1182,15 @@ fun CalendarDateDialog(
                                         }
                                     }
                                 }
-                                
+
                                 Spacer(Modifier.width(12.dp))
-                                
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = outfit.outfitName,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Black,
+                                        color = if (ThemeManager.isDarkMode) White else Black,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -1183,7 +1209,7 @@ fun CalendarDateDialog(
                                         color = Grey
                                     )
                                 }
-                                
+
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
                                     contentDescription = null,
@@ -1192,9 +1218,9 @@ fun CalendarDateDialog(
                             }
                         }
                     }
-                    
+
                     Spacer(Modifier.height(16.dp))
-                    
+
                     OutlinedButton(
                         onClick = onPlanOutfit,
                         modifier = Modifier.fillMaxWidth(),
