@@ -6,9 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.closetly.R
 import com.example.closetly.repository.ChatRepoImpl
+import com.example.closetly.ui.theme.Background_Dark
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.ClosetlyTheme
@@ -151,10 +150,10 @@ fun DashboardBody(){
                 CenterAlignedTopAppBar(
                     modifier = Modifier.height(65.dp),
                     colors = TopAppBarDefaults.topAppBarColors(
-                        titleContentColor = Black,
-                        actionIconContentColor = Black,
-                        containerColor = White,
-                        navigationIconContentColor = Black
+                        titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                        actionIconContentColor = if (ThemeManager.isDarkMode) White else Black,
+                        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                        navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     navigationIcon = {
                         IconButton(onClick = {
@@ -164,7 +163,7 @@ fun DashboardBody(){
                                 painter = painterResource(R.drawable.baseline_add_24),
                                 contentDescription = null,
                                 modifier = Modifier.size(22.dp),
-                                tint = Black
+                                tint = if (ThemeManager.isDarkMode) White else Black
                             )
                         }
                     },
@@ -185,7 +184,7 @@ fun DashboardBody(){
                                 painter = painterResource(R.drawable.baseline_menu_24),
                                 contentDescription = null,
                                 modifier = Modifier.size(22.dp),
-                                tint = Black
+                                tint = if (ThemeManager.isDarkMode) White else Black
                             )
                         }
                     }
@@ -194,10 +193,10 @@ fun DashboardBody(){
                 TopAppBar(
                     modifier = Modifier.height(65.dp),
                     colors = TopAppBarDefaults.topAppBarColors(
-                        titleContentColor = Black,
-                        actionIconContentColor = Black,
-                        containerColor = White,
-                        navigationIconContentColor = Black
+                        titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                        actionIconContentColor = if (ThemeManager.isDarkMode) White else Black,
+                        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                        navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     title = {
                         Text(
@@ -220,10 +219,11 @@ fun DashboardBody(){
                                     context.startActivity(Intent(context, NotificationActivity::class.java))
                                 }) {
                                     Box {
-                                        Image(
+                                        Icon(
                                             painter = painterResource(R.drawable.notification),
                                             contentDescription = null,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(22.dp),
+                                            tint = if (ThemeManager.isDarkMode) White else Color.Black
                                         )
                                         if (unreadNotifications > 0) {
                                             Box(
@@ -241,10 +241,11 @@ fun DashboardBody(){
                                     context.startActivity(intent)
                                 }) {
                                     Box{
-                                        Image(painter = painterResource(R.drawable.chat),
+                                        Icon(
+                                            painter = painterResource(R.drawable.chat),
                                             contentDescription = null,
-                                            modifier = Modifier
-                                                .size(22.dp)
+                                            modifier = Modifier.size(22.dp),
+                                            tint = if (ThemeManager.isDarkMode) White else Color.Black
                                         )
                                         if (unreadMessages > 0) {
                                             Box(
@@ -264,7 +265,7 @@ fun DashboardBody(){
                                         painter = painterResource(R.drawable.chat),
                                         contentDescription = null,
                                         modifier = Modifier.size(22.dp),
-                                        tint = Black
+                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
                                     )
                                 }
                             }
@@ -274,7 +275,7 @@ fun DashboardBody(){
                                         painter = painterResource(R.drawable.chat),
                                         contentDescription = null,
                                         modifier = Modifier.size(22.dp),
-                                        tint = Black
+                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
                                     )
                                 }
                             }
@@ -284,7 +285,7 @@ fun DashboardBody(){
                                         painter = painterResource(R.drawable.chat),
                                         contentDescription = null,
                                         modifier = Modifier.size(22.dp),
-                                        tint = Black
+                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
                                     )
                                 }
                             }
@@ -294,22 +295,23 @@ fun DashboardBody(){
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = White,
-                modifier = Modifier
-                    .height(115.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Grey.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(0.dp)
-                    )
-            ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Grey.copy(alpha = 0.2f))
+                )
+                NavigationBar(
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                    modifier = Modifier.height(115.dp)
+                ) {
                 listItem.forEachIndexed { index, item ->
                     val isSelected = selectedIndex == index
                     NavigationBarItem(
                         icon = {
                             Column(
-                                modifier = if (isSelected) Modifier.offset(y = (-8).dp) else Modifier,
+                                modifier = if (isSelected) Modifier.offset(y = (-4).dp) else Modifier,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
@@ -335,11 +337,12 @@ fun DashboardBody(){
                             indicatorColor = Color.Transparent,
                             selectedIconColor = Brown,
                             selectedTextColor = Brown,
-                            unselectedIconColor = Black,
-                            unselectedTextColor = Black
+                            unselectedIconColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Color.Black,
+                            unselectedTextColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Color.Black
                         )
                     )
                 }
+            }
             }
         }
     ){ padding ->
@@ -362,7 +365,7 @@ fun DashboardBody(){
                     onDismissRequest = { showSheet = false },
                     sheetState = sheetState,
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    containerColor = Color.White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
                 ) {
                     Column(
                         modifier = Modifier
@@ -374,7 +377,7 @@ fun DashboardBody(){
                             text = "Create",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = Black,
+                            color = if (ThemeManager.isDarkMode) White else Color.Black,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                         SheetOption(icon = R.drawable.baseline_add_24, label = "Post") {
@@ -407,10 +410,10 @@ fun SheetOption(icon: Int, label: String, onClick: () -> Unit) {
             painter = painterResource(icon),
             contentDescription = label,
             modifier = Modifier.size(28.dp),
-            tint = Black
+            tint = if (ThemeManager.isDarkMode) White else Black
         )
         Spacer(modifier = Modifier.width(20.dp))
-        Text(label, fontSize = 18.sp, color = Black)
+        Text(label, fontSize = 18.sp, color = if (ThemeManager.isDarkMode) White else Black)
     }
 }
 

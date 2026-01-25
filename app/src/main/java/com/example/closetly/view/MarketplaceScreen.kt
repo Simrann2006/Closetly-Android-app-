@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -43,6 +42,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.closetly.R
 import com.example.closetly.repository.UserRepoImpl
+import com.example.closetly.utils.ThemeManager
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -82,7 +82,7 @@ fun MarketplaceScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
                 .padding(16.dp)
         ) {
             OutlinedTextField(
@@ -90,12 +90,13 @@ fun MarketplaceScreen() {
                 onValueChange = { searchText = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(52.dp),
                 placeholder = {
                     Text(
-                        "Search items or sellers......",
+                        "Search items or sellers...",
                         style = TextStyle(
-                            fontSize = 13.sp,
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
                             color = Grey
                         )
                     )
@@ -105,17 +106,22 @@ fun MarketplaceScreen() {
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = null,
                         tint = Grey,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Light_grey,
-                    focusedContainerColor = Light_grey,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Brown
+                    unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                    focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                    unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Color.Transparent,
+                    focusedBorderColor = Brown,
+                    focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                    unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
                 ),
-                textStyle = TextStyle(fontSize = 14.sp),
+                textStyle = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontSize = 14.sp
+                ),
                 singleLine = true
             )
 
@@ -123,7 +129,7 @@ fun MarketplaceScreen() {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 FilterButton(
                     text = "All",
@@ -149,14 +155,26 @@ fun MarketplaceScreen() {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "No products found",
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 16.sp,
-                            color = Grey
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_add_shopping_cart_24),
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Grey.copy(alpha = 0.5f)
                         )
-                    )
+                        Text(
+                            "No products found",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Grey
+                            )
+                        )
+                    }
                 }
             } else {
                 LazyVerticalGrid(
@@ -183,25 +201,29 @@ fun FilterButton(
 ) {
     Surface(
         modifier = Modifier
-            .height(40.dp)
+            .height(42.dp)
             .clickable(
                 onClick = onClick,
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ),
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) Brown else Light_grey
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) {
+            Brown
+        } else {
+            if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
+        }
     ) {
         Box(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text,
                 style = TextStyle(
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                    color = if (isSelected) White else Black,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) White else (if (ThemeManager.isDarkMode) White else Black),
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 14.sp
                 )
             )
@@ -220,9 +242,14 @@ fun ProductCard(
             .fillMaxWidth()
             .aspectRatio(0.70f)
             .clickable { showDialog = true },
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = White)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (ThemeManager.isDarkMode)
+                Surface_Dark.copy(alpha = 0.7f)
+            else
+                White.copy(alpha = 0.95f)
+        )
     ) {
         Box {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -243,11 +270,11 @@ fun ProductCard(
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopStart)
-                            .padding(8.dp)
-                            .size(36.dp),
+                            .padding(10.dp)
+                            .size(38.dp),
                         shape = CircleShape,
-                        color = White,
-                        shadowElevation = 2.dp
+                        color = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        shadowElevation = 3.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             if (product.sellerProfilePic.isNotEmpty()) {
@@ -283,16 +310,16 @@ fun ProductCard(
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(8.dp),
+                            .padding(10.dp),
                         color = when (product.listingType) {
                             ListingType.RENT -> Light_brown
-                            ListingType.THRIFT -> Grey
+                            ListingType.THRIFT -> DarkGrey
                         },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(10.dp)
                     ) {
                         Text(
                             text = product.listingType.name,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
                             style = TextStyle(
                                 fontFamily = FontFamily(Font(R.font.poppins_regular)),
                                 fontSize = 10.sp,
@@ -301,22 +328,22 @@ fun ProductCard(
                             )
                         )
                     }
-                    
+
                     if (product.status != "Available") {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.BottomStart)
-                                .padding(8.dp),
+                                .padding(10.dp),
                             color = when (product.status) {
                                 "Sold Out" -> Red
                                 "On Rent" -> DarkYellow
                                 else -> Grey
                             },
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Text(
                                 text = product.status.uppercase(),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
                                 style = TextStyle(
                                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                                     fontSize = 10.sp,
@@ -331,7 +358,12 @@ fun ProductCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(White)
+                        .background(
+                            if (ThemeManager.isDarkMode)
+                                Surface_Dark.copy(alpha = 0.9f)
+                            else
+                                White.copy(alpha = 0.95f)
+                        )
                         .padding(12.dp)
                 ) {
                     Text(
@@ -340,7 +372,7 @@ fun ProductCard(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -350,15 +382,15 @@ fun ProductCard(
 
                     Text(
                         text = if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
-                            "$${product.rentPricePerDay}/day"
+                            "Rs.${product.rentPricePerDay}/day"
                         } else {
-                            "$${product.price}"
+                            "Rs.${product.price}"
                         },
                         style = TextStyle(
                             fontFamily = FontFamily(Font(R.font.poppins_regular)),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Brown
+                            color = if (ThemeManager.isDarkMode) Light_brown else Brown
                         )
                     )
                 }
@@ -381,10 +413,10 @@ fun ProductDetailsDialog(
     val context = LocalContext.current
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val userRepo = remember { UserRepoImpl(context) }
-    
+
     var sellerName by remember { mutableStateOf(product.sellerName) }
     var sellerProfilePic by remember { mutableStateOf(product.sellerProfilePic) }
-    
+
     LaunchedEffect(product.sellerId) {
         userRepo.getUserById(product.sellerId) { success, _, userData ->
             if (success && userData != null) {
@@ -402,8 +434,14 @@ fun ProductDetailsDialog(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (ThemeManager.isDarkMode)
+                    Surface_Dark.copy(alpha = 0.95f)
+                else
+                    White.copy(alpha = 0.98f)
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -415,12 +453,12 @@ fun ProductDetailsDialog(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .height(280.dp)
+                        .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -429,59 +467,77 @@ fun ProductDetailsDialog(
                 ) {
                     Text(
                         text = product.title,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black,
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (ThemeManager.isDarkMode) White else Black
+                        ),
                         modifier = Modifier.weight(1f)
                     )
 
+                    Spacer(Modifier.width(12.dp))
+
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = when (product.listingType) {
                             ListingType.RENT -> Light_brown
-                            ListingType.THRIFT -> Grey
+                            ListingType.THRIFT -> DarkGrey
                         }
                     ) {
                         Text(
                             text = product.listingType.name,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            )
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
-                        "$${product.rentPricePerDay}/day"
+                        "Rs.${product.rentPricePerDay}/day"
                     } else {
-                        "$${product.price}"
+                        "Rs.${product.price}"
                     },
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Brown
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (ThemeManager.isDarkMode) Light_brown else Brown
+                    )
                 )
 
                 if (product.description.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Description:",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Grey
+                        text = "Description",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Grey
+                        )
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = product.description,
-                        fontSize = 14.sp,
-                        color = Black,
-                        modifier = Modifier.padding(top = 4.dp)
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black,
+                            lineHeight = 20.sp
+                        )
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 if (product.brand.isNotEmpty()) {
                     ProductDetailRow(label = "Brand", value = product.brand)
@@ -493,13 +549,15 @@ fun ProductDetailsDialog(
                     ProductDetailRow(label = "Condition", value = product.condition)
                 }
                 if (product.listingType == ListingType.RENT && product.rentPricePerDay != null) {
-                    ProductDetailRow(label = "Sale Price", value = "$${product.price}")
+                    ProductDetailRow(label = "Sale Price", value = "Rs.${product.price}")
                 }
                 ProductDetailRow(label = "Posted", value = getTimeAgo(product.timestamp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Light_grey)
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(
+                    color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -510,22 +568,25 @@ fun ProductDetailsDialog(
                             model = sellerProfilePic,
                             contentDescription = null,
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(52.dp)
                                 .clip(CircleShape),
                             contentScale = ContentScale.Crop
                         )
                     } else {
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(52.dp),
                             shape = CircleShape,
                             color = Brown.copy(alpha = 0.2f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     text = sellerName.firstOrNull()?.toString()?.uppercase() ?: "?",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Brown
+                                    style = TextStyle(
+                                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Brown
+                                    )
                                 )
                             }
                         }
@@ -534,19 +595,25 @@ fun ProductDetailsDialog(
                     Column {
                         Text(
                             text = sellerName,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (ThemeManager.isDarkMode) White else Black
+                            )
                         )
                         Text(
                             text = "Seller",
-                            fontSize = 12.sp,
-                            color = Grey
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 13.sp,
+                                color = Grey
+                            )
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 if (product.sellerId != currentUserId) {
                     var isLoadingChat by remember { mutableStateOf(false) }
@@ -573,11 +640,11 @@ fun ProductDetailsDialog(
                         enabled = !isLoadingChat,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(52.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Brown
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         if (isLoadingChat) {
                             CircularProgressIndicator(
@@ -589,14 +656,18 @@ fun ProductDetailsDialog(
                             Icon(
                                 painter = painterResource(R.drawable.chat),
                                 contentDescription = null,
-                                tint = White
+                                tint = White,
+                                modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 "Message Seller",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = White
+                                style = TextStyle(
+                                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = White
+                                )
                             )
                         }
                     }
@@ -611,26 +682,26 @@ fun ProductDetailRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = "$label:",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Grey
+            style = TextStyle(
+                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Grey
+            )
         )
         Text(
             text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = Black
+            style = TextStyle(
+                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (ThemeManager.isDarkMode) White else Black
+            )
         )
     }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun PreviewMarketplace() {
-    MarketplaceScreen()
 }

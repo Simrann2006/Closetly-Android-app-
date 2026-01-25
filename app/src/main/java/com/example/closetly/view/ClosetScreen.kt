@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +56,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -64,19 +67,15 @@ import coil.compose.AsyncImage
 import com.example.closetly.model.CategoryModel
 import com.example.closetly.model.ClothesModel
 import com.example.closetly.repository.ClothesRepoImpl
-import com.example.closetly.ui.theme.Black
-import com.example.closetly.ui.theme.Brown
-import com.example.closetly.ui.theme.Grey
-import com.example.closetly.ui.theme.Light_grey
-import com.example.closetly.ui.theme.Skin
+import com.example.closetly.ui.theme.*
 import com.example.closetly.repository.CategoryRepoImpl
 import com.example.closetly.viewmodel.CategoryViewModel
-import com.example.closetly.ui.theme.White
 import com.example.closetly.viewmodel.ClothesViewModel
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.window.Dialog
 import com.example.closetly.R
+import com.example.closetly.utils.ThemeManager
 
 @Composable
 fun ClosetScreen() {
@@ -86,7 +85,7 @@ fun ClosetScreen() {
     val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
     val clothesRepo = remember { ClothesRepoImpl() }
     val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
-    
+
     var selectedCategory by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
 
@@ -104,7 +103,7 @@ fun ClosetScreen() {
                 if (data == null || data.isEmpty()) {
                     val defaultCategories = listOf("Tops", "Bottoms", "Shoes")
                     var addedCount = 0
-                    
+
                     defaultCategories.forEach { categoryName ->
                         val newCategory = CategoryModel(categoryName = categoryName)
                         categoryViewModel.addCategory(newCategory) { addSuccess, _ ->
@@ -170,7 +169,7 @@ fun ClosetScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
                 .padding(16.dp)
         ) {
             Row(
@@ -188,6 +187,7 @@ fun ClosetScreen() {
                         Text(
                             "Search your closet...",
                             style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
                                 fontSize = 13.sp,
                                 color = Grey
                             )
@@ -203,12 +203,17 @@ fun ClosetScreen() {
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = Light_grey,
-                        focusedContainerColor = Light_grey,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = Brown
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Color.Transparent,
+                        focusedBorderColor = Brown,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
-                    textStyle = TextStyle(fontSize = 14.sp),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 14.sp
+                    ),
                     singleLine = true
                 )
 
@@ -218,12 +223,14 @@ fun ClosetScreen() {
                         intent.putExtra("FLOW_TYPE", AddFlow.CLOSET)
                         context.startActivity(intent)
                     },
-                    containerColor = Skin,
+                    containerColor = Brown,
+                    contentColor = White,
                     modifier = Modifier.size(46.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_add_24),
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = White
                     )
                 }
             }
@@ -251,14 +258,17 @@ fun ClosetScreen() {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "Plan Outfit",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = White
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = White
+                    )
                 )
             }
-            
+
             Spacer(Modifier.height(8.dp))
-            
+
             OutlinedButton(
                 onClick = {
                     context.startActivity(Intent(context, SavedOutfitsActivity::class.java))
@@ -281,8 +291,12 @@ fun ClosetScreen() {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "Saved Outfits",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Brown
+                    )
                 )
             }
 
@@ -291,7 +305,7 @@ fun ClosetScreen() {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                color = Light_grey
+                color = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
             ) {
                 val scrollState = rememberScrollState()
                 Row(
@@ -333,7 +347,7 @@ fun ClosetScreen() {
                 }
             }
         }
-        
+
         if (showDeleteDialog && categoryToDelete != null) {
             AlertDialog(
                 onDismissRequest = {
@@ -343,14 +357,22 @@ fun ClosetScreen() {
                 title = {
                     Text(
                         text = "Delete Category",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = if (ThemeManager.isDarkMode) White else Black
+                        )
                     )
                 },
                 text = {
                     Text(
                         text = "Are you sure you want to delete '$categoryToDelete'? All items in this category will also be deleted.",
-                        fontSize = 14.sp
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black
+                        )
                     )
                 },
                 confirmButton = {
@@ -359,7 +381,7 @@ fun ClosetScreen() {
                             val categoryName = categoryToDelete
                             val categoryData = allClothes.firstOrNull { it.categoryName == categoryName }
                             val categoryId = categoryData?.categoryId ?: ""
-                            
+
                             if (categoryId.isNotEmpty()) {
                                 categoryViewModel.deleteCategory(categoryId) { success, message ->
                                     if (success) {
@@ -378,7 +400,14 @@ fun ClosetScreen() {
                             categoryToDelete = null
                         }
                     ) {
-                        Text("Delete", color = Color.Red, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Delete",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                color = Color.Red,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
                     }
                 },
                 dismissButton = {
@@ -388,19 +417,31 @@ fun ClosetScreen() {
                             categoryToDelete = null
                         }
                     ) {
-                        Text("Cancel", color = Grey, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Cancel",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                color = Grey,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
                     }
                 },
-                containerColor = White,
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                 shape = RoundedCornerShape(16.dp)
             )
         }
-        
+
         if (isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White.copy(alpha = 0.8f)),
+                    .background(
+                        if (ThemeManager.isDarkMode)
+                            Background_Dark.copy(alpha = 0.8f)
+                        else
+                            White.copy(alpha = 0.8f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(
@@ -410,8 +451,7 @@ fun ClosetScreen() {
                 )
             }
         }
-        
-        // Floating Action Button for Analysis
+
         FloatingActionButton(
             onClick = {
                 val intent = Intent(context, AnalysisActivity::class.java)
@@ -436,14 +476,19 @@ fun ClosetScreen() {
 fun ClothesItem(clothes: ClothesModel) {
     var showDialog by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableStateOf(0) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.75f)
             .clickable { showDialog = true },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (ThemeManager.isDarkMode)
+                Surface_Dark.copy(alpha = 0.7f)
+            else
+                White
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -459,7 +504,7 @@ fun ClothesItem(clothes: ClothesModel) {
                     contentScale = ContentScale.Crop
                 )
             }
-            
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -467,29 +512,35 @@ fun ClothesItem(clothes: ClothesModel) {
             ) {
                 Text(
                     text = clothes.clothesName,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Black,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (ThemeManager.isDarkMode) White else Black
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = clothes.categoryName,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Grey,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = Grey
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
         }
     }
-    
+
     if (showDialog) {
         ClothesDetailsDialog(
             clothes = clothes,
             onDismiss = { showDialog = false },
-            onDeleted = { 
+            onDeleted = {
                 showDialog = false
                 refreshKey++
             }
@@ -508,10 +559,10 @@ fun ClothesDetailsDialog(
     val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
     val categoryRepo = remember { CategoryRepoImpl() }
     val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
-    
+
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    
+
     Dialog(
         onDismissRequest = onDismiss
     ) {
@@ -520,7 +571,12 @@ fun ClothesDetailsDialog(
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(
+                containerColor = if (ThemeManager.isDarkMode)
+                    Surface_Dark.copy(alpha = 0.95f)
+                else
+                    White
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -533,19 +589,28 @@ fun ClothesDetailsDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
-                        .background(Light_grey, RoundedCornerShape(12.dp)),
+                        .background(
+                            if (ThemeManager.isDarkMode)
+                                Surface_Dark
+                            else
+                                Light_grey,
+                            RoundedCornerShape(12.dp)
+                        ),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
                     text = clothes.clothesName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Black
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (ThemeManager.isDarkMode) White else Black
+                    )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
 
                 DetailRow(label = "Category", value = clothes.categoryName)
@@ -553,23 +618,29 @@ fun ClothesDetailsDialog(
                 DetailRow(label = "Price", value = clothes.price)
                 DetailRow(label = "Color", value = clothes.color)
                 DetailRow(label = "Season", value = clothes.season)
-                
+
                 if (clothes.notes.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Notes:",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Grey
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Grey
+                        )
                     )
                     Text(
                         text = clothes.notes,
-                        fontSize = 14.sp,
-                        color = Black,
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black
+                        ),
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -592,13 +663,13 @@ fun ClothesDetailsDialog(
             }
         }
     }
-    
+
     if (showEditDialog) {
         EditClothesDialog(
             clothes = clothes,
             clothesViewModel = clothesViewModel,
             categoryViewModel = categoryViewModel,
-            onDismiss = { 
+            onDismiss = {
                 showEditDialog = false
                 onDismiss()
             },
@@ -608,7 +679,7 @@ fun ClothesDetailsDialog(
             }
         )
     }
-    
+
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
             clothesName = clothes.clothesName,
@@ -635,15 +706,21 @@ fun DetailRow(label: String, value: String) {
     ) {
         Text(
             text = "$label:",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Grey
+            style = TextStyle(
+                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Grey
+            )
         )
         Text(
             text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = Black
+            style = TextStyle(
+                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (ThemeManager.isDarkMode) White else Black
+            )
         )
     }
 }
@@ -664,7 +741,7 @@ fun EditClothesDialog(
     var selectedCategory by remember { mutableStateOf(clothes.categoryName) }
     var categories by remember { mutableStateOf<List<String>>(emptyList()) }
     var expandedCategory by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(Unit) {
         categoryViewModel.getAllCategories { success, _, data ->
             if (success && data != null) {
@@ -672,14 +749,19 @@ fun EditClothesDialog(
             }
         }
     }
-    
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(
+                containerColor = if (ThemeManager.isDarkMode)
+                    Surface_Dark.copy(alpha = 0.95f)
+                else
+                    White
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -688,32 +770,56 @@ fun EditClothesDialog(
             ) {
                 Text(
                     text = "Edit Clothes",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Black
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (ThemeManager.isDarkMode) White else Black
+                    )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 OutlinedTextField(
                     value = clothesName,
                     onValueChange = { clothesName = it },
-                    label = { Text("Clothes Name") },
+                    label = {
+                        Text(
+                            "Clothes Name",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
+                    ),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = selectedCategory,
                         onValueChange = { },
-                        label = { Text("Category") },
+                        label = {
+                            Text(
+                                "Category",
+                                style = TextStyle(
+                                    fontFamily = FontFamily(Font(R.font.poppins_regular))
+                                )
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { expandedCategory = true },
@@ -722,24 +828,38 @@ fun EditClothesDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = Grey,
-                            disabledTextColor = Black
+                            disabledTextColor = if (ThemeManager.isDarkMode) White else Black
                         ),
                         trailingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = Grey
                             )
-                        }
+                        },
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular))
+                        )
                     )
-                    
+
                     DropdownMenu(
                         expanded = expandedCategory,
                         onDismissRequest = { expandedCategory = false },
-                        modifier = Modifier.background(White)
+                        modifier = Modifier.background(
+                            if (ThemeManager.isDarkMode) Surface_Dark else White
+                        )
                     ) {
                         categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category) },
+                                text = {
+                                    Text(
+                                        category,
+                                        style = TextStyle(
+                                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                            color = if (ThemeManager.isDarkMode) White else Black
+                                        )
+                                    )
+                                },
                                 onClick = {
                                     selectedCategory = category
                                     expandedCategory = false
@@ -747,7 +867,7 @@ fun EditClothesDialog(
                             )
                         }
                     }
-                    
+
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -760,12 +880,26 @@ fun EditClothesDialog(
                 OutlinedTextField(
                     value = brand,
                     onValueChange = { brand = it },
-                    label = { Text("Brand") },
+                    label = {
+                        Text(
+                            "Brand",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
+                    ),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
                     )
                 )
 
@@ -774,48 +908,90 @@ fun EditClothesDialog(
                 OutlinedTextField(
                     value = color,
                     onValueChange = { color = it },
-                    label = { Text("Color") },
+                    label = {
+                        Text(
+                            "Color",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
+                    ),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 OutlinedTextField(
                     value = season,
                     onValueChange = { season = it },
-                    label = { Text("Season") },
+                    label = {
+                        Text(
+                            "Season",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
+                    ),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes") },
+                    label = {
+                        Text(
+                            "Notes",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular))
+                            )
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedLabelColor = Brown,
+                        unfocusedLabelColor = Grey
                     ),
-                    maxLines = 4
+                    maxLines = 4,
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
+                    )
                 )
-                
+
                 Spacer(modifier = Modifier.height(20.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -830,9 +1006,15 @@ fun EditClothesDialog(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cancel", color = Black)
+                        Text(
+                            "Cancel",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                color = Black
+                            )
+                        )
                     }
-                    
+
                     Button(
                         onClick = {
                             val updatedClothes = clothes.copy(
@@ -840,6 +1022,7 @@ fun EditClothesDialog(
                                 brand = brand,
                                 categoryName = selectedCategory,
                                 season = season,
+                                color = color,
                                 notes = notes
                             )
                             clothesViewModel.editClothes(updatedClothes) { success, message ->
@@ -856,7 +1039,13 @@ fun EditClothesDialog(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Save", color = White)
+                        Text(
+                            "Save",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                color = White
+                            )
+                        )
                     }
                 }
             }
@@ -875,11 +1064,21 @@ fun DeleteConfirmationDialog(
         title = {
             Text(
                 text = "Delete Clothes?",
-                fontWeight = FontWeight.Bold
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontWeight = FontWeight.Bold,
+                    color = if (ThemeManager.isDarkMode) White else Black
+                )
             )
         },
         text = {
-            Text("Are you sure you want to delete \"$clothesName\"? This action cannot be undone.")
+            Text(
+                "Are you sure you want to delete \"$clothesName\"? This action cannot be undone.",
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black
+                )
+            )
         },
         confirmButton = {
             TextButton(
@@ -888,15 +1087,26 @@ fun DeleteConfirmationDialog(
                     contentColor = Color.Red
                 )
             ) {
-                Text("Delete")
+                Text(
+                    "Delete",
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular))
+                    )
+                )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(
+                    "Cancel",
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        color = Grey
+                    )
+                )
             }
         },
-        containerColor = White,
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         shape = RoundedCornerShape(16.dp)
     )
 }
@@ -914,9 +1124,15 @@ fun CategoryButton(
             .height(34.dp)
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = onLongPress
+                onLongClick = onLongPress,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
             ),
-        color = if (isSelected) White else Light_grey,
+        color = if (isSelected) {
+            if (ThemeManager.isDarkMode) Surface_Dark else White
+        } else {
+            if (ThemeManager.isDarkMode) Background_Dark else Light_grey
+        },
         shape = RoundedCornerShape(17.dp),
         shadowElevation = if (isSelected) 2.dp else 0.dp,
         border = if (isSelected) BorderStroke(
@@ -932,9 +1148,12 @@ fun CategoryButton(
         ) {
             Text(
                 text = text,
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                color = if (isSelected) Brown else Grey
+                style = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (isSelected) Brown else Grey
+                )
             )
         }
     }
