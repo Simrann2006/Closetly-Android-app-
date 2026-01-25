@@ -434,7 +434,7 @@ fun PlanOutfitScreen(
                                     Intent(context,
                                         SavedOutfitsActivity::class.java
                                     ).apply {
-                                    Intent.setFlags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 })
                                 (context as? ComponentActivity)?.finish()
                             } else {

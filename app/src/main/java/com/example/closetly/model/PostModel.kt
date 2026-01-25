@@ -26,14 +26,6 @@ data class PostModel(
     
     val postType: String = "post"
 ) {
-
-    fun resolveProfilePictureUrl(): String {
-        return userProfilePic.ifEmpty { profilePicture }
-    }
-
-    fun resolveTimestamp(): Long {
-        return if (timestamp > 0) timestamp else postTimestamp
-    }
     
     /**
      * Get the appropriate caption/description
@@ -47,7 +39,7 @@ data class PostModel(
         return if (priceText.isNotEmpty()) {
             priceText
         } else if (price > 0.0) {
-            "₹${price.toInt()}"
+            "Rs. ${price.toInt()}"
         } else {
             ""
         }

@@ -191,10 +191,10 @@ class SliderRepoImpl : SliderRepo {
                         // Get appropriate price based on listing type
                         val price = if (listingTypeStr == "RENT") {
                             val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) ?: 0.0
-                            "₹${rentPriceDouble.toInt()}/day"
+                            "Rs. ${rentPriceDouble.toInt()}/day"
                         } else {
                             val priceDouble = child.child("price").getValue(Double::class.java) ?: 0.0
-                            "₹${priceDouble.toInt()}"
+                            "Rs. ${priceDouble.toInt()}"
                         }
                         
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
@@ -246,7 +246,7 @@ class SliderRepoImpl : SliderRepo {
                         val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) 
                             ?: child.child("rentPrice").getValue(Double::class.java) 
                             ?: child.child("price").getValue(Double::class.java) ?: 0.0
-                        val price = "₹${rentPriceDouble.toInt()}/day"
+                        val price = "Rs. ${rentPriceDouble.toInt()}/day"
                         val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
                         val status = child.child("status").getValue(String::class.java) ?: "Available"
                         
