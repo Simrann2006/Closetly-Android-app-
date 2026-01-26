@@ -13,7 +13,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -49,6 +51,7 @@ import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.viewmodel.OutfitViewModel
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -60,6 +63,12 @@ data class PositionedClothesItem(
     var width: Float = 120f,
     var height: Float = 120f,
     val id: String = clothes.clothesId
+)
+
+data class DayOutfit(
+    val date: String,
+    val dayLabel: String,
+    var clothes: List<PositionedClothesItem> = emptyList()
 )
 
 class PlanOutfitActivity : ComponentActivity() {
@@ -112,6 +121,9 @@ fun PlanOutfitScreen(
     var existingCreatedAt by remember { mutableStateOf(0L) }
     var existingWornCount by remember { mutableStateOf(0) }
     var existingLastWornDate by remember { mutableStateOf("") }
+    
+    var multiDayOutfits by remember { mutableStateOf<List<DayOutfit>>(emptyList()) }
+    var selectedDayIndex by remember { mutableStateOf(0) }
     
     var showSaveDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
@@ -208,6 +220,82 @@ fun PlanOutfitScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            if (isMultiDay && multiDayOutfits.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = White),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Planning ${multiDayOutfits.size} day event",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Brown
+                            )
+                            Text(
+                                text = occasion.ifEmpty { "Event" },
+                                fontSize = 12.sp,
+                                color = Grey
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            itemsIndexed(multiDayOutfits) { index, dayOutfit ->
+                                val isSelected = index == selectedDayIndex
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        multiDayOutfits = multiDayOutfits.mapIndexed { i, outfit ->
+                                            if (i == selectedDayIndex) outfit.copy(clothes = selectedClothes)
+                                            else outfit
+                                        }
+                                        selectedDayIndex = index
+                                        selectedClothes = multiDayOutfits[index].clothes
+                                        selectedItemId = null
+                                    },
+                                    label = {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = dayOutfit.dayLabel,
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                            Text(
+                                                text = dayOutfit.date.takeLast(5),
+                                                fontSize = 10.sp
+                                            )
+                                            Text(
+                                                text = "${dayOutfit.clothes.size} items",
+                                                fontSize = 9.sp,
+                                                color = if (isSelected) White else Grey
+                                            )
+                                        }
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Brown,
+                                        selectedLabelColor = White
+                                    ),
+                                    modifier = Modifier.height(60.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -230,7 +318,8 @@ fun PlanOutfitScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Your Outfit",
+                            text = if (isMultiDay && multiDayOutfits.isNotEmpty()) 
+                                "Day ${selectedDayIndex + 1} Outfit" else "Your Outfit",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Black
@@ -380,64 +469,137 @@ fun PlanOutfitScreen(
                 isMultiDay = isMultiDay,
                 onMultiDayToggle = { isMultiDay = it },
                 occasions = occasions,
+                multiDayOutfits = multiDayOutfits,
+                onMultiDayOutfitsGenerated = { days ->
+                    multiDayOutfits = days
+                    selectedDayIndex = 0
+                },
                 onDismiss = { showSaveDialog = false },
                 onSave = {
-                    if (selectedClothes.isEmpty()) {
-                        Toast.makeText(context, "Please add items to your outfit", Toast.LENGTH_SHORT).show()
-                        return@OutfitSaveDialog
-                    }
-                    
-                    val outfit = OutfitModel(
-                        outfitId = outfitId ?: "",
-                        outfitName = outfitName,
-                        items = selectedClothes.mapIndexed { index, positionedItem ->
-                            OutfitItemModel(
-                                clothesId = positionedItem.clothes.clothesId,
-                                clothesName = positionedItem.clothes.clothesName,
-                                categoryName = positionedItem.clothes.categoryName,
-                                image = positionedItem.clothes.image,
-                                position = index,
-                                offsetX = positionedItem.offsetX,
-                                offsetY = positionedItem.offsetY,
-                                scale = positionedItem.scale
+                    if (isMultiDay && multiDayOutfits.isNotEmpty()) {
+                        val updatedMultiDayOutfits = multiDayOutfits.mapIndexed { i, outfit ->
+                            if (i == selectedDayIndex) outfit.copy(clothes = selectedClothes)
+                            else outfit
+                        }
+                        
+                        val emptyDays = updatedMultiDayOutfits.filter { it.clothes.isEmpty() }
+                        if (emptyDays.isNotEmpty()) {
+                            Toast.makeText(
+                                context, 
+                                "Please add clothes for all days. ${emptyDays.size} day(s) are empty.", 
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@OutfitSaveDialog
+                        }
+                        
+                        val eventId = UUID.randomUUID().toString()
+                        var savedCount = 0
+                        val totalToSave = updatedMultiDayOutfits.size
+                        
+                        updatedMultiDayOutfits.forEachIndexed { index, dayOutfit ->
+                            val outfit = OutfitModel(
+                                outfitId = "",
+                                outfitName = if (outfitName.isNotEmpty()) 
+                                    "$outfitName - ${dayOutfit.dayLabel}" else dayOutfit.dayLabel,
+                                items = dayOutfit.clothes.mapIndexed { idx, positionedItem ->
+                                    OutfitItemModel(
+                                        clothesId = positionedItem.clothes.clothesId,
+                                        clothesName = positionedItem.clothes.clothesName,
+                                        categoryName = positionedItem.clothes.categoryName,
+                                        image = positionedItem.clothes.image,
+                                        position = idx,
+                                        offsetX = positionedItem.offsetX,
+                                        offsetY = positionedItem.offsetY,
+                                        scale = positionedItem.scale
+                                    )
+                                },
+                                userId = "",
+                                plannedDate = dayOutfit.date,
+                                startDate = startDate,
+                                endDate = endDate,
+                                occasion = occasion,
+                                occasionNotes = "$occasionNotes\n[Event: $eventId]",
+                                isFavorite = isFavorite,
+                                createdAt = System.currentTimeMillis(),
+                                thumbnailUrl = dayOutfit.clothes.firstOrNull()?.clothes?.image ?: "",
+                                updatedAt = System.currentTimeMillis()
                             )
-                        },
-                        userId = existingUserId,
-                        plannedDate = if (!isMultiDay) selectedDate else "",
-                        startDate = if (isMultiDay) startDate else "",
-                        endDate = if (isMultiDay) endDate else "",
-                        occasion = occasion,
-                        occasionNotes = occasionNotes,
-                        isFavorite = isFavorite,
-                        createdAt = if (outfitId != null) existingCreatedAt else System.currentTimeMillis(),
-                        wornCount = existingWornCount,
-                        lastWornDate = existingLastWornDate,
-                        thumbnailUrl = selectedClothes.firstOrNull()?.clothes?.image ?: "",
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    
-                    if (outfitId != null) {
-                        outfitViewModel.editOutfit(outfit) { success, message ->
-                            if (success) {
-                                Toast.makeText(context, "Outfit updated successfully", Toast.LENGTH_SHORT).show()
-                                (context as? ComponentActivity)?.finish()
-                            } else {
-                                Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                            
+                            outfitViewModel.addOutfit(outfit) { success, _ ->
+                                if (success) savedCount++
+                                
+                                if (index == totalToSave - 1) {
+                                    Toast.makeText(
+                                        context, 
+                                        "Saved $savedCount outfits for your event!", 
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    context.startActivity(
+                                        Intent(context, SavedOutfitsActivity::class.java).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                    )
+                                    (context as? ComponentActivity)?.finish()
+                                }
                             }
                         }
                     } else {
-                        outfitViewModel.addOutfit(outfit) { success, message ->
-                            if (success) {
-                                Toast.makeText(context, "Outfit saved successfully", Toast.LENGTH_SHORT).show()
-                                context.startActivity(
-                                    Intent(context,
-                                        SavedOutfitsActivity::class.java
-                                    ).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                })
-                                (context as? ComponentActivity)?.finish()
-                            } else {
-                                Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                        if (selectedClothes.isEmpty()) {
+                            Toast.makeText(context, "Please add items to your outfit", Toast.LENGTH_SHORT).show()
+                            return@OutfitSaveDialog
+                        }
+                    
+                        val outfit = OutfitModel(
+                            outfitId = outfitId ?: "",
+                            outfitName = outfitName,
+                            items = selectedClothes.mapIndexed { index, positionedItem ->
+                                OutfitItemModel(
+                                    clothesId = positionedItem.clothes.clothesId,
+                                    clothesName = positionedItem.clothes.clothesName,
+                                    categoryName = positionedItem.clothes.categoryName,
+                                    image = positionedItem.clothes.image,
+                                    position = index,
+                                    offsetX = positionedItem.offsetX,
+                                    offsetY = positionedItem.offsetY,
+                                    scale = positionedItem.scale
+                                )
+                            },
+                            userId = existingUserId,
+                            plannedDate = selectedDate,
+                            startDate = "",
+                            endDate = "",
+                            occasion = occasion,
+                            occasionNotes = occasionNotes,
+                            isFavorite = isFavorite,
+                            createdAt = if (outfitId != null) existingCreatedAt else System.currentTimeMillis(),
+                            wornCount = existingWornCount,
+                            lastWornDate = existingLastWornDate,
+                            thumbnailUrl = selectedClothes.firstOrNull()?.clothes?.image ?: "",
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    
+                        if (outfitId != null) {
+                            outfitViewModel.editOutfit(outfit) { success, message ->
+                                if (success) {
+                                    Toast.makeText(context, "Outfit updated successfully", Toast.LENGTH_SHORT).show()
+                                    (context as? ComponentActivity)?.finish()
+                                } else {
+                                    Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            outfitViewModel.addOutfit(outfit) { success, message ->
+                                if (success) {
+                                    Toast.makeText(context, "Outfit saved successfully", Toast.LENGTH_SHORT).show()
+                                    context.startActivity(
+                                        Intent(context, SavedOutfitsActivity::class.java).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                    )
+                                    (context as? ComponentActivity)?.finish()
+                                } else {
+                                    Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
                     }
@@ -446,8 +608,11 @@ fun PlanOutfitScreen(
         }
 
         if (showFilterDialog) {
+            val closetCategories = listOf("All") + allClothes.map { it.categoryName }.distinct().sorted()
+            
             CategoryFilterDialog(
                 selectedCategory = selectedCategory,
+                categories = closetCategories,
                 onCategorySelect = { selectedCategory = it },
                 onDismiss = { showFilterDialog = false }
             )
@@ -846,17 +1011,30 @@ fun OutfitSaveDialog(
     isMultiDay: Boolean,
     onMultiDayToggle: (Boolean) -> Unit,
     occasions: List<String>,
+    multiDayOutfits: List<DayOutfit>,
+    onMultiDayOutfitsGenerated: (List<DayOutfit>) -> Unit,
     onDismiss: () -> Unit,
     onSave: () -> Unit
 ) {
     val context = LocalContext.current
     var showOccasionMenu by remember { mutableStateOf(false) }
     
+    LaunchedEffect(startDate, endDate, isMultiDay) {
+        if (isMultiDay && startDate.isNotEmpty() && endDate.isNotEmpty()) {
+            val days = generateDaysBetween(startDate, endDate)
+            if (days.isNotEmpty() && (multiDayOutfits.isEmpty() || 
+                multiDayOutfits.first().date != days.first().date ||
+                multiDayOutfits.last().date != days.last().date)) {
+                onMultiDayOutfitsGenerated(days)
+            }
+        }
+    }
+    
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 600.dp),
+                .heightIn(max = 650.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
@@ -867,7 +1045,7 @@ fun OutfitSaveDialog(
                     .padding(24.dp)
             ) {
                 Text(
-                    text = "Save Outfit",
+                    text = if (isMultiDay) "Plan Multi-Day Event" else "Save Outfit",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Black
@@ -878,7 +1056,8 @@ fun OutfitSaveDialog(
                 OutlinedTextField(
                     value = outfitName,
                     onValueChange = onOutfitNameChange,
-                    label = { Text("Outfit Name") },
+                    label = { Text(if (isMultiDay) "Event Name" else "Outfit Name") },
+                    placeholder = { Text(if (isMultiDay) "e.g., Beach Vacation" else "e.g., Casual Friday") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -894,11 +1073,21 @@ fun OutfitSaveDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Multi-day event", fontSize = 14.sp, color = Black)
+                    Column {
+                        Text("Multi-day event", fontSize = 14.sp, color = Black)
+                        Text(
+                            "Plan different outfits for each day",
+                            fontSize = 11.sp,
+                            color = Grey
+                        )
+                    }
                     Switch(
                         checked = isMultiDay,
                         onCheckedChange = onMultiDayToggle,
-                        colors = SwitchDefaults.colors(checkedThumbColor = Brown)
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Brown,
+                            checkedTrackColor = Brown.copy(alpha = 0.5f)
+                        )
                     )
                 }
                 
@@ -948,6 +1137,43 @@ fun OutfitSaveDialog(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
+                            }
+                        }
+                    }
+                    
+                    if (multiDayOutfits.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Brown.copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Brown,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        "${multiDayOutfits.size} days to plan",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Brown
+                                    )
+                                    Text(
+                                        "Close this dialog to plan each day's outfit using the tabs above",
+                                        fontSize = 11.sp,
+                                        color = Grey
+                                    )
+                                }
                             }
                         }
                     }
@@ -1044,9 +1270,10 @@ fun OutfitSaveDialog(
                     Button(
                         onClick = onSave,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Brown)
+                        colors = ButtonDefaults.buttonColors(containerColor = Brown),
+                        enabled = if (isMultiDay) multiDayOutfits.isNotEmpty() else true
                     ) {
-                        Text("Save")
+                        Text(if (isMultiDay) "Save All" else "Save")
                     }
                 }
             }
@@ -1054,14 +1281,43 @@ fun OutfitSaveDialog(
     }
 }
 
+private fun generateDaysBetween(startDateStr: String, endDateStr: String): List<DayOutfit> {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    return try {
+        val startDate = dateFormat.parse(startDateStr) ?: return emptyList()
+        val endDate = dateFormat.parse(endDateStr) ?: return emptyList()
+        
+        if (endDate.before(startDate)) return emptyList()
+        
+        val days = mutableListOf<DayOutfit>()
+        val calendar = Calendar.getInstance()
+        calendar.time = startDate
+        
+        var dayNumber = 1
+        while (!calendar.time.after(endDate)) {
+            days.add(
+                DayOutfit(
+                    date = dateFormat.format(calendar.time),
+                    dayLabel = "Day $dayNumber"
+                )
+            )
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+            dayNumber++
+        }
+        
+        days.take(14)
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
 @Composable
 fun CategoryFilterDialog(
     selectedCategory: String,
+    categories: List<String>,
     onCategorySelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val categories = listOf("All", "Tops", "Bottoms", "Shoes", "Accessories", "Outerwear", "Dresses")
-    
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),

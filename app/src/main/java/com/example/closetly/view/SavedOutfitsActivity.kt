@@ -10,6 +10,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,15 +49,17 @@ class SavedOutfitsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val scrollToOutfitId = intent.getStringExtra("scrollToOutfitId")
+
         setContent {
-            SavedOutfitsScreen()
+            SavedOutfitsScreen(scrollToOutfitId = scrollToOutfitId)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavedOutfitsScreen() {
+fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
     val context = LocalContext.current
     val outfitRepo = remember { OutfitRepoImpl() }
     val outfitViewModel = remember { OutfitViewModel(outfitRepo) }
@@ -70,6 +74,9 @@ fun SavedOutfitsScreen() {
     var outfitToDelete by remember { mutableStateOf<OutfitModel?>(null) }
     var showDetailDialog by remember { mutableStateOf(false) }
     var refreshTrigger by remember { mutableStateOf(0) }
+    var highlightedOutfitId by remember { mutableStateOf(scrollToOutfitId) }
+    
+    val listState = rememberLazyListState()
 
     val tabs = listOf("All Outfits", "Scheduled", "Favorites")
 
@@ -92,6 +99,22 @@ fun SavedOutfitsScreen() {
             searchQuery.isEmpty() ||
                     outfit.outfitName.contains(searchQuery, ignoreCase = true) ||
                     outfit.occasion.contains(searchQuery, ignoreCase = true)
+        }
+    }
+    
+    LaunchedEffect(displayedOutfits, scrollToOutfitId) {
+        if (scrollToOutfitId != null && displayedOutfits.isNotEmpty()) {
+            val index = displayedOutfits.indexOfFirst { it.outfitId == scrollToOutfitId }
+            if (index >= 0) {
+                listState.animateScrollToItem(index)
+            }
+        }
+    }
+    
+    LaunchedEffect(highlightedOutfitId) {
+        if (highlightedOutfitId != null) {
+            kotlinx.coroutines.delay(2000)
+            highlightedOutfitId = null
         }
     }
 
@@ -231,6 +254,7 @@ fun SavedOutfitsScreen() {
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
@@ -238,6 +262,7 @@ fun SavedOutfitsScreen() {
                     items(displayedOutfits) { outfit ->
                         ImprovedOutfitCard(
                             outfit = outfit,
+                            isHighlighted = outfit.outfitId == highlightedOutfitId,
                             onClick = {
                                 selectedOutfit = outfit
                                 showDetailDialog = true
@@ -340,17 +365,30 @@ fun SavedOutfitsScreen() {
 @Composable
 fun ImprovedOutfitCard(
     outfit: OutfitModel,
+    isHighlighted: Boolean = false,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleFavorite: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    
+    val borderColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isHighlighted) Brown else Color.Transparent,
+        animationSpec = androidx.compose.animation.core.tween(500),
+        label = "border"
+    )
+    val borderWidth by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isHighlighted) 3.dp else 0.dp,
+        animationSpec = androidx.compose.animation.core.tween(500),
+        label = "borderWidth"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(420.dp)
+            .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { showMenu = true }
