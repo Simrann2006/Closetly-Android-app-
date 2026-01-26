@@ -8,7 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -229,15 +230,13 @@ fun SavedOutfitsScreen() {
                     }
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                LazyColumn(
                     contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(displayedOutfits) { outfit ->
-                        OutfitCard(
+                        ImprovedOutfitCard(
                             outfit = outfit,
                             onClick = {
                                 selectedOutfit = outfit
@@ -339,7 +338,7 @@ fun SavedOutfitsScreen() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun OutfitCard(
+fun ImprovedOutfitCard(
     outfit: OutfitModel,
     onClick: () -> Unit,
     onEdit: () -> Unit,
@@ -351,146 +350,203 @@ fun OutfitCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.75f)
+            .height(420.dp)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = { showMenu = true }
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = White),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .background(Color.White)
-                ) {
-                    if (outfit.items.isNotEmpty()) {
-                        OutfitLayoutPreview(outfit, isGridPreview = true)
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1.3f)
+                    .background(White)
+            ) {
+                if (outfit.items.isNotEmpty()) {
+                    OutfitLayoutPreview(outfit, isGridPreview = false)
+                }
+
+                if (outfit.isFavorite) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                            .background(Color.White, RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Favorite",
+                                modifier = Modifier.size(16.dp),
+                                tint = Color(0xFFE57373)
+                            )
+                            Text(
+                                text = "Favorite",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFFE57373)
+                            )
+                        }
                     }
                 }
 
-                Column(
+                IconButton(
+                    onClick = { showMenu = true },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(Color.White.copy(alpha = 0.9f), CircleShape)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More",
+                        tint = Black,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    containerColor = White
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit Outfit") },
+                        onClick = {
+                            showMenu = false
+                            onEdit()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = Brown)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (outfit.isFavorite) "Remove from Favorites" else "Add to Favorites") },
+                        onClick = {
+                            showMenu = false
+                            onToggleFavorite()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                if (outfit.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                                contentDescription = null,
+                                tint = Color(0xFFE57373)
+                            )
+                        }
+                    )
+                    Divider(modifier = Modifier.padding(vertical = 4.dp))
+                    DropdownMenuItem(
+                        text = { Text("Delete Outfit", color = Color.Red) },
+                        onClick = {
+                            showMenu = false
+                            onDelete()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                        }
+                    )
+                }
+            }
+
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                if (outfit.outfitName.isNotEmpty()) {
                     Text(
                         text = outfit.outfitName,
-                        fontSize = 14.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     if (outfit.occasion.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
+                        InfoChip(
+                            icon = Icons.Default.Event,
                             text = outfit.occasion,
-                            fontSize = 12.sp,
-                            color = Brown,
-                            maxLines = 1
+                            containerColor = Brown.copy(alpha = 0.1f),
+                            contentColor = Brown
                         )
                     }
 
-                    if (outfit.hasDate() || outfit.isMultiDay()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp),
-                                tint = Grey
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = outfit.getDisplayDate(),
-                                fontSize = 11.sp,
-                                color = Grey,
-                                maxLines = 1
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
+                    InfoChip(
+                        icon = Icons.Default.Checkroom,
                         text = "${outfit.items.size} items",
-                        fontSize = 11.sp,
-                        color = Grey
+                        containerColor = Grey.copy(alpha = 0.1f),
+                        contentColor = Grey
                     )
                 }
-            }
 
-            if (outfit.isFavorite) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favorite",
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
-                        .size(24.dp)
-                        .background(White.copy(alpha = 0.9f), CircleShape)
-                        .padding(4.dp),
-                    tint = Red
-                )
-            }
-
-            IconButton(
-                onClick = { showMenu = true },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More",
-                    tint = Black
-                )
-            }
-
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false },
-                containerColor = White
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Edit") },
-                    onClick = {
-                        showMenu = false
-                        onEdit()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Edit, contentDescription = null)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(if (outfit.isFavorite) "Remove from Favorites" else "Add to Favorites") },
-                    onClick = {
-                        showMenu = false
-                        onToggleFavorite()
-                    },
-                    leadingIcon = {
+                if (outfit.hasDate() || outfit.isMultiDay()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Icon(
-                            if (outfit.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
-                            contentDescription = null
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Grey
+                        )
+                        Text(
+                            text = outfit.getDisplayDate(),
+                            fontSize = 13.sp,
+                            color = Grey
                         )
                     }
-                )
-                DropdownMenuItem(
-                    text = { Text("Delete") },
-                    onClick = {
-                        showMenu = false
-                        onDelete()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
-                    }
-                )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun InfoChip(
+    icon: ImageVector,
+    text: String,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = containerColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = contentColor
+            )
+            Text(
+                text = text,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = contentColor
+            )
         }
     }
 }
@@ -508,7 +564,7 @@ fun OutfitDetailDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
@@ -518,7 +574,7 @@ fun OutfitDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(0.5f)
-                        .background(Color.White)
+                        .background(Color(0xFFFAFAFA))
                 ) {
                     if (outfit.items.isNotEmpty()) {
                         OutfitLayoutPreview(outfit, isGridPreview = false)
@@ -529,14 +585,12 @@ fun OutfitDetailDialog(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
+                            .background(White.copy(alpha = 0.95f), CircleShape)
                     ) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Grey,
-                            modifier = Modifier
-                                .background(White.copy(alpha = 0.9f), CircleShape)
-                                .padding(4.dp)
+                            tint = Black
                         )
                     }
                 }
@@ -548,30 +602,39 @@ fun OutfitDetailDialog(
                         .verticalScroll(rememberScrollState())
                         .padding(20.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = outfit.outfitName,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Black,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (outfit.isFavorite) {
-                            Icon(
-                                Icons.Default.Favorite,
-                                contentDescription = "Favorite",
-                                tint = Color.Red,
-                                modifier = Modifier.size(24.dp)
+                    if (outfit.outfitName.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = outfit.outfitName,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Black,
+                                modifier = Modifier.weight(1f)
                             )
+                            if (outfit.isFavorite) {
+                                Icon(
+                                    Icons.Default.Favorite,
+                                    contentDescription = "Favorite",
+                                    tint = Color(0xFFE57373),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
+                    } else if (outfit.isFavorite) {
+                        Icon(
+                            Icons.Default.Favorite,
+                            contentDescription = "Favorite",
+                            tint = Color(0xFFE57373),
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
 
                     if (outfit.occasion.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         DetailRow(
                             icon = Icons.Default.Event,
                             label = "Occasion",
@@ -580,7 +643,7 @@ fun OutfitDetailDialog(
                     }
 
                     if (outfit.hasDate() || outfit.isMultiDay()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         DetailRow(
                             icon = Icons.Default.CalendarToday,
                             label = "Date",
@@ -589,7 +652,7 @@ fun OutfitDetailDialog(
                     }
 
                     if (outfit.occasionNotes.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         DetailRow(
                             icon = Icons.Default.Notes,
                             label = "Notes",
@@ -597,7 +660,7 @@ fun OutfitDetailDialog(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     DetailRow(
                         icon = Icons.Default.Checkroom,
                         label = "Items",
@@ -605,7 +668,7 @@ fun OutfitDetailDialog(
                     )
 
                     if (outfit.wornCount > 0) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                         DetailRow(
                             icon = Icons.Default.Check,
                             label = "Worn",
@@ -616,45 +679,48 @@ fun OutfitDetailDialog(
                                 text = "Last worn: ${outfit.lastWornDate}",
                                 fontSize = 12.sp,
                                 color = Grey,
-                                modifier = Modifier.padding(start = 32.dp)
+                                modifier = Modifier.padding(start = 32.dp, top = 4.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         OutlinedButton(
                             onClick = onMarkWorn,
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Brown)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Brown),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Worn", fontSize = 13.sp)
+                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Worn", fontSize = 14.sp)
                         }
                         Button(
                             onClick = onEdit,
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = Brown)
+                            colors = ButtonDefaults.buttonColors(containerColor = Brown),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Edit, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Edit", fontSize = 13.sp)
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Edit", fontSize = 14.sp)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedButton(
                         onClick = onDelete,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = null)
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Delete Outfit")
+                        Text("Delete Outfit", fontSize = 14.sp)
                     }
                 }
             }
@@ -682,10 +748,12 @@ fun DetailRow(icon: ImageVector, label: String, value: String) {
                 color = Grey,
                 fontWeight = FontWeight.Medium
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = value,
-                fontSize = 14.sp,
-                color = Black
+                fontSize = 15.sp,
+                color = Black,
+                fontWeight = FontWeight.Normal
             )
         }
     }
@@ -700,12 +768,12 @@ data class Bounds(
 
 fun calculateBounds(
     items: List<OutfitItemModel>,
-    baseItemSize: Float
+    baseItemSizePx: Float
 ): Bounds {
     val lefts = items.map { it.offsetX }
-    val rights = items.map { it.offsetX + baseItemSize * it.scale }
+    val rights = items.map { it.offsetX + baseItemSizePx * it.scale }
     val tops = items.map { it.offsetY }
-    val bottoms = items.map { it.offsetY + baseItemSize * it.scale }
+    val bottoms = items.map { it.offsetY + baseItemSizePx * it.scale }
 
     return Bounds(
         minX = lefts.minOrNull() ?: 0f,
@@ -720,14 +788,13 @@ fun OutfitLayoutPreview(
     outfit: OutfitModel,
     isGridPreview: Boolean
 ) {
-
     val baseItemSize = 120f
 
     if (outfit.items.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(White)
         )
         return
     }
@@ -735,50 +802,52 @@ fun OutfitLayoutPreview(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(White),
+        contentAlignment = Alignment.Center
     ) {
+        val density = LocalContext.current.resources.displayMetrics.density
+        val containerWidthPx = constraints.maxWidth.toFloat()
+        val containerHeightPx = constraints.maxHeight.toFloat()
 
-        val containerWidth = constraints.maxWidth.toFloat()
-        val containerHeight = constraints.maxHeight.toFloat()
+        val bounds = calculateBounds(outfit.items, baseItemSize * density)
+        val outfitWidthPx = bounds.maxX - bounds.minX
+        val outfitHeightPx = bounds.maxY - bounds.minY
 
-        val bounds = calculateBounds(outfit.items, baseItemSize)
-        val outfitWidth = bounds.maxX - bounds.minX
-        val outfitHeight = bounds.maxY - bounds.minY
+        if (outfitWidthPx <= 0 || outfitHeightPx <= 0) return@BoxWithConstraints
 
-        if (outfitWidth <= 0 || outfitHeight <= 0) return@BoxWithConstraints
+        val paddingPx = 20f
+        val availableWidthPx = containerWidthPx - (paddingPx * 2)
+        val availableHeightPx = containerHeightPx - (paddingPx * 2)
 
         val scaleFactor = minOf(
-            containerWidth / outfitWidth,
-            containerHeight / outfitHeight
-        )
-        
-        val finalScale = if (isGridPreview) scaleFactor * 0.75f else scaleFactor * 0.90f
+            availableWidthPx / outfitWidthPx,
+            availableHeightPx / outfitHeightPx
+        ).coerceIn(0.4f, 2.5f)
 
-        val scaledOutfitWidth = outfitWidth * finalScale
-        val scaledOutfitHeight = outfitHeight * finalScale
+        val scaledWidthPx = outfitWidthPx * scaleFactor
+        val scaledHeightPx = outfitHeightPx * scaleFactor
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.Center)
-                .size(scaledOutfitWidth.dp, scaledOutfitHeight.dp)
-        ) {
+        val centerOffsetX = (containerWidthPx - scaledWidthPx) / 2
+        val centerOffsetY = (containerHeightPx - scaledHeightPx) / 2
+
+        Box(modifier = Modifier.fillMaxSize()) {
             outfit.items.forEach { item ->
+                val originalItemSizePx = baseItemSize * density * item.scale
+                
+                val scaledItemSizePx = originalItemSizePx * scaleFactor
+                
+                val itemSizeDp = scaledItemSizePx / density
 
-                val size = baseItemSize * item.scale * finalScale
+                val relativeX = (item.offsetX - bounds.minX) * scaleFactor
+                val relativeY = (item.offsetY - bounds.minY) * scaleFactor
 
-                val x = (item.offsetX - bounds.minX) * finalScale
-                val y = (item.offsetY - bounds.minY) * finalScale
+                val finalX = centerOffsetX + relativeX
+                val finalY = centerOffsetY + relativeY
 
                 Box(
                     modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x.toInt(),
-                                y.toInt()
-                            )
-                        }
-                        .size(size.dp)
+                        .offset { IntOffset(finalX.toInt(), finalY.toInt()) }
+                        .size(itemSizeDp.dp)
                 ) {
                     AsyncImage(
                         model = item.image,

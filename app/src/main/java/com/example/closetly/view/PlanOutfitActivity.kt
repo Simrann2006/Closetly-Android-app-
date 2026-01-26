@@ -49,7 +49,6 @@ import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.viewmodel.OutfitViewModel
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -109,6 +108,10 @@ fun PlanOutfitScreen(
     var occasionNotes by remember { mutableStateOf("") }
     var isMultiDay by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
+    var existingUserId by remember { mutableStateOf("") }
+    var existingCreatedAt by remember { mutableStateOf(0L) }
+    var existingWornCount by remember { mutableStateOf(0) }
+    var existingLastWornDate by remember { mutableStateOf("") }
     
     var showSaveDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
@@ -118,46 +121,46 @@ fun PlanOutfitScreen(
     
     val occasions = listOf("Casual", "Formal", "Work", "Party", "Sport", "Date", "Beach", "Wedding", "Travel", "Other")
     
-    LaunchedEffect(outfitId) {
-        outfitId?.let { id ->
-            outfitViewModel.getOutfitById(id) { success, _, outfit ->
-                if (success && outfit != null) {
-                    outfitName = outfit.outfitName
-                    selectedDate = outfit.plannedDate
-                    startDate = outfit.startDate
-                    endDate = outfit.endDate
-                    occasion = outfit.occasion
-                    occasionNotes = outfit.occasionNotes
-                    isMultiDay = outfit.isMultiDay()
-                    isFavorite = outfit.isFavorite
-                    
-                    val clothesIds = outfit.items.map { it.clothesId }
-                    clothesViewModel.getAllClothes { clothesSuccess, _, clothes ->
-                        if (clothesSuccess && clothes != null) {
-                            val matchingClothes = clothes.filter { it.clothesId in clothesIds }
-                            selectedClothes = outfit.items.mapNotNull { item ->
-                                matchingClothes.find { it.clothesId == item.clothesId }?.let { cloth ->
-                                    PositionedClothesItem(
-                                        clothes = cloth,
-                                        offsetX = item.offsetX,
-                                        offsetY = item.offsetY,
-                                        scale = item.scale
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     LaunchedEffect(Unit) {
         clothesViewModel.getAllClothes { success, _, clothes ->
             if (success && clothes != null) {
                 allClothes = clothes
             }
             isLoading = false
+        }
+    }
+    
+    LaunchedEffect(outfitId, allClothes) {
+        if (outfitId == null || allClothes.isEmpty()) return@LaunchedEffect
+        
+        outfitViewModel.getOutfitById(outfitId) { success, _, outfit ->
+            if (success && outfit != null) {
+                outfitName = outfit.outfitName
+                selectedDate = outfit.plannedDate
+                startDate = outfit.startDate
+                endDate = outfit.endDate
+                occasion = outfit.occasion
+                occasionNotes = outfit.occasionNotes
+                isMultiDay = outfit.isMultiDay()
+                isFavorite = outfit.isFavorite
+                existingUserId = outfit.userId
+                existingCreatedAt = outfit.createdAt
+                existingWornCount = outfit.wornCount
+                existingLastWornDate = outfit.lastWornDate
+                
+                val clothesIds = outfit.items.map { it.clothesId }
+                val matchingClothes = allClothes.filter { it.clothesId in clothesIds }
+                selectedClothes = outfit.items.mapNotNull { item ->
+                    matchingClothes.find { it.clothesId == item.clothesId }?.let { cloth ->
+                        PositionedClothesItem(
+                            clothes = cloth,
+                            offsetX = item.offsetX,
+                            offsetY = item.offsetY,
+                            scale = item.scale
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -212,7 +215,7 @@ fun PlanOutfitScreen(
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFFFFF)
+                    containerColor = White
                 ),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
@@ -251,7 +254,7 @@ fun PlanOutfitScreen(
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .background(
-                                    color = Color(0xFFFFFFFF),
+                                    color = White,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .clickable { selectedItemId = null },
@@ -292,24 +295,26 @@ fun PlanOutfitScreen(
                                 }
                         ) {
                             selectedClothes.forEach { positionedItem ->
-                                DraggableOutfitItem(
-                                    positionedItem = positionedItem,
-                                    isSelected = selectedItemId == positionedItem.id,
-                                    onSelect = { selectedItemId = positionedItem.id },
-                                    canvasWidth = canvasWidth,
-                                    canvasHeight = canvasHeight,
-                                    onPositionChange = { newX, newY, newScale ->
-                                        selectedClothes = selectedClothes.map {
-                                            if (it.id == positionedItem.id) {
-                                                it.copy(offsetX = newX, offsetY = newY, scale = newScale)
-                                            } else it
+                                key(positionedItem.id) {
+                                    DraggableOutfitItem(
+                                        positionedItem = positionedItem,
+                                        isSelected = selectedItemId == positionedItem.id,
+                                        onSelect = { selectedItemId = positionedItem.id },
+                                        canvasWidth = canvasWidth,
+                                        canvasHeight = canvasHeight,
+                                        onPositionChange = { newX, newY, newScale ->
+                                            selectedClothes = selectedClothes.map {
+                                                if (it.id == positionedItem.id) {
+                                                    it.copy(offsetX = newX, offsetY = newY, scale = newScale)
+                                                } else it
+                                            }
+                                        },
+                                        onRemove = {
+                                            selectedClothes = selectedClothes.filter { it.id != positionedItem.id }
+                                            selectedItemId = null
                                         }
-                                    },
-                                    onRemove = {
-                                        selectedClothes = selectedClothes.filter { it.id != positionedItem.id }
-                                        selectedItemId = null
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
@@ -382,19 +387,9 @@ fun PlanOutfitScreen(
                         return@OutfitSaveDialog
                     }
                     
-                    // Generate default name if empty
-                    val finalOutfitName = if (outfitName.isEmpty()) {
-                        val timestamp = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(
-                            Date()
-                        )
-                        "Outfit - $timestamp"
-                    } else {
-                        outfitName
-                    }
-                    
                     val outfit = OutfitModel(
                         outfitId = outfitId ?: "",
-                        outfitName = finalOutfitName,
+                        outfitName = outfitName,
                         items = selectedClothes.mapIndexed { index, positionedItem ->
                             OutfitItemModel(
                                 clothesId = positionedItem.clothes.clothesId,
@@ -407,12 +402,16 @@ fun PlanOutfitScreen(
                                 scale = positionedItem.scale
                             )
                         },
+                        userId = existingUserId,
                         plannedDate = if (!isMultiDay) selectedDate else "",
                         startDate = if (isMultiDay) startDate else "",
                         endDate = if (isMultiDay) endDate else "",
                         occasion = occasion,
                         occasionNotes = occasionNotes,
                         isFavorite = isFavorite,
+                        createdAt = if (outfitId != null) existingCreatedAt else System.currentTimeMillis(),
+                        wornCount = existingWornCount,
+                        lastWornDate = existingLastWornDate,
                         thumbnailUrl = selectedClothes.firstOrNull()?.clothes?.image ?: "",
                         updatedAt = System.currentTimeMillis()
                     )
@@ -495,15 +494,22 @@ fun PlanOutfitScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = {
-                                tempSelectedItems.forEach { clothesId ->
+                                val density = context.resources.displayMetrics.density
+                                val itemSizePx = 120f * density
+                                
+                                tempSelectedItems.forEachIndexed { index, clothesId ->
                                     allClothes.find { it.clothesId == clothesId }?.let { clothes ->
-                                        val baseX = if (canvasWidth > 0) (canvasWidth / 2 - 60) else 100f
-                                        val baseY = 40f + selectedClothes.size * 20
+                                        val baseX = if (canvasWidth > 0) {
+                                            ((canvasWidth - itemSizePx) / 2).coerceIn(0f, canvasWidth - itemSizePx)
+                                        } else 50f
+                                        val baseY = if (canvasHeight > 0) {
+                                            (50f + (selectedClothes.size + index) * 30f).coerceIn(0f, canvasHeight - itemSizePx)
+                                        } else 50f
                                         
                                         selectedClothes = selectedClothes + PositionedClothesItem(
                                             clothes = clothes,
                                             offsetX = baseX,
-                                            offsetY = if (canvasHeight > 0) baseY.coerceAtMost(canvasHeight - 200) else baseY
+                                            offsetY = baseY
                                         )
                                     }
                                 }
@@ -718,30 +724,40 @@ fun DraggableOutfitItem(
     onPositionChange: (Float, Float, Float) -> Unit,
     onRemove: () -> Unit
 ) {
-    var offsetX by remember { mutableStateOf(positionedItem.offsetX) }
-    var offsetY by remember { mutableStateOf(positionedItem.offsetY) }
-    var scale by remember { mutableStateOf(positionedItem.scale) }
+    val density = LocalContext.current.resources.displayMetrics.density
+    val baseSize = 120f
+    val baseSizePx = baseSize * density
     
-    val baseSize = 120.dp
+    var offsetX by remember(positionedItem.id) { mutableStateOf(positionedItem.offsetX) }
+    var offsetY by remember(positionedItem.id) { mutableStateOf(positionedItem.offsetY) }
+    var scale by remember(positionedItem.id) { mutableStateOf(positionedItem.scale) }
     
     Box(
         modifier = Modifier
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .size((baseSize.value * scale).dp)
+            .size((baseSize * scale).dp)
             .zIndex(if (isSelected) 1f else 0f)
             .graphicsLayer(
                 scaleX = 1f,
                 scaleY = 1f,
                 transformOrigin = TransformOrigin(0.5f, 0.5f)
             )
-            .pointerInput(isSelected) {
+            .pointerInput(isSelected, canvasWidth, canvasHeight) {
                 if (!isSelected) return@pointerInput
                 
                 detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.3f, 3.5f)
+                    val newScale = (scale * zoom).coerceIn(0.3f, 2.5f)
+                    val newItemSizePx = baseSizePx * newScale
                     
-                    offsetX += pan.x
-                    offsetY += pan.y
+                    var newOffsetX = offsetX + pan.x
+                    var newOffsetY = offsetY + pan.y
+                    
+                    newOffsetX = newOffsetX.coerceIn(0f, (canvasWidth - newItemSizePx).coerceAtLeast(0f))
+                    newOffsetY = newOffsetY.coerceIn(0f, (canvasHeight - newItemSizePx).coerceAtLeast(0f))
+                    
+                    scale = newScale
+                    offsetX = newOffsetX
+                    offsetY = newOffsetY
                     
                     onPositionChange(offsetX, offsetY, scale)
                 }
@@ -763,7 +779,7 @@ fun DraggableOutfitItem(
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .border(1.dp, Color(0xFFBEFF00), RoundedCornerShape(4.dp))
+                    .border(1.dp, CalendarBlue, RoundedCornerShape(4.dp))
             )
             
             ResizeHandles()
