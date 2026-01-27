@@ -67,7 +67,7 @@ class ClothesRepoImpl : ClothesRepo {
         clothesId: String,
         callback: (Boolean, String, ClothesModel?) -> Unit
     ) {
-        ref.child(clothesId).addValueEventListener(object : ValueEventListener{
+        ref.child(clothesId).addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists()){
                     val clothes = snapshot.getValue(ClothesModel::class.java)
@@ -90,7 +90,7 @@ class ClothesRepoImpl : ClothesRepo {
         }
 
         ref.orderByChild("userId").equalTo(currentUserId)
-            .addValueEventListener(object : ValueEventListener{
+            .addListenerForSingleValueEvent(object : ValueEventListener{
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if(snapshot.exists()){
                         var allClothes = mutableListOf<ClothesModel>()
@@ -117,7 +117,7 @@ class ClothesRepoImpl : ClothesRepo {
         categoryId: String,
         callback: (Boolean, String, List<ClothesModel>?) -> Unit
     ) {
-        ref.orderByChild("categoryId").equalTo(categoryId).addValueEventListener(object : ValueEventListener{
+        ref.orderByChild("categoryId").equalTo(categoryId).addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists()){
                     var allClothes = mutableListOf<ClothesModel>()

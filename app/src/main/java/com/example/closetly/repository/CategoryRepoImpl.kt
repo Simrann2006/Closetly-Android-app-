@@ -65,7 +65,7 @@ class CategoryRepoImpl : CategoryRepo {
         }
 
         categoryRef.orderByChild("userId").equalTo(currentUserId)
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         val allCategories = mutableListOf<CategoryModel>()
@@ -91,7 +91,7 @@ class CategoryRepoImpl : CategoryRepo {
         categoryId: String,
         callback: (Boolean, String, CategoryModel?) -> Unit
     ) {
-        categoryRef.child(categoryId).addValueEventListener(object : ValueEventListener {
+        categoryRef.child(categoryId).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     val category = snapshot.getValue(CategoryModel::class.java)

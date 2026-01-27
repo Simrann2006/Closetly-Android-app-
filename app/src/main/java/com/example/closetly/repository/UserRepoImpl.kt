@@ -99,8 +99,6 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     override fun logout(callback: (Boolean, String) -> Unit) {
         try{
             auth.signOut()
-            // Note: To fully sign out from Google, the app should clear Credential Manager cache
-            // This requires clearing saved credentials on the device
             callback(true, "Logout successfully")
         } catch (e : Exception){
             callback(false, e.message.toString())
@@ -141,7 +139,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         userId: String,
         callback: (Boolean, String, UserModel?) -> Unit
     ) {
-        ref.child(userId).addValueEventListener(object: ValueEventListener{
+        ref.child(userId).addListenerForSingleValueEvent(object: ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists()){
                     val user = snapshot.getValue(UserModel::class.java)
@@ -159,7 +157,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     }
 
     override fun getAllUser(callback: (Boolean, String, List<UserModel>) -> Unit) {
-        ref.addValueEventListener(object : ValueEventListener{
+        ref.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists()){
                     var allUsers = mutableListOf<UserModel>()
@@ -265,7 +263,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         callback: (Boolean) -> Unit
     ) {
         ref.child(currentUserId).child("following").child(targetUserId)
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     callback(snapshot.exists())
                 }
@@ -278,7 +276,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     
     override fun getFollowersCount(userId: String, callback: (Int) -> Unit) {
         ref.child(userId).child("followers")
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val followerIds = snapshot.children.mapNotNull { it.key }.toSet()
                     
@@ -306,7 +304,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     
     override fun getFollowingCount(userId: String, callback: (Int) -> Unit) {
         ref.child(userId).child("following")
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     callback(snapshot.childrenCount.toInt())
                 }
