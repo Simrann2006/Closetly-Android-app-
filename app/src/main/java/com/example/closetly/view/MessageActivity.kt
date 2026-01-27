@@ -34,6 +34,7 @@ import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.utils.getTimeAgoShort
+import com.example.closetly.utils.getSeenStatus
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -368,8 +369,14 @@ fun MessageListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val relativeTime = getTimeAgoShort(chat.lastMessageTime)
+                
+                // Determine display message based on message status
                 val displayMessage = when {
                     unreadCount > 0 -> "$unreadCount new message${if (unreadCount > 1) "s" else ""}"
+                    chat.lastMessageSenderId == currentUserId && chat.lastSeenAt > 0L -> {
+                        // Show seen status if current user sent the last message
+                        getSeenStatus(chat.lastSeenAt)
+                    }
                     chat.lastMessage.isNotEmpty() -> chat.lastMessage
                     chat.lastMessageSenderId.isNotEmpty() -> {
                         if (chat.lastMessageSenderId == currentUserId) {

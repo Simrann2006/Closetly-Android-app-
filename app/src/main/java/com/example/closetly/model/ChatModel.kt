@@ -6,5 +6,6 @@ data class ChatModel(
     val lastMessage: String = "",
     val lastMessageTime: Long = 0L,
     val lastMessageSenderId: String = "",
-    val unreadCount: Map<String, Int> = emptyMap()
+    val unreadCount: Map<String, Int> = emptyMap(),
+    val lastSeenAt: Long = 0L  // Last time messages were seen
 )

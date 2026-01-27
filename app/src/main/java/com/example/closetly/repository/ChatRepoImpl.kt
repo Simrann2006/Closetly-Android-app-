@@ -194,9 +194,33 @@ class ChatRepoImpl : ChatRepo {
         userId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        chatsRef.child(chatId).child("unreadCount").child(userId).setValue(0)
+        val currentTime = System.currentTimeMillis()
+        val updates = mapOf(
+            "unreadCount/$userId" to 0,
+            "lastSeenAt" to currentTime
+        )
+        
+        chatsRef.child(chatId).updateChildren(updates)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
+                    // Mark individual messages as seen
+                    messagesRef.child(chatId).orderByChild("timestamp")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                snapshot.children.forEach { messageSnapshot ->
+                                    val message = messageSnapshot.getValue(MessageModel::class.java)
+                                    if (message != null && message.senderId != userId && !message.isRead) {
+                                        messageSnapshot.ref.updateChildren(
+                                            mapOf(
+                                                "isRead" to true,
+                                                "seenAt" to currentTime
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
                     callback(true, "Marked as read")
                 } else {
                     callback(false, "${it.exception?.message}")
