@@ -3,6 +3,8 @@ package com.example.closetly.view
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,6 +34,8 @@ import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
 import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.UserViewModel
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
@@ -107,7 +111,10 @@ fun SettingsBody() {
             SettingsItem(
                 icon = R.drawable.baseline_lock_24,
                 title = "Change Password",
-                onClick = { }
+                onClick = {
+                    val intent = Intent(context, ChangePasswordActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
 
             SettingsItem(
@@ -262,46 +269,117 @@ fun SettingsBody() {
     }
 
     if (showDeleteDialog) {
+        var isDeleting by remember { mutableStateOf(false) }
+        
         AlertDialog(
             containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
-            onDismissRequest = { showDeleteDialog = false },
+            onDismissRequest = { if (!isDeleting) showDeleteDialog = false },
             title = { Text("Delete Account", color = MaterialTheme.colorScheme.onSurface) },
-            text = { Text("Are you sure you want to delete your account? This action cannot be undone.", color = MaterialTheme.colorScheme.onSurface) },
+            text = { 
+                Column {
+                    Text("Are you sure you want to delete your account? This action cannot be undone.", color = MaterialTheme.colorScheme.onSurface)
+                    if (isDeleting) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text("Deleting all your data...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 14.sp)
+                        }
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
+                        isDeleting = true
                         val user = FirebaseAuth.getInstance().currentUser
                         user?.let {
                             val userId = it.uid
-                            FirebaseDatabase.getInstance().getReference("Users").child(userId).removeValue()
-                                .addOnCompleteListener { dbTask ->
-                                    if (dbTask.isSuccessful) {
-                                        it.delete().addOnCompleteListener { authTask ->
+                            val database = FirebaseDatabase.getInstance()
+                            
+                            val deleteTasks = mutableListOf<Task<Void>>()
+                            
+                            deleteTasks.add(database.getReference("Users").child(userId).removeValue())
+                            
+                            deleteTasks.add(database.getReference("Notifications").child(userId).removeValue())
+                            
+                            database.getReference("Posts").orderByChild("userId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { postSnapshot ->
+                                        postSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            database.getReference("Clothess").orderByChild("userId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { clothesSnapshot ->
+                                        clothesSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            database.getReference("Outfits").orderByChild("userId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { outfitSnapshot ->
+                                        outfitSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            database.getReference("Products").orderByChild("sellerId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { productSnapshot ->
+                                        productSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            database.getReference("Rent").orderByChild("sellerId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { rentSnapshot ->
+                                        rentSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            database.getReference("Comments").orderByChild("userId").equalTo(userId)
+                                .get().addOnSuccessListener { snapshot ->
+                                    snapshot.children.forEach { commentSnapshot ->
+                                        commentSnapshot.ref.removeValue()
+                                    }
+                                }
+                            
+                            Tasks.whenAll(deleteTasks)
+                                .addOnCompleteListener {
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        user.delete().addOnCompleteListener { authTask ->
                                             if (authTask.isSuccessful) {
                                                 val intent = Intent(context, LoginActivity::class.java)
                                                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                                 context.startActivity(intent)
-                                                Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
                                                 (context as Activity).finish()
                                             } else {
+                                                isDeleting = false
                                                 Toast.makeText(context, "Failed to delete account", Toast.LENGTH_SHORT).show()
                                             }
                                         }
-                                    } else {
-                                        Toast.makeText(context, "Failed to delete data", Toast.LENGTH_SHORT).show()
-                                    }
+                                    }, 2000)
                                 }
                         }
-                    }
+                    },
+                    enabled = !isDeleting
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("Delete", color = if (isDeleting) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    enabled = !isDeleting
+                ) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isDeleting) 0.3f else 0.6f))
                 }
             }
         )
