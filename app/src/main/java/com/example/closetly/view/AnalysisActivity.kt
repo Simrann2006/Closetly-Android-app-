@@ -16,6 +16,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,19 +27,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
-import com.example.closetly.R
 import com.example.closetly.model.ActivityStats
 import com.example.closetly.model.ClosetCategory
 import com.example.closetly.model.UnderusedItem
@@ -45,7 +46,8 @@ import com.example.closetly.model.WornColor
 import com.example.closetly.model.ClothesModel
 import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.viewmodel.ClothesViewModel
-import com.example.closetly.utils.AnalysisUtils
+import com.example.closetly.repository.AnalysisRepoImpl
+import com.example.closetly.viewmodel.AnalysisViewModel
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.viewmodel.UserViewModel
 import com.example.closetly.ui.theme.Brown
@@ -60,7 +62,9 @@ class AnalysisActivity : ComponentActivity() {
         setContent {
             val clothesRepo = remember { ClothesRepoImpl() }
             val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
-            AnalysisScreen(clothesViewModel = clothesViewModel)
+            val analysisRepo = remember { AnalysisRepoImpl() }
+            val analysisViewModel = remember { AnalysisViewModel(analysisRepo) }
+            AnalysisScreen(clothesViewModel = clothesViewModel, analysisViewModel = analysisViewModel)
         }
     }
 }
@@ -69,6 +73,7 @@ class AnalysisActivity : ComponentActivity() {
 @Composable
 fun AnalysisScreen(
     clothesViewModel: ClothesViewModel,
+    analysisViewModel: AnalysisViewModel,
     userImageUrl: String = ""
 ) {
     val context = LocalContext.current
@@ -99,19 +104,19 @@ fun AnalysisScreen(
     }
 
     val activityStats = remember(clothesList) {
-        AnalysisUtils.calculateActivityStats(clothesList)
+        analysisViewModel.calculateActivityStats(clothesList)
     }
-    
+
     val closetCategories = remember(clothesList) {
-        AnalysisUtils.calculateClosetBreakdown(clothesList)
+        analysisViewModel.calculateClosetBreakdown(clothesList)
     }
-    
+
     val mostWornColors = remember(clothesList) {
-        AnalysisUtils.calculateMostWornColors(clothesList)
+        analysisViewModel.calculateMostWornColors(clothesList)
     }
-    
+
     val underusedItem = remember(clothesList) {
-        AnalysisUtils.findUnderusedItem(clothesList)
+        analysisViewModel.findUnderusedItem(clothesList)
     }
 
     Scaffold(
@@ -167,7 +172,7 @@ fun AnalysisScreen(
                     activityStats = activityStats
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 if (closetCategories.isNotEmpty()) {
                     ClosetBreakdownCard(categories = closetCategories)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -190,7 +195,7 @@ fun AnalysisScreen(
                     } else {
                         EmptyColorCard(modifier = Modifier.weight(1f))
                     }
-                    
+
                     if (underusedItem != null) {
                         UnderusedItemCard(
                             item = underusedItem,
@@ -498,7 +503,7 @@ private fun HeaderSection(
 
 @Composable
 private fun StatCard(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     count: Int,
     label: String,
     iconTint: Color
@@ -551,6 +556,8 @@ private fun StatCard(
 
 @Composable
 private fun ClosetBreakdownCard(categories: List<ClosetCategory>) {
+    var showLineChart by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -566,20 +573,50 @@ private fun ClosetBreakdownCard(categories: List<ClosetCategory>) {
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            Text(
-                text = "Closet Breakdown",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF6B4F54),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Closet Breakdown",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF6B4F54)
+                )
 
-            PieChart(
-                categories = categories,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
-            )
+                IconButton(
+                    onClick = { showLineChart = !showLineChart },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (showLineChart)
+                            Icons.AutoMirrored.Filled.ArrowBack
+                        else
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = if (showLineChart) "Show Pie Chart" else "Show Line Chart",
+                        tint = Color(0xFF6B4F54)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (showLineChart) {
+                LineChart(
+                    categories = categories,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                )
+            } else {
+                PieChart(
+                    categories = categories,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -642,6 +679,100 @@ private fun PieChart(
                 )
 
                 startAngle += sweepAngle
+            }
+        }
+    }
+}
+
+@Composable
+private fun LineChart(
+    categories: List<ClosetCategory>,
+    modifier: Modifier = Modifier,
+    animationDuration: Int = 1000
+) {
+    val animatable = remember { Animatable(0f) }
+
+    LaunchedEffect(key1 = categories) {
+        animatable.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = animationDuration)
+        )
+    }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .padding(16.dp)
+        ) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            val padding = 40f
+            val chartWidth = canvasWidth - padding * 2
+            val chartHeight = canvasHeight - padding * 2
+
+            // Draw Y-axis
+            drawLine(
+                color = Color(0xFF6B4F54),
+                start = Offset(padding, padding),
+                end = Offset(padding, canvasHeight - padding),
+                strokeWidth = 2f
+            )
+
+            // Draw X-axis
+            drawLine(
+                color = Color(0xFF6B4F54),
+                start = Offset(padding, canvasHeight - padding),
+                end = Offset(canvasWidth - padding, canvasHeight - padding),
+                strokeWidth = 2f
+            )
+
+            if (categories.isNotEmpty()) {
+                val maxPercentage = categories.maxOf { it.percentage }
+                val spacing = chartWidth / (categories.size + 1)
+
+                // Draw lines connecting points
+                for (i in 0 until categories.size - 1) {
+                    val currentX = padding + spacing * (i + 1)
+                    val currentY = canvasHeight - padding -
+                            (categories[i].percentage / maxPercentage * chartHeight * animatable.value)
+
+                    val nextX = padding + spacing * (i + 2)
+                    val nextY = canvasHeight - padding -
+                            (categories[i + 1].percentage / maxPercentage * chartHeight * animatable.value)
+
+                    drawLine(
+                        color = categories[i].color,
+                        start = Offset(currentX, currentY),
+                        end = Offset(nextX, nextY),
+                        strokeWidth = 4f
+                    )
+                }
+
+                // Draw points
+                categories.forEachIndexed { index, category ->
+                    val x = padding + spacing * (index + 1)
+                    val y = canvasHeight - padding -
+                            (category.percentage / maxPercentage * chartHeight * animatable.value)
+
+                    // Outer circle
+                    drawCircle(
+                        color = category.color,
+                        radius = 8f,
+                        center = Offset(x, y)
+                    )
+
+                    // Inner circle
+                    drawCircle(
+                        color = Color.White,
+                        radius = 4f,
+                        center = Offset(x, y)
+                    )
+                }
             }
         }
     }
