@@ -44,6 +44,9 @@ import com.example.closetly.utils.NotificationHelper
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.snapshotFlow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -127,6 +130,8 @@ fun ChatBody(
     }
     
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var wasAtBottom by remember { mutableStateOf(true) }
 
     LaunchedEffect(chatId) {
         if (chatId.isNotEmpty()) {
@@ -139,9 +144,22 @@ fun ChatBody(
         }
     }
 
+    // Track if user is at the bottom of the chat
+    LaunchedEffect(Unit) {
+        snapshotFlow { listState.layoutInfo }
+            .collectLatest { layoutInfo ->
+                val totalItems = layoutInfo.totalItemsCount
+                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                wasAtBottom = totalItems == 0 || lastVisibleItem >= totalItems - 1
+            }
+    }
+
+    // Scroll to bottom when new messages arrive or keyboard opens
     LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty() && wasAtBottom) {
+            coroutineScope.launch {
+                listState.scrollToItem(messages.size - 1)
+            }
         }
     }
 
@@ -238,7 +256,9 @@ fun ChatBody(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        state = listState
+                        state = listState,
+                        contentPadding = PaddingValues(bottom = 8.dp),
+                        reverseLayout = false
                     ) {
                         items(messages) { message ->
                             MessageBubble(
