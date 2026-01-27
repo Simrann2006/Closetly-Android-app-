@@ -171,9 +171,9 @@ fun HomeScreen(
                 item {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = 200.dp),
-                        contentAlignment = Alignment.TopCenter
+                            .fillMaxWidth()
+                            .height(600.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = Brown)
                     }
