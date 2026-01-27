@@ -52,4 +52,20 @@ class ChatViewModel(val repo: ChatRepo) : ViewModel() {
     ) {
         repo.deleteChat(chatId, callback)
     }
+    
+    fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        repo.deleteMessage(chatId, messageId, callback)
+    }
+    
+    fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        repo.unsendMessage(chatId, messageId, callback)
+    }
 }

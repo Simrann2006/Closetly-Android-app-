@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -120,6 +121,8 @@ fun ChatBody(
     var fullScreenImageUrls by remember { mutableStateOf<List<String>>(emptyList()) }
     var fullScreenImageIndex by remember { mutableStateOf(0) }
     var currentUserName by remember { mutableStateOf("") }
+    var selectedMessage by remember { mutableStateOf<MessageModel?>(null) }
+    var showMessageActions by remember { mutableStateOf(false) }
     
     LaunchedEffect(currentUserId) {
         userViewModel.getUserById(currentUserId) { success, _, user ->
@@ -272,12 +275,16 @@ fun ChatBody(
                             MessageBubble(
                                 message = message,
                                 isCurrentUser = message.senderId == currentUserId,
-                        onImageClick = { urls, index ->
-                            fullScreenImageUrls = urls
-                            fullScreenImageIndex = index
-                            showFullScreenImage = true
-                        }
-                    )
+                                onImageClick = { urls, index ->
+                                    fullScreenImageUrls = urls
+                                    fullScreenImageIndex = index
+                                    showFullScreenImage = true
+                                },
+                                onLongPress = {
+                                    selectedMessage = message
+                                    showMessageActions = true
+                                }
+                            )
                         }
                     }
                 }
@@ -435,6 +442,39 @@ fun ChatBody(
             imageUrls = fullScreenImageUrls,
             initialIndex = fullScreenImageIndex,
             onDismiss = { showFullScreenImage = false }
+        )
+    }
+    
+    if (showMessageActions && selectedMessage != null) {
+        MessageActionsDialog(
+            message = selectedMessage!!,
+            isCurrentUser = selectedMessage!!.senderId == currentUserId,
+            onDismiss = { 
+                showMessageActions = false
+                selectedMessage = null
+            },
+            onDelete = {
+                chatViewModel.deleteMessage(chatId, selectedMessage!!.messageId) { success, msg ->
+                    if (success) {
+                        Toast.makeText(context, "Message deleted", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed: $msg", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                showMessageActions = false
+                selectedMessage = null
+            },
+            onUnsend = {
+                chatViewModel.unsendMessage(chatId, selectedMessage!!.messageId) { success, msg ->
+                    if (success) {
+                        Toast.makeText(context, "Message removed for everyone", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed: $msg", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                showMessageActions = false
+                selectedMessage = null
+            }
         )
     }
 }
@@ -679,12 +719,20 @@ fun getRelativeTime(timestamp: Long): String {
 fun MessageBubble(
     message: MessageModel,
     isCurrentUser: Boolean,
-    onImageClick: (List<String>, Int) -> Unit
+    onImageClick: (List<String>, Int) -> Unit,
+    onLongPress: () -> Unit = {}
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = { onLongPress() },
+                indication = null,
+                interactionSource = interactionSource
+            ),
         horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
         Column(
@@ -822,4 +870,78 @@ fun MessageBubble(
     }
 }
 
-
+@Composable
+fun MessageActionsDialog(
+    message: MessageModel,
+    isCurrentUser: Boolean,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onUnsend: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF2C2C2E),
+        shape = RoundedCornerShape(16.dp),
+        title = null,
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Delete option
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { 
+                            onDelete()
+                        }
+                        .padding(vertical = 16.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_delete_24),
+                        contentDescription = "Delete",
+                        tint = White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Delete",
+                        color = White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+                
+                // Show Unsend option only for current user's messages
+                if (isCurrentUser) {
+                    Divider(color = Grey.copy(alpha = 0.3f), thickness = 0.5.dp)
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { 
+                                onUnsend()
+                            }
+                            .padding(vertical = 16.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_delete_24),
+                            contentDescription = "Unsend",
+                            tint = Color(0xFFFF3B30),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Unsend",
+                            color = Color(0xFFFF3B30),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {}
+    )
+}

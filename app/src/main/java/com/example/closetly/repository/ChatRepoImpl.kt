@@ -246,4 +246,40 @@ class ChatRepoImpl : ChatRepo {
             }
         }
     }
+    
+    override fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // Delete message only from local view (message still exists in database)
+        // This is client-side deletion only
+        messagesRef.child(chatId).child(messageId)
+            .child("deletedFor")
+            .child(database.getReference("Users").push().key ?: "")
+            .setValue(true)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Message deleted")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
+    }
+    
+    override fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // Unsend removes message for everyone
+        messagesRef.child(chatId).child(messageId).removeValue()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Message removed for everyone")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
+    }
 }

@@ -38,4 +38,16 @@ interface ChatRepo {
         chatId: String,
         callback: (Boolean, String) -> Unit
     )
+    
+    fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    )
 }
