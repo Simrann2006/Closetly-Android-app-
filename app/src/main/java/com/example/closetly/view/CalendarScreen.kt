@@ -371,7 +371,8 @@ fun CalendarScreen() {
                                     val dateString = date.toString()
                                     val dayOutfits = monthOutfits.filter { 
                                         it.plannedDate == dateString || 
-                                        (it.startDate <= dateString && it.endDate >= dateString)
+                                        (it.startDate.isNotEmpty() && it.endDate.isNotEmpty() &&
+                                         it.startDate <= dateString && it.endDate >= dateString)
                                     }
                                     val hasOutfit = dayOutfits.isNotEmpty()
 
@@ -401,71 +402,51 @@ fun CalendarScreen() {
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (hasOutfit) {
-                                            Box(modifier = Modifier.fillMaxSize()) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .padding(2.dp)
-                                                        .background(Color.White),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    val outfit = dayOutfits.first()
-                                                    val baseCanvasSize = 400f
-                                                    val scaleFactor = 0.15f
-                                                    
-                                                    outfit.items.forEach { item ->
-                                                        val scaledOffsetX = item.offsetX * scaleFactor
-                                                        val scaledOffsetY = item.offsetY * scaleFactor
-                                                        val scaledSize = 120f * scaleFactor * item.scale
-                                                        
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .offset {
-                                                                    IntOffset(
-                                                                        scaledOffsetX.toInt(),
-                                                                        scaledOffsetY.toInt()
-                                                                    )
-                                                                }
-                                                                .size(scaledSize.dp)
-                                                        ) {
-                                                            AsyncImage(
-                                                                model = item.image,
-                                                                contentDescription = item.clothesName,
-                                                                modifier = Modifier.fillMaxSize(),
-                                                                contentScale = ContentScale.Fit
-                                                            )
-                                                        }
+                                            val outfitForThisDay = dayOutfits.find { it.plannedDate == dateString }
+                                                ?: dayOutfits.first()
+                                            
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(46.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (ThemeManager.isDarkMode) Surface_Dark else White)
+                                                    .border(1.5.dp, Grey.copy(alpha = 0.4f), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (outfitForThisDay.items.isNotEmpty()) {
+                                                    val itemsToShow = outfitForThisDay.items.take(3)
+                                                    val itemSize = when (itemsToShow.size) {
+                                                        1 -> 36.dp
+                                                        2 -> 26.dp
+                                                        else -> 20.dp
                                                     }
-                                                }
-                                                Box(
-                                                    modifier = Modifier
-                                                        .align(Alignment.TopEnd)
-                                                        .padding(2.dp)
-                                                        .size(16.dp)
-                                                        .background(Brown.copy(alpha = 0.9f), CircleShape),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = dayCounter.toString(),
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = White
-                                                    )
-                                                }
-                                                if (dayOutfits.size > 1) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .align(Alignment.BottomEnd)
-                                                            .padding(2.dp)
-                                                            .size(16.dp)
-                                                            .background(CalendarPurple.copy(alpha = 0.9f), CircleShape),
-                                                        contentAlignment = Alignment.Center
-                                                    ) {
-                                                        Text(
-                                                            text = "+${dayOutfits.size - 1}",
-                                                            fontSize = 8.sp,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = White
+                                                    
+                                                    itemsToShow.forEachIndexed { index, item ->
+                                                        val offsetY = when (itemsToShow.size) {
+                                                            1 -> (-2).dp
+                                                            2 -> if (index == 0) (-8).dp else 6.dp
+                                                            else -> when (index) {
+                                                                0 -> (-10).dp
+                                                                1 -> 0.dp
+                                                                else -> 10.dp
+                                                            }
+                                                        }
+                                                        val offsetX = when (itemsToShow.size) {
+                                                            3 -> when (index) {
+                                                                0 -> 0.dp
+                                                                1 -> (-3).dp
+                                                                else -> 3.dp
+                                                            }
+                                                            else -> 0.dp
+                                                        }
+                                                        
+                                                        AsyncImage(
+                                                            model = item.image,
+                                                            contentDescription = item.clothesName,
+                                                            modifier = Modifier
+                                                                .offset(x = offsetX, y = offsetY)
+                                                                .size(itemSize),
+                                                            contentScale = ContentScale.Fit
                                                         )
                                                     }
                                                 }
@@ -569,6 +550,7 @@ fun CalendarScreen() {
             },
             onViewOutfit = { outfit ->
                 val intent = Intent(context, SavedOutfitsActivity::class.java)
+                intent.putExtra("scrollToOutfitId", outfit.outfitId)
                 context.startActivity(intent)
                 showDialog = false
             }

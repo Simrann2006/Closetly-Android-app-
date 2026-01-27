@@ -73,31 +73,65 @@ import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.viewmodel.ClothesViewModel
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.window.Dialog
 import com.example.closetly.R
 import com.example.closetly.utils.ThemeManager
+import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClosetScreen() {
 
     val context = LocalContext.current
-    val categoryRepo = remember { CategoryRepoImpl() }
-    val categoryViewModel = remember { CategoryViewModel(categoryRepo) }
-    val clothesRepo = remember { ClothesRepoImpl() }
-    val clothesViewModel = remember { ClothesViewModel(clothesRepo) }
+    
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    
+    val categoryRepo = remember(currentUserId) { CategoryRepoImpl() }
+    val categoryViewModel = remember(currentUserId) { CategoryViewModel(categoryRepo) }
+    val clothesRepo = remember(currentUserId) { ClothesRepoImpl() }
+    val clothesViewModel = remember(currentUserId) { ClothesViewModel(clothesRepo) }
 
     var selectedCategory by remember { mutableStateOf("All") }
     var searchText by remember { mutableStateOf("") }
 
-    var categories by remember { mutableStateOf(listOf("All")) }
-    var allClothes by remember { mutableStateOf<List<ClothesModel>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var categoriesLoaded by remember { mutableStateOf(false) }
-    var clothesLoaded by remember { mutableStateOf(false) }
+    var categories by remember(currentUserId) { mutableStateOf(listOf("All")) }
+    var allClothes by remember(currentUserId) { mutableStateOf<List<ClothesModel>>(emptyList()) }
+    var isLoading by remember(currentUserId) { mutableStateOf(true) }
+    var categoriesLoaded by remember(currentUserId) { mutableStateOf(false) }
+    var clothesLoaded by remember(currentUserId) { mutableStateOf(false) }
+    
+    var isRefreshing by remember { mutableStateOf(false) }
+    
+    fun refreshData() {
+        isRefreshing = true
+        var categoriesDone = false
+        var clothesDone = false
+        
+        categoryViewModel.getAllCategories { success, _, data ->
+            if (success && data != null) {
+                val categoryNames = listOf("All") + data.map { it.categoryName }
+                categories = categoryNames
+            }
+            categoriesDone = true
+            if (categoriesDone && clothesDone) isRefreshing = false
+        }
+        
+        clothesViewModel.getAllClothes { success, _, data ->
+            if (success && data != null) {
+                allClothes = data
+            }
+            clothesDone = true
+            if (categoriesDone && clothesDone) isRefreshing = false
+        }
+    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var categoryToDelete by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentUserId) {
         categoryViewModel.getAllCategories { success, _, data ->
             if (success) {
                 if (data == null || data.isEmpty()) {
@@ -130,7 +164,7 @@ fun ClosetScreen() {
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentUserId) {
         clothesViewModel.getAllClothes { success, _, data ->
             if (success && data != null) {
                 allClothes = data
@@ -164,14 +198,31 @@ fun ClosetScreen() {
 
         clothes
     }
+    
+    val pullToRefreshState = rememberPullToRefreshState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
-                .padding(16.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { refreshData() },
+            modifier = Modifier.fillMaxSize(),
+            state = pullToRefreshState,
+            indicator = {
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = isRefreshing,
+                    state = pullToRefreshState,
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Grey,
+                    color = White
+                )
+            }
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
+                    .padding(16.dp)
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -346,6 +397,7 @@ fun ClosetScreen() {
                     ClothesItem(clothes = clothes)
                 }
             }
+        }
         }
 
         if (showDeleteDialog && categoryToDelete != null) {

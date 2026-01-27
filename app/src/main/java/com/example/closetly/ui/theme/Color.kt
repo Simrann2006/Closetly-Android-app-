@@ -24,7 +24,7 @@ val OnPrimary_Dark = Color(0xFF000000)
 val OnSecondary_Dark = Color(0xFF000000)
 val OnBackground_Dark = Color(0xFFE6E1E5)
 val OnSurface_Dark = Color(0xFFE6E1E5)
-val Error_Dark = Color(0xFFFF5449)
+val Error_Dark = Color(0xFFB71712)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
@@ -45,7 +45,7 @@ val Black = Color(0xFF000000)
 
 val Skin = Color(0xFFC59D9B)
 
-val Red = Color(0xFFD50B00)
+val Red = Color(0xFFB71712)
 
 val Light_grey1 = Color(0xFFE0E0E0)
 
