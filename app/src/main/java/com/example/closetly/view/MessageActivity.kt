@@ -34,6 +34,8 @@ import com.example.closetly.repository.ChatRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.utils.getTimeAgoShort
+import com.example.closetly.utils.getSeenStatus
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -95,7 +97,7 @@ fun MessageBody() {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White)
             ) {
                 Row(
                     modifier = Modifier
@@ -110,7 +112,7 @@ fun MessageBody() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
 
@@ -122,7 +124,7 @@ fun MessageBody() {
                             text = currentUser?.username ?: "User",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
 
@@ -130,7 +132,7 @@ fun MessageBody() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_edit_24),
                             contentDescription = null,
-                            tint = Black,
+                            tint = if (ThemeManager.isDarkMode) White else Black,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -149,23 +151,23 @@ fun MessageBody() {
                     trailingIcon = {
                         Icon(painter = painterResource(R.drawable.baseline_search_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Black,
-                        focusedBorderColor = Black,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White,
-                        unfocusedTextColor = Black,
-                        focusedTextColor = Black
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Black,
+                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     singleLine = true
                 )
             }
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         Column(
             modifier = Modifier
@@ -176,7 +178,7 @@ fun MessageBody() {
                 text = "Messages",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Black,
+                color = if (ThemeManager.isDarkMode) White else Black,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
@@ -187,14 +189,14 @@ fun MessageBody() {
                     isLoading -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                     filteredChats.isEmpty() -> {
                         Text(
                             text = if (searchQuery.isNotBlank()) "No results found" else "No messages yet",
                             fontSize = 16.sp,
-                            color = Grey,
+                            color = if (ThemeManager.isDarkMode) Grey else DarkGrey,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
@@ -315,7 +317,7 @@ fun MessageListItem(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(Light_grey),
+                .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
             contentAlignment = Alignment.Center
         ) {
             if (user.profilePicture.isNotEmpty()) {
@@ -349,7 +351,7 @@ fun MessageListItem(
                     text = user.username,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
 
                 if (timeAgo.isNotEmpty()) {
@@ -368,8 +370,24 @@ fun MessageListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val relativeTime = getTimeAgoShort(chat.lastMessageTime)
+                
+                // Get the other user's ID (recipient)
+                val otherUserId = chat.participants.firstOrNull { it != currentUserId } ?: ""
+                val recipientSeenAt = chat.lastSeenAt[otherUserId] ?: 0L
+                
+                // Determine display message based on message status
                 val displayMessage = when {
                     unreadCount > 0 -> "$unreadCount new message${if (unreadCount > 1) "s" else ""}"
+                    chat.lastMessageSenderId == currentUserId -> {
+                        // Current user sent the last message
+                        if (recipientSeenAt > 0L && recipientSeenAt >= chat.lastMessageTime) {
+                            // Recipient has seen the message
+                            getSeenStatus(recipientSeenAt)
+                        } else {
+                            // Message sent but not seen yet by recipient
+                            "Sent $relativeTime"
+                        }
+                    }
                     chat.lastMessage.isNotEmpty() -> chat.lastMessage
                     chat.lastMessageSenderId.isNotEmpty() -> {
                         if (chat.lastMessageSenderId == currentUserId) {
@@ -384,7 +402,7 @@ fun MessageListItem(
                 Text(
                     text = displayMessage,
                     fontSize = 14.sp,
-                    color = if (unreadCount > 0) Black else Grey,
+                    color = if (unreadCount > 0) (if (ThemeManager.isDarkMode) White else Black) else Grey,
                     fontWeight = if (unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -445,7 +463,7 @@ fun NewChatDialog(
                     text = "New Chat",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -458,17 +476,17 @@ fun NewChatDialog(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Grey.copy(alpha = 0.5f),
-                        focusedBorderColor = Black,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White,
-                        unfocusedTextColor = Black,
-                        focusedTextColor = Black
+                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     singleLine = true,
                     trailingIcon = {
                         Icon(painter = painterResource(R.drawable.baseline_search_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 )
@@ -483,7 +501,7 @@ fun NewChatDialog(
                                 .height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = Black)
+                            CircularProgressIndicator(color = if (ThemeManager.isDarkMode) White else Black)
                         }
                     }
                     filteredUsers.isEmpty() -> {
@@ -531,11 +549,11 @@ fun NewChatDialog(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel", color = Black)
+                    Text("Cancel", color = if (ThemeManager.isDarkMode) White else Black)
                 }
             }
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
     )
 }
 
@@ -552,7 +570,7 @@ fun UserListItem(user: UserModel, onClick: () -> Unit) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Light_grey),
+                .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
             contentAlignment = Alignment.Center
         ) {
             if (user.profilePicture.isNotEmpty()) {
@@ -579,7 +597,7 @@ fun UserListItem(user: UserModel, onClick: () -> Unit) {
                 text = user.username,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) White else Black
             )
             if (user.fullName.isNotEmpty()) {
                 Text(
@@ -628,7 +646,7 @@ fun ChatActionDialog(
                 }
             }
         },
-        containerColor = White,
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         tonalElevation = 2.dp,
     )
 }
@@ -646,14 +664,14 @@ fun DeleteChatConfirmationDialog(
                 text = "Delete Chat?",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) White else Black
             )
         },
         text = {
             Text(
                 text = "Are you sure you want to delete your conversation with $userName? This action cannot be undone.",
                 fontSize = 16.sp,
-                color = Black
+                color = if (ThemeManager.isDarkMode) White else Black
             )
         },
         confirmButton = {
@@ -671,6 +689,6 @@ fun DeleteChatConfirmationDialog(
                 Text("Cancel", color = Grey)
             }
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
     )
 }

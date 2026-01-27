@@ -6,5 +6,7 @@ data class ChatModel(
     val lastMessage: String = "",
     val lastMessageTime: Long = 0L,
     val lastMessageSenderId: String = "",
-    val unreadCount: Map<String, Int> = emptyMap()
+    val unreadCount: Map<String, Int> = emptyMap(),
+    val lastSeenAt: Map<String, Long> = emptyMap(),  // userId -> Last time they saw messages
+    val typingStatus: Map<String, Long> = emptyMap()  // userId -> timestamp when they started typing
 )

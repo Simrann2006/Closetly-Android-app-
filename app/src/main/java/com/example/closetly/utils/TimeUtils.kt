@@ -36,3 +36,25 @@ fun getTimeAgoShort(timestamp: Long): String {
         }
     }
 }
+
+fun getSeenStatus(seenAt: Long): String {
+    if (seenAt == 0L) return ""
+    
+    val now = System.currentTimeMillis()
+    val diff = now - seenAt
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    
+    return when {
+        seconds < 60 -> "Seen now"
+        minutes < 60 -> "Seen ${minutes}m ago"
+        hours < 24 -> "Seen ${hours}h ago"
+        days < 7 -> "Seen ${days}d ago"
+        else -> {
+            val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
+            "Seen " + sdf.format(Date(seenAt))
+        }
+    }
+}

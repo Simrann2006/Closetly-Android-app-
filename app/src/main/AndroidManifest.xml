@@ -110,7 +110,8 @@
             android:name=".view.ChatActivity"
             android:exported="false"
             android:label="ChatActivity"
-            android:theme="@style/Theme.Closetly" />
+            android:theme="@style/Theme.Closetly"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.NotificationActivity"
             android:exported="true"

@@ -1,6 +1,9 @@
 package com.example.closetly.view
 
 import ImageUtils
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -11,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -20,6 +24,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,9 +50,14 @@ import com.example.closetly.repository.CommonRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.utils.NotificationHelper
+import com.example.closetly.utils.getSeenStatus
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.snapshotFlow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -117,6 +131,9 @@ fun ChatBody(
     var fullScreenImageUrls by remember { mutableStateOf<List<String>>(emptyList()) }
     var fullScreenImageIndex by remember { mutableStateOf(0) }
     var currentUserName by remember { mutableStateOf("") }
+    var selectedMessage by remember { mutableStateOf<MessageModel?>(null) }
+    var showMessageActions by remember { mutableStateOf(false) }
+    var isOtherUserTyping by remember { mutableStateOf(false) }
     
     LaunchedEffect(currentUserId) {
         userViewModel.getUserById(currentUserId) { success, _, user ->
@@ -127,6 +144,8 @@ fun ChatBody(
     }
     
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var wasAtBottom by remember { mutableStateOf(true) }
 
     LaunchedEffect(chatId) {
         if (chatId.isNotEmpty()) {
@@ -136,12 +155,49 @@ fun ChatBody(
                 }
             }
             chatViewModel.markMessagesAsRead(chatId, currentUserId) { _, _ -> }
+            
+            // Listen for typing status
+            chatViewModel.listenForTypingStatus(chatId, otherUserId) { isTyping ->
+                isOtherUserTyping = isTyping
+            }
         }
     }
 
+    // Track if user is at the bottom of the chat
+    LaunchedEffect(Unit) {
+        snapshotFlow { listState.layoutInfo }
+            .collectLatest { layoutInfo ->
+                val totalItems = layoutInfo.totalItemsCount
+                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                wasAtBottom = totalItems == 0 || lastVisibleItem >= totalItems - 1
+            }
+    }
+
+    // Scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+        if (messages.isNotEmpty() && wasAtBottom) {
+            coroutineScope.launch {
+                listState.animateScrollToItem(messages.size - 1)
+            }
+        }
+    }
+
+    // Smoothly scroll to bottom when keyboard appears
+    val imeVisible by rememberUpdatedState(WindowInsets.ime.getBottom(LocalDensity.current) > 0)
+    LaunchedEffect(imeVisible) {
+        if (imeVisible && messages.isNotEmpty() && wasAtBottom) {
+            coroutineScope.launch {
+                listState.animateScrollToItem(messages.size - 1)
+            }
+        }
+    }
+    
+    // Smoothly scroll when user starts typing
+    LaunchedEffect(messageText) {
+        if (messageText.isNotEmpty() && messages.isNotEmpty()) {
+            coroutineScope.launch {
+                listState.animateScrollToItem(messages.size - 1)
+            }
         }
     }
 
@@ -169,7 +225,7 @@ fun ChatBody(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Light_grey),
+                                .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
                             contentAlignment = Alignment.Center
                         ) {
                             if (otherUserImage.isNotEmpty()) {
@@ -195,7 +251,7 @@ fun ChatBody(
                             text = otherUserName,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
@@ -206,16 +262,16 @@ fun ChatBody(
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         Column(
             modifier = Modifier
@@ -231,24 +287,33 @@ fun ChatBody(
                     Text(
                         text = "Start a conversation",
                         fontSize = 16.sp,
-                        color = Grey,
+                        color = if (ThemeManager.isDarkMode) Grey else DarkGrey,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        state = listState
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .imePadding(),
+                        state = listState,
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        reverseLayout = false
                     ) {
                         items(messages) { message ->
                             MessageBubble(
                                 message = message,
                                 isCurrentUser = message.senderId == currentUserId,
-                        onImageClick = { urls, index ->
-                            fullScreenImageUrls = urls
-                            fullScreenImageIndex = index
-                            showFullScreenImage = true
-                        }
-                    )
+                                currentUserId = currentUserId,
+                                onImageClick = { urls, index ->
+                                    fullScreenImageUrls = urls
+                                    fullScreenImageIndex = index
+                                    showFullScreenImage = true
+                                },
+                                onLongPress = {
+                                    selectedMessage = message
+                                    showMessageActions = true
+                                }
+                            )
                         }
                     }
                 }
@@ -257,16 +322,45 @@ fun ChatBody(
             if (isUploading) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
             }
 
-            Row(
+            // Message input area with typing indicator
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White)
             ) {
+                // Typing indicator
+                if (isOtherUserTyping) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Typing",
+                            fontSize = 12.sp,
+                            color = Grey,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        )
+                        Text(
+                            text = "...",
+                            fontSize = 12.sp,
+                            color = Grey,
+                            modifier = Modifier.padding(start = 2.dp)
+                        )
+                    }
+                }
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 IconButton(
                     onClick = onPickCamera,
                     enabled = !isUploading
@@ -274,7 +368,7 @@ fun ChatBody(
                     Icon(
                         painter = painterResource(R.drawable.baseline_camera_alt_24),
                         contentDescription = null,
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
 
@@ -285,23 +379,27 @@ fun ChatBody(
                     Icon(
                         painter = painterResource(R.drawable.baseline_insert_photo_24),
                         contentDescription = null,
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
 
                 OutlinedTextField(
                     value = messageText,
-                    onValueChange = { messageText = it },
+                    onValueChange = { newText ->
+                        messageText = newText
+                        // Update typing status
+                        chatViewModel.setTypingStatus(chatId, currentUserId, newText.isNotEmpty())
+                    },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Message...", color = Grey) },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Light_grey,
-                        focusedBorderColor = Black,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White,
-                        unfocusedTextColor = Black,
-                        focusedTextColor = Black
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Light_grey,
+                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     maxLines = 4,
                     enabled = !isUploading
@@ -340,9 +438,10 @@ fun ChatBody(
                 ) {
                     Icon(painter = painterResource(R.drawable.baseline_send_24),
                         contentDescription = null,
-                        tint = if (messageText.isNotBlank()) Black else Grey
+                        tint = if (messageText.isNotBlank()) (if (ThemeManager.isDarkMode) White else Black) else Grey
                     )
                 }
+            }
             }
         }
     }
@@ -407,6 +506,28 @@ fun ChatBody(
             onDismiss = { showFullScreenImage = false }
         )
     }
+    
+    if (showMessageActions && selectedMessage != null) {
+        MessageActionsDialog(
+            message = selectedMessage!!,
+            isCurrentUser = selectedMessage!!.senderId == currentUserId,
+            onDismiss = { 
+                showMessageActions = false
+                selectedMessage = null
+            },
+            onUnsend = {
+                chatViewModel.unsendMessage(chatId, selectedMessage!!.messageId) { success, msg ->
+                    if (success) {
+                        Toast.makeText(context, "Message removed", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed: $msg", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                showMessageActions = false
+                selectedMessage = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -434,13 +555,13 @@ fun ImagePreviewDialog(
                         text = "Selected ${selectedImageList.size} photo${if (selectedImageList.size > 1) "s" else ""}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_close_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
@@ -649,12 +770,27 @@ fun getRelativeTime(timestamp: Long): String {
 fun MessageBubble(
     message: MessageModel,
     isCurrentUser: Boolean,
-    onImageClick: (List<String>, Int) -> Unit
+    currentUserId: String,
+    onImageClick: (List<String>, Int) -> Unit,
+    onLongPress: () -> Unit = {}
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .then(
+                if (isCurrentUser) {
+                    Modifier.combinedClickable(
+                        onClick = {},
+                        onLongClick = { onLongPress() },
+                        indication = null,
+                        interactionSource = interactionSource
+                    )
+                } else {
+                    Modifier
+                }
+            ),
         horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
         Column(
@@ -771,25 +907,106 @@ fun MessageBubble(
                                 bottomEnd = if (isCurrentUser) 4.dp else 16.dp
                             )
                         )
-                        .background(if (isCurrentUser) Black else Light_grey)
+                        .background(
+                            if (isCurrentUser) 
+                                (if (ThemeManager.isDarkMode) Brown else Black)
+                            else 
+                                (if (ThemeManager.isDarkMode) DarkGrey else Light_grey)
+                        )
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = message.text,
-                        color = if (isCurrentUser) White else Black,
+                        color = if (isCurrentUser) White else (if (ThemeManager.isDarkMode) White else Black),
                         fontSize = 15.sp
                     )
                 }
             }
-            
-            Text(
-                text = getRelativeTime(message.timestamp),
-                fontSize = 11.sp,
-                color = Grey,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-            )
         }
     }
 }
 
-
+@Composable
+fun MessageActionsDialog(
+    message: MessageModel,
+    isCurrentUser: Boolean,
+    onDismiss: () -> Unit,
+    onUnsend: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF2C2C2E),
+        shape = RoundedCornerShape(16.dp),
+        title = null,
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Copy option (if message has text)
+                if (message.text.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val clip = ClipData.newPlainText("message", message.text)
+                                clipboardManager.setPrimaryClip(clip)
+                                Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+                                onDismiss()
+                            }
+                            .padding(vertical = 16.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.ContentCopy,
+                            contentDescription = "Copy",
+                            tint = White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Copy",
+                            color = White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                
+                // Show Unsend option only for current user's messages
+                if (isCurrentUser) {
+                    if (message.text.isNotEmpty()) {
+                        Divider(color = Grey.copy(alpha = 0.3f), thickness = 0.5.dp)
+                    }
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { 
+                                onUnsend()
+                            }
+                            .padding(vertical = 16.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_delete_24),
+                            contentDescription = "Unsend",
+                            tint = Color(0xFFFF3B30),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Unsend",
+                            color = Color(0xFFFF3B30),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {}
+    )
+}

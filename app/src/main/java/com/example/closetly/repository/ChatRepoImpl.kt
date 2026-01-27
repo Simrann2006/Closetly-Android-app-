@@ -194,9 +194,33 @@ class ChatRepoImpl : ChatRepo {
         userId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        chatsRef.child(chatId).child("unreadCount").child(userId).setValue(0)
+        val currentTime = System.currentTimeMillis()
+        val updates = mapOf(
+            "unreadCount/$userId" to 0,
+            "lastSeenAt/$userId" to currentTime
+        )
+        
+        chatsRef.child(chatId).updateChildren(updates)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
+                    // Mark individual messages as seen
+                    messagesRef.child(chatId).orderByChild("timestamp")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                snapshot.children.forEach { messageSnapshot ->
+                                    val message = messageSnapshot.getValue(MessageModel::class.java)
+                                    if (message != null && message.senderId != userId && !message.isRead) {
+                                        messageSnapshot.ref.updateChildren(
+                                            mapOf(
+                                                "isRead" to true,
+                                                "seenAt" to currentTime
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
                     callback(true, "Marked as read")
                 } else {
                     callback(false, "${it.exception?.message}")
@@ -221,5 +245,104 @@ class ChatRepoImpl : ChatRepo {
                 callback(false, "${chatTask.exception?.message}")
             }
         }
+    }
+    
+    override fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // Delete message only from local view (message still exists in database)
+        // This is client-side deletion only
+        messagesRef.child(chatId).child(messageId)
+            .child("deletedFor")
+            .child(database.getReference("Users").push().key ?: "")
+            .setValue(true)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Message deleted")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
+    }
+    
+    override fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // Unsend removes message completely for everyone in real-time
+        messagesRef.child(chatId).child(messageId).removeValue()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    // Update last message in chat if this was the last message
+                    updateLastMessageAfterDeletion(chatId)
+                    callback(true, "Message removed")
+                } else {
+                    callback(false, "${it.exception?.message}")
+                }
+            }
+    }
+    
+    private fun updateLastMessageAfterDeletion(chatId: String) {
+        // Get remaining messages and update chat's lastMessage field
+        messagesRef.child(chatId).orderByChild("timestamp")
+            .limitToLast(1)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val lastMessage = snapshot.children.firstOrNull()?.getValue(MessageModel::class.java)
+                        if (lastMessage != null) {
+                            chatsRef.child(chatId).updateChildren(
+                                mapOf(
+                                    "lastMessage" to lastMessage.text,
+                                    "lastMessageTime" to lastMessage.timestamp,
+                                    "lastMessageSenderId" to lastMessage.senderId
+                                )
+                            )
+                        }
+                    } else {
+                        // No messages left, clear last message
+                        chatsRef.child(chatId).updateChildren(
+                            mapOf(
+                                "lastMessage" to "",
+                                "lastMessageTime" to 0L,
+                                "lastMessageSenderId" to ""
+                            )
+                        )
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+    
+    override fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    ) {
+        val timestamp = if (isTyping) System.currentTimeMillis() else 0L
+        chatsRef.child(chatId).child("typingStatus").child(userId).setValue(timestamp)
+    }
+    
+    override fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        chatsRef.child(chatId).child("typingStatus").child(otherUserId)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val timestamp = snapshot.getValue(Long::class.java) ?: 0L
+                    val currentTime = System.currentTimeMillis()
+                    // Consider typing if timestamp is within last 5 seconds
+                    val isTyping = timestamp > 0 && (currentTime - timestamp) < 5000
+                    callback(isTyping)
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
     }
 }

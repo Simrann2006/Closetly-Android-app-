@@ -52,4 +52,36 @@ class ChatViewModel(val repo: ChatRepo) : ViewModel() {
     ) {
         repo.deleteChat(chatId, callback)
     }
+    
+    fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        repo.deleteMessage(chatId, messageId, callback)
+    }
+    
+    fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        repo.unsendMessage(chatId, messageId, callback)
+    }
+    
+    fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    ) {
+        repo.setTypingStatus(chatId, userId, isTyping)
+    }
+    
+    fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        repo.listenForTypingStatus(chatId, otherUserId, callback)
+    }
 }

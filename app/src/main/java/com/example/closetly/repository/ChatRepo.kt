@@ -38,4 +38,28 @@ interface ChatRepo {
         chatId: String,
         callback: (Boolean, String) -> Unit
     )
+    
+    fun deleteMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun unsendMessage(
+        chatId: String,
+        messageId: String,
+        callback: (Boolean, String) -> Unit
+    )
+    
+    fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    )
+    
+    fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    )
 }

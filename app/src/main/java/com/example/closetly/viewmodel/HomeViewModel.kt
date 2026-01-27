@@ -37,36 +37,59 @@ class HomeViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+    
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
+    private val _lastSeenTimestamp = MutableStateFlow(0L)
+    val lastSeenTimestamp: StateFlow<Long> = _lastSeenTimestamp.asStateFlow()
+    
+    // Track oldest post timestamp for pagination
+    private var oldestPostTimestamp: Long? = null
+    private val PAGE_SIZE = 10
+    
     init {
-        loadPosts()
+        loadInitialPosts()
     }
     
     /**
-     * Load all posts with real-time listeners
-     * For each post, we also subscribe to its likes count, comments count, and user states
-     * Excludes current user's own posts from the feed
+     * Load initial posts (from followed users + real-time updates)
+     * This is called on first load
      */
-    fun loadPosts() {
+    private fun loadInitialPosts() {
         viewModelScope.launch {
             _isLoading.value = true
             
-            repository.getAllPostsRealTime()
+            // Get last seen timestamp
+            _lastSeenTimestamp.value = repository.getLastSeenTimestamp(currentUserId)
+            
+            // Load posts from followed users
+            repository.getPostsFromFollowedUsers(
+                userId = currentUserId,
+                afterTimestamp = null,
+                limit = PAGE_SIZE
+            )
                 .catch { e ->
                     _error.value = e.message
                     _isLoading.value = false
                 }
                 .collectLatest { posts ->
-                    // Filter out current user's own posts and posts without valid data
                     val filteredPosts = posts.filter { post ->
-                        post.userId != currentUserId &&
                         post.userId.isNotEmpty() &&
                         post.imageUrl.isNotEmpty() &&
                         post.username.isNotEmpty()
                     }
                     _isLoading.value = false
+                    
+                    // Track oldest post for pagination
+                    if (filteredPosts.isNotEmpty()) {
+                        oldestPostTimestamp = filteredPosts.minOfOrNull { it.timestamp }
+                    }
                     
                     // For each post, combine it with its real-time states
                     val postsWithStates = filteredPosts.map { post ->
@@ -74,12 +97,119 @@ class HomeViewModel(
                     }
                     
                     // Combine all post flows into one
-                    combine(postsWithStates) { postsArray ->
-                        postsArray.toList()
-                    }.collect { combinedPosts ->
-                        _postsUI.value = combinedPosts
+                    if (postsWithStates.isNotEmpty()) {
+                        combine(postsWithStates) { postsArray ->
+                            postsArray.toList()
+                        }.collect { combinedPosts ->
+                            _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
+                        }
+                    } else {
+                        _postsUI.value = emptyList()
                     }
                 }
+        }
+    }
+    
+    /**
+     * Pull-to-refresh: Load only NEW posts created after last seen timestamp
+     * This prevents old posts from reappearing
+     */
+    fun refreshPosts() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            
+            try {
+                val lastSeen = _lastSeenTimestamp.value
+                val currentTime = System.currentTimeMillis()
+                
+                // Get only new posts
+                repository.getNewPostsOnly(currentUserId, lastSeen)
+                    .catch { e ->
+                        _error.value = "Refresh failed: ${e.message}"
+                        _isRefreshing.value = false
+                    }
+                    .collect { newPosts ->
+                        if (newPosts.isNotEmpty()) {
+                            // Add new posts to existing list
+                            val currentPosts = _postsUI.value.map { it.post }
+                            val allPosts = (newPosts + currentPosts).distinctBy { it.postId }
+                            
+                            // Create UI flows for new posts
+                            val postsWithStates = allPosts.map { post ->
+                                createPostUIFlow(post)
+                            }
+                            
+                            if (postsWithStates.isNotEmpty()) {
+                                combine(postsWithStates) { postsArray ->
+                                    postsArray.toList()
+                                }.collect { combinedPosts ->
+                                    _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
+                                }
+                            }
+                            
+                            // Update last seen timestamp
+                            _lastSeenTimestamp.value = currentTime
+                            repository.saveLastSeenTimestamp(currentUserId, currentTime)
+                        }
+                        
+                        _isRefreshing.value = false
+                    }
+            } catch (e: Exception) {
+                _error.value = "Refresh failed: ${e.message}"
+                _isRefreshing.value = false
+            }
+        }
+    }
+    
+    /**
+     * Load more posts (pagination)
+     * Called when user scrolls to bottom
+     */
+    fun loadMorePosts() {
+        if (_isLoadingMore.value || oldestPostTimestamp == null) return
+        
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+            
+            try {
+                repository.getPostsFromFollowedUsers(
+                    userId = currentUserId,
+                    afterTimestamp = oldestPostTimestamp,
+                    limit = PAGE_SIZE
+                )
+                    .catch { e ->
+                        _error.value = "Load more failed: ${e.message}"
+                        _isLoadingMore.value = false
+                    }
+                    .collect { morePosts ->
+                        if (morePosts.isNotEmpty()) {
+                            // Update oldest timestamp
+                            oldestPostTimestamp = morePosts.minOfOrNull { it.timestamp }
+                            
+                            // Add to existing posts
+                            val currentPosts = _postsUI.value.map { it.post }
+                            val allPosts = (currentPosts + morePosts).distinctBy { it.postId }
+                            
+                            // Create UI flows
+                            val postsWithStates = allPosts.map { post ->
+                                createPostUIFlow(post)
+                            }
+                            
+                            if (postsWithStates.isNotEmpty()) {
+                                combine(postsWithStates) { postsArray ->
+                                    postsArray.toList()
+                                }.collect { combinedPosts ->
+                                    _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
+                                }
+                            }
+                        }
+                        
+                        _isLoadingMore.value = false
+                    }
+            } catch (e: Exception) {
+                _error.value = "Load more failed: ${e.message}"
+                _isLoadingMore.value = false
+            }
         }
     }
     
