@@ -50,4 +50,16 @@ interface ChatRepo {
         messageId: String,
         callback: (Boolean, String) -> Unit
     )
+    
+    fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    )
+    
+    fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    )
 }

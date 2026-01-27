@@ -370,12 +370,22 @@ fun MessageListItem(
             ) {
                 val relativeTime = getTimeAgoShort(chat.lastMessageTime)
                 
+                // Get the other user's ID (recipient)
+                val otherUserId = chat.participants.firstOrNull { it != currentUserId } ?: ""
+                val recipientSeenAt = chat.lastSeenAt[otherUserId] ?: 0L
+                
                 // Determine display message based on message status
                 val displayMessage = when {
                     unreadCount > 0 -> "$unreadCount new message${if (unreadCount > 1) "s" else ""}"
-                    chat.lastMessageSenderId == currentUserId && chat.lastSeenAt > 0L -> {
-                        // Show seen status if current user sent the last message
-                        getSeenStatus(chat.lastSeenAt)
+                    chat.lastMessageSenderId == currentUserId -> {
+                        // Current user sent the last message
+                        if (recipientSeenAt > 0L && recipientSeenAt >= chat.lastMessageTime) {
+                            // Recipient has seen the message
+                            getSeenStatus(recipientSeenAt)
+                        } else {
+                            // Message sent but not seen yet by recipient
+                            "Sent $relativeTime"
+                        }
                     }
                     chat.lastMessage.isNotEmpty() -> chat.lastMessage
                     chat.lastMessageSenderId.isNotEmpty() -> {

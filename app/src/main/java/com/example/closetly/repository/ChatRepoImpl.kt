@@ -197,7 +197,7 @@ class ChatRepoImpl : ChatRepo {
         val currentTime = System.currentTimeMillis()
         val updates = mapOf(
             "unreadCount/$userId" to 0,
-            "lastSeenAt" to currentTime
+            "lastSeenAt/$userId" to currentTime
         )
         
         chatsRef.child(chatId).updateChildren(updates)
@@ -272,14 +272,77 @@ class ChatRepoImpl : ChatRepo {
         messageId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        // Unsend removes message for everyone
+        // Unsend removes message completely for everyone in real-time
         messagesRef.child(chatId).child(messageId).removeValue()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    callback(true, "Message removed for everyone")
+                    // Update last message in chat if this was the last message
+                    updateLastMessageAfterDeletion(chatId)
+                    callback(true, "Message removed")
                 } else {
                     callback(false, "${it.exception?.message}")
                 }
             }
+    }
+    
+    private fun updateLastMessageAfterDeletion(chatId: String) {
+        // Get remaining messages and update chat's lastMessage field
+        messagesRef.child(chatId).orderByChild("timestamp")
+            .limitToLast(1)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val lastMessage = snapshot.children.firstOrNull()?.getValue(MessageModel::class.java)
+                        if (lastMessage != null) {
+                            chatsRef.child(chatId).updateChildren(
+                                mapOf(
+                                    "lastMessage" to lastMessage.text,
+                                    "lastMessageTime" to lastMessage.timestamp,
+                                    "lastMessageSenderId" to lastMessage.senderId
+                                )
+                            )
+                        }
+                    } else {
+                        // No messages left, clear last message
+                        chatsRef.child(chatId).updateChildren(
+                            mapOf(
+                                "lastMessage" to "",
+                                "lastMessageTime" to 0L,
+                                "lastMessageSenderId" to ""
+                            )
+                        )
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+    
+    override fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    ) {
+        val timestamp = if (isTyping) System.currentTimeMillis() else 0L
+        chatsRef.child(chatId).child("typingStatus").child(userId).setValue(timestamp)
+    }
+    
+    override fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        chatsRef.child(chatId).child("typingStatus").child(otherUserId)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val timestamp = snapshot.getValue(Long::class.java) ?: 0L
+                    val currentTime = System.currentTimeMillis()
+                    // Consider typing if timestamp is within last 5 seconds
+                    val isTyping = timestamp > 0 && (currentTime - timestamp) < 5000
+                    callback(isTyping)
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false)
+                }
+            })
     }
 }

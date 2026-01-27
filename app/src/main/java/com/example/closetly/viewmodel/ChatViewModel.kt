@@ -68,4 +68,20 @@ class ChatViewModel(val repo: ChatRepo) : ViewModel() {
     ) {
         repo.unsendMessage(chatId, messageId, callback)
     }
+    
+    fun setTypingStatus(
+        chatId: String,
+        userId: String,
+        isTyping: Boolean
+    ) {
+        repo.setTypingStatus(chatId, userId, isTyping)
+    }
+    
+    fun listenForTypingStatus(
+        chatId: String,
+        otherUserId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        repo.listenForTypingStatus(chatId, otherUserId, callback)
+    }
 }
