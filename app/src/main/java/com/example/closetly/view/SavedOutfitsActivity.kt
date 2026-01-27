@@ -39,6 +39,7 @@ import com.example.closetly.model.OutfitItemModel
 import com.example.closetly.model.OutfitModel
 import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.OutfitViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -133,9 +134,9 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
@@ -150,7 +151,7 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                 Icon(Icons.Default.Add, contentDescription = "Create Outfit")
             }
         },
-        containerColor = Light_grey
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Light_grey
     ) { padding ->
         Column(
             modifier = Modifier
@@ -165,28 +166,30 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Search outfits...", fontSize = 14.sp) },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = Grey)
+                    Icon(Icons.Default.Search, contentDescription = null, tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey)
                 },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Grey)
+                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey)
                         }
                     }
                 },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = White,
-                    unfocusedContainerColor = White,
+                    focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                     focusedBorderColor = Brown,
-                    unfocusedBorderColor = Grey.copy(alpha = 0.3f)
+                    unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f),
+                    focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                    unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
                 ),
                 shape = RoundedCornerShape(12.dp)
             )
 
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = White,
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                 contentColor = Brown,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
@@ -230,12 +233,12 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                             painter = painterResource(R.drawable.baseline_checkroom_24),
                             contentDescription = null,
                             modifier = Modifier.size(80.dp),
-                            tint = Grey.copy(alpha = 0.5f)
+                            tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.5f) else Grey.copy(alpha = 0.5f)
                         )
                         Text(
                             text = if (searchQuery.isNotEmpty()) "No outfits found" else "No outfits yet",
                             fontSize = 16.sp,
-                            color = Grey,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                             textAlign = TextAlign.Center
                         )
                         if (searchQuery.isEmpty()) {
@@ -325,12 +328,12 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
         if (showDeleteDialog && outfitToDelete != null) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                containerColor = Color.White,
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White,
                 title = {
-                    Text("Delete Outfit?")
+                    Text("Delete Outfit?", color = if (ThemeManager.isDarkMode) White else Black)
                 },
                 text = {
-                    Text("Are you sure you want to delete \"${outfitToDelete!!.outfitName}\"? This action cannot be undone.")
+                    Text("Are you sure you want to delete \"${outfitToDelete!!.outfitName}\"? This action cannot be undone.", color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.9f) else Black)
                 },
                 confirmButton = {
                     Button(
@@ -394,7 +397,7 @@ fun ImprovedOutfitCard(
                 onLongClick = { showMenu = true }
             ),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White),
         elevation = CardDefaults.cardElevation(6.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -402,7 +405,7 @@ fun ImprovedOutfitCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1.3f)
-                    .background(White)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White)
             ) {
                 if (outfit.items.isNotEmpty()) {
                     OutfitLayoutPreview(outfit, isGridPreview = false)
@@ -441,12 +444,12 @@ fun ImprovedOutfitCard(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(8.dp)
-                        .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                        .background(if (ThemeManager.isDarkMode) Surface_Dark.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.9f), CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "More",
-                        tint = Black,
+                        tint = if (ThemeManager.isDarkMode) White else Black,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -454,10 +457,10 @@ fun ImprovedOutfitCard(
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Edit Outfit") },
+                        text = { Text("Edit Outfit", color = if (ThemeManager.isDarkMode) White else Black) },
                         onClick = {
                             showMenu = false
                             onEdit()
@@ -467,7 +470,7 @@ fun ImprovedOutfitCard(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text(if (outfit.isFavorite) "Remove from Favorites" else "Add to Favorites") },
+                        text = { Text(if (outfit.isFavorite) "Remove from Favorites" else "Add to Favorites", color = if (ThemeManager.isDarkMode) White else Black) },
                         onClick = {
                             showMenu = false
                             onToggleFavorite()
@@ -505,7 +508,7 @@ fun ImprovedOutfitCard(
                         text = outfit.outfitName,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Black,
+                        color = if (ThemeManager.isDarkMode) White else Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -528,8 +531,8 @@ fun ImprovedOutfitCard(
                     InfoChip(
                         icon = Icons.Default.Checkroom,
                         text = "${outfit.items.size} items",
-                        containerColor = Grey.copy(alpha = 0.1f),
-                        contentColor = Grey
+                        containerColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.1f) else Grey.copy(alpha = 0.1f),
+                        contentColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                     )
                 }
 
@@ -543,12 +546,12 @@ fun ImprovedOutfitCard(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
-                            tint = Grey
+                            tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                         )
                         Text(
                             text = outfit.getDisplayDate(),
                             fontSize = 13.sp,
-                            color = Grey
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                         )
                     }
                 }
@@ -603,7 +606,7 @@ fun OutfitDetailDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -612,7 +615,7 @@ fun OutfitDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(0.5f)
-                        .background(Color(0xFFFAFAFA))
+                        .background(if (ThemeManager.isDarkMode) Background_Dark else Color(0xFFFAFAFA))
                 ) {
                     if (outfit.items.isNotEmpty()) {
                         OutfitLayoutPreview(outfit, isGridPreview = false)
@@ -623,12 +626,12 @@ fun OutfitDetailDialog(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
-                            .background(White.copy(alpha = 0.95f), CircleShape)
+                            .background(if (ThemeManager.isDarkMode) Surface_Dark.copy(alpha = 0.95f) else White.copy(alpha = 0.95f), CircleShape)
                     ) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
@@ -650,7 +653,7 @@ fun OutfitDetailDialog(
                                 text = outfit.outfitName,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Black,
+                                color = if (ThemeManager.isDarkMode) White else Black,
                                 modifier = Modifier.weight(1f)
                             )
                             if (outfit.isFavorite) {
@@ -716,7 +719,7 @@ fun OutfitDetailDialog(
                             Text(
                                 text = "Last worn: ${outfit.lastWornDate}",
                                 fontSize = 12.sp,
-                                color = Grey,
+                                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                                 modifier = Modifier.padding(start = 32.dp, top = 4.dp)
                             )
                         }
@@ -783,14 +786,14 @@ fun DetailRow(icon: ImageVector, label: String, value: String) {
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = Grey,
+                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = value,
                 fontSize = 15.sp,
-                color = Black,
+                color = if (ThemeManager.isDarkMode) White else Black,
                 fontWeight = FontWeight.Normal
             )
         }
@@ -832,7 +835,7 @@ fun OutfitLayoutPreview(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else White)
         )
         return
     }
@@ -840,7 +843,7 @@ fun OutfitLayoutPreview(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(White),
+            .background(if (ThemeManager.isDarkMode) Background_Dark else White),
         contentAlignment = Alignment.Center
     ) {
         val density = LocalContext.current.resources.displayMetrics.density
