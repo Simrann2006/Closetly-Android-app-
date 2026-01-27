@@ -221,6 +221,7 @@ fun ChatBody(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
         ) {
             Box(
                 modifier = Modifier
@@ -264,7 +265,8 @@ fun ChatBody(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .background(White),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
