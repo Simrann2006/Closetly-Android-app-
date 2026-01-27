@@ -21,9 +21,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -38,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -81,8 +87,11 @@ import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
     onPostClick: (String, String) -> Unit = { _, _ -> },
@@ -92,6 +101,8 @@ fun HomeScreen(
     val viewModel: HomeViewModel = remember { HomeViewModel(context) }
     val postsUI by viewModel.postsUI.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val error by viewModel.error.collectAsState()
 
     val sliderItems by sliderViewModel.sliderItems.collectAsState()
@@ -99,6 +110,39 @@ fun HomeScreen(
 
     val sliderCount = if (sliderItems.isEmpty()) 0 else sliderItems.size
     val pagerState = rememberPagerState()
+    
+    // LazyColumn state for pagination
+    val listState = rememberLazyListState()
+    
+    // Pull-to-refresh state
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { viewModel.refreshPosts() }
+    )
+    
+    // Detect when user scrolls near bottom for pagination
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val totalItemsCount = layoutInfo.totalItemsCount
+            val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            
+            // Load more when user is 3 items away from the end
+            lastVisibleItemIndex >= totalItemsCount - 3 && totalItemsCount > 0
+        }
+    }
+    
+    // Trigger load more when scrolling near bottom
+    LaunchedEffect(shouldLoadMore) {
+        snapshotFlow { shouldLoadMore.value }
+            .distinctUntilChanged()
+            .filter { it }
+            .collect {
+                if (!isLoadingMore && !isLoading) {
+                    viewModel.loadMorePosts()
+                }
+            }
+    }
 
     LaunchedEffect(pagerState, sliderCount) {
         if (sliderCount > 0) {
@@ -110,137 +154,170 @@ fun HomeScreen(
         }
     }
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey)
-            .imePadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .pullRefresh(pullRefreshState)
     ) {
-        if ((sliderLoading && sliderItems.isEmpty()) && (isLoading && postsUI.isEmpty())) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 200.dp),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    CircularProgressIndicator(color = Brown)
-                }
-            }
-        } else {
-            item {
-                if (sliderLoading && sliderItems.isEmpty()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if ((sliderLoading && sliderItems.isEmpty()) && (isLoading && postsUI.isEmpty())) {
+                item {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
+                            .padding(top = 200.dp),
+                        contentAlignment = Alignment.TopCenter
                     ) {
                         CircularProgressIndicator(color = Brown)
                     }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp)
-                    ) {
-                        HorizontalPager(
-                            count = sliderCount,
-                            state = pagerState,
-                        ) { pageIndex ->
-                            val sliderItem = sliderItems.getOrNull(pageIndex)
-
-                            if (sliderItem != null) {
-                                SliderItemCard(
-                                    sliderItem = sliderItem,
-                                    onItemClick = {
-                                        try {
-                                            val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                                putExtra("userId", sliderItem.userId)
-                                                putExtra("username", sliderItem.username)
-                                            }
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                    },
-                                    onUsernameClick = {
-                                        try {
-                                            val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                                putExtra("userId", sliderItem.userId)
-                                                putExtra("username", sliderItem.username)
-                                            }
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-                        HorizontalPagerIndicator(
-                            pagerState = pagerState,
-                            pageCount = sliderCount,
-                            activeColor = White,
-                            inactiveColor = Grey.copy(alpha = 0.3f),
-                            indicatorWidth = 8.dp,
-                            indicatorHeight = 8.dp,
-                            spacing = 6.dp,
+                }
+            } else {
+                item {
+                    if (sliderLoading && sliderItems.isEmpty()) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 8.dp)
+                                .fillMaxWidth()
+                                .height(400.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Brown)
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(400.dp)
+                        ) {
+                            HorizontalPager(
+                                count = sliderCount,
+                                state = pagerState,
+                            ) { pageIndex ->
+                                val sliderItem = sliderItems.getOrNull(pageIndex)
+
+                                if (sliderItem != null) {
+                                    SliderItemCard(
+                                        sliderItem = sliderItem,
+                                        onItemClick = {
+                                            try {
+                                                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                                    putExtra("userId", sliderItem.userId)
+                                                    putExtra("username", sliderItem.username)
+                                                }
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        },
+                                        onUsernameClick = {
+                                            try {
+                                                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                                    putExtra("userId", sliderItem.userId)
+                                                    putExtra("username", sliderItem.username)
+                                                }
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+
+                            HorizontalPagerIndicator(
+                                pagerState = pagerState,
+                                pageCount = sliderCount,
+                                activeColor = White,
+                                inactiveColor = Grey.copy(alpha = 0.3f),
+                                indicatorWidth = 8.dp,
+                                indicatorHeight = 8.dp,
+                                spacing = 6.dp,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (isLoading && postsUI.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Brown)
+                        }
+                    }
+                }
+
+                error?.let { errorMessage ->
+                    item {
+                        Text(
+                            text = errorMessage,
+                            color = Red,
+                            modifier = Modifier.padding(16.dp),
+                            fontFamily = FontFamily(Font(R.font.poppins_regular))
                         )
                     }
                 }
-            }
 
-            if (isLoading && postsUI.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Brown)
-                    }
-                }
-            }
-
-            error?.let { errorMessage ->
-                item {
-                    Text(
-                        text = errorMessage,
-                        color = Red,
-                        modifier = Modifier.padding(16.dp),
-                        fontFamily = FontFamily(Font(R.font.poppins_regular))
-                    )
-                }
-            }
-
-            items(
-                items = postsUI,
-                key = { it.post.postId }
-            ) { postUI ->
-                PostCard(
-                    postUI = postUI,
-                    onLikeClick = { viewModel.toggleLike(postUI.post.postId) },
-                    onSaveClick = { viewModel.toggleSave(postUI.post.postId) },
-                    onFollowClick = { viewModel.toggleFollow(postUI.post.userId) },
-                    onCommentClick = {
-                        val intent = Intent(context, CommentActivity::class.java).apply {
-                            putExtra("POST_ID", postUI.post.postId)
-                            putExtra("POST_USER_ID", postUI.post.userId)
-                            putExtra("USER_NAME", postUI.post.username)
+                items(
+                    items = postsUI,
+                    key = { it.post.postId }
+                ) { postUI ->
+                    PostCard(
+                        postUI = postUI,
+                        onLikeClick = { viewModel.toggleLike(postUI.post.postId) },
+                        onSaveClick = { viewModel.toggleSave(postUI.post.postId) },
+                        onFollowClick = { viewModel.toggleFollow(postUI.post.userId) },
+                        onCommentClick = {
+                            val intent = Intent(context, CommentActivity::class.java).apply {
+                                putExtra("POST_ID", postUI.post.postId)
+                                putExtra("POST_USER_ID", postUI.post.userId)
+                                putExtra("USER_NAME", postUI.post.username)
+                            }
+                            context.startActivity(intent)
                         }
-                        context.startActivity(intent)
+                    )
+                    Spacer(Modifier.height(2.dp))
+                }
+                
+                // Loading indicator for pagination
+                if (isLoadingMore) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Brown,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
                     }
-                )
-                Spacer(Modifier.height(2.dp))
+                }
             }
         }
+        
+        // Pull-to-refresh indicator at top
+        PullRefreshIndicator(
+            refreshing = isRefreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+            contentColor = Brown
+        )
     }
 }
 

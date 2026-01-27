@@ -327,4 +327,187 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             postsRef.removeEventListener(postsListener)
         }
     }
+    
+    /**
+     * Get posts from followed users with pagination support
+     * Shows posts in descending order by timestamp (latest first)
+     */
+    override fun getPostsFromFollowedUsers(
+        userId: String,
+        afterTimestamp: Long?,
+        limit: Int
+    ): Flow<List<PostModel>> = callbackFlow {
+        val currentUserId = auth.currentUser?.uid
+        var blockedUserIds = setOf<String>()
+        var followedUserIds = setOf<String>()
+        
+        // Listen for blocked users changes
+        val blockedListener = if (currentUserId != null) {
+            object : ValueEventListener {
+                override fun onDataChange(blockedSnapshot: DataSnapshot) {
+                    blockedUserIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            }
+        } else null
+        
+        // Listen for following users changes
+        val followingListener = object : ValueEventListener {
+            override fun onDataChange(followingSnapshot: DataSnapshot) {
+                followedUserIds = followingSnapshot.children.mapNotNull { it.key }.toSet()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        
+        // Attach listeners
+        if (currentUserId != null && blockedListener != null) {
+            usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
+        }
+        usersRef.child(userId).child("following").addValueEventListener(followingListener)
+        
+        // Create query for posts ordered by timestamp
+        val query = if (afterTimestamp != null) {
+            postsRef.orderByChild("timestamp")
+                .startAt(afterTimestamp.toDouble() + 1) // Exclusive of afterTimestamp
+                .limitToFirst(limit)
+        } else {
+            postsRef.orderByChild("timestamp")
+                .limitToLast(limit) // Get latest posts
+        }
+        
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val posts = mutableListOf<PostModel>()
+                snapshot.children.forEach { postSnapshot ->
+                    postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                        // Filter: only posts from followed users, not blocked, not self
+                        if (followedUserIds.contains(post.userId) &&
+                            !blockedUserIds.contains(post.userId) &&
+                            post.userId != currentUserId &&
+                            post.imageUrl.isNotEmpty() &&
+                            post.username.isNotEmpty()) {
+                            posts.add(post)
+                        }
+                    }
+                }
+                // Sort by timestamp descending (latest first)
+                trySend(posts.sortedByDescending { it.timestamp })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        query.addValueEventListener(listener)
+
+        awaitClose {
+            query.removeEventListener(listener)
+            if (currentUserId != null && blockedListener != null) {
+                usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
+            }
+            usersRef.child(userId).child("following").removeEventListener(followingListener)
+        }
+    }
+    
+    /**
+     * Get only new posts created after the last seen timestamp
+     * Used for pull-to-refresh to show only fresh content
+     */
+    override fun getNewPostsOnly(
+        userId: String,
+        lastSeenTimestamp: Long
+    ): Flow<List<PostModel>> = callbackFlow {
+        val currentUserId = auth.currentUser?.uid
+        var blockedUserIds = setOf<String>()
+        var followedUserIds = setOf<String>()
+        
+        // Listen for blocked users
+        val blockedListener = if (currentUserId != null) {
+            object : ValueEventListener {
+                override fun onDataChange(blockedSnapshot: DataSnapshot) {
+                    blockedUserIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            }
+        } else null
+        
+        // Listen for following users
+        val followingListener = object : ValueEventListener {
+            override fun onDataChange(followingSnapshot: DataSnapshot) {
+                followedUserIds = followingSnapshot.children.mapNotNull { it.key }.toSet()
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        
+        // Attach listeners
+        if (currentUserId != null && blockedListener != null) {
+            usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
+        }
+        usersRef.child(userId).child("following").addValueEventListener(followingListener)
+        
+        // Query for posts created after lastSeenTimestamp
+        val query = postsRef.orderByChild("timestamp")
+            .startAt((lastSeenTimestamp + 1).toDouble()) // Exclusive of lastSeenTimestamp
+        
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val newPosts = mutableListOf<PostModel>()
+                snapshot.children.forEach { postSnapshot ->
+                    postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                        // Only include posts from followed users, not blocked, newer than lastSeen
+                        if (followedUserIds.contains(post.userId) &&
+                            !blockedUserIds.contains(post.userId) &&
+                            post.userId != currentUserId &&
+                            post.timestamp > lastSeenTimestamp &&
+                            post.imageUrl.isNotEmpty() &&
+                            post.username.isNotEmpty()) {
+                            newPosts.add(post)
+                        }
+                    }
+                }
+                // Sort by timestamp descending (latest first)
+                trySend(newPosts.sortedByDescending { it.timestamp })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        query.addValueEventListener(listener)
+
+        awaitClose {
+            query.removeEventListener(listener)
+            if (currentUserId != null && blockedListener != null) {
+                usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
+            }
+            usersRef.child(userId).child("following").removeEventListener(followingListener)
+        }
+    }
+    
+    /**
+     * Save the last seen timestamp for a user
+     * This tracks when the user last refreshed their feed
+     */
+    override suspend fun saveLastSeenTimestamp(userId: String, timestamp: Long) {
+        try {
+            usersRef.child(userId).child("lastSeenTimestamp").setValue(timestamp).await()
+        } catch (e: Exception) {
+            // Silent fail - not critical
+        }
+    }
+    
+    /**
+     * Get the last seen timestamp for a user
+     * Returns 0 if not found (first time user)
+     */
+    override suspend fun getLastSeenTimestamp(userId: String): Long {
+        return try {
+            val snapshot = usersRef.child(userId).child("lastSeenTimestamp").get().await()
+            snapshot.getValue(Long::class.java) ?: 0L
+        } catch (e: Exception) {
+            0L // Default to epoch start if error
+        }
+    }
 }
