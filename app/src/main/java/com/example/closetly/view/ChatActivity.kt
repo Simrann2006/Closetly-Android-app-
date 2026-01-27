@@ -157,6 +157,13 @@ fun ChatBody(
     // Scroll to bottom when new messages arrive or keyboard opens
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty() && wasAtBottom) {
+            listState.scrollToItem(messages.size - 1)
+        }
+    }
+
+    // Auto-scroll to bottom when keyboard appears (user starts typing)
+    LaunchedEffect(messageText) {
+        if (messageText.isNotEmpty() && messages.isNotEmpty() && wasAtBottom) {
             coroutineScope.launch {
                 listState.scrollToItem(messages.size - 1)
             }
@@ -239,7 +246,6 @@ fun ChatBody(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .imePadding()
         ) {
             Box(
                 modifier = Modifier
@@ -255,9 +261,11 @@ fun ChatBody(
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .imePadding(),
                         state = listState,
-                        contentPadding = PaddingValues(bottom = 8.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp),
                         reverseLayout = false
                     ) {
                         items(messages) { message ->
