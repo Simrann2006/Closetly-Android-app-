@@ -27,6 +27,7 @@ import com.example.closetly.model.PostModel
 import com.example.closetly.repository.CommonRepoImpl
 import com.example.closetly.repository.PostRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.CommonViewModel
 import com.example.closetly.viewmodel.PostViewModel
 
@@ -74,13 +75,13 @@ fun PostCreationBody(imageUri: String?) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         Column(
             modifier = Modifier
@@ -92,7 +93,7 @@ fun PostCreationBody(imageUri: String?) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .background(Light_grey)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey)
             ) {
                 if (imageUri != null) {
                     AsyncImage(
@@ -115,7 +116,7 @@ fun PostCreationBody(imageUri: String?) {
                     placeholder = {
                         Text(
                             "Add a caption...",
-                            color = Grey,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.6f) else Grey,
                             fontSize = 16.sp
                         )
                     },
@@ -123,17 +124,19 @@ fun PostCreationBody(imageUri: String?) {
                         .fillMaxWidth()
                         .heightIn(min = 120.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        disabledContainerColor = White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
-                        cursorColor = Black
+                        cursorColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     textStyle = LocalTextStyle.current.copy(
                         fontSize = 16.sp,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 )
             }
