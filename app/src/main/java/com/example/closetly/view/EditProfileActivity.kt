@@ -37,6 +37,7 @@ import com.example.closetly.model.UserModel
 import com.example.closetly.repository.CommonRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.CommonViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -208,7 +209,7 @@ fun EditProfileScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Light_grey)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey)
                 .verticalScroll(rememberScrollState())
         ) {
             Box(
@@ -239,14 +240,14 @@ fun EditProfileScreen() {
                             shape = CircleShape,
                             modifier = Modifier
                                 .size(120.dp)
-                                .border(4.dp, White, CircleShape)
+                                .border(4.dp, if (ThemeManager.isDarkMode) Surface_Dark else White, CircleShape)
                                 .clickable { imagePickerLauncher.launch("image/*") },
                             elevation = CardDefaults.cardElevation(8.dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Light_grey)
+                                    .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey)
                             ) {
                                 if (cloudinaryImageUrl.isNotEmpty()) {
                                     AsyncImage(
@@ -263,7 +264,7 @@ fun EditProfileScreen() {
                                         Icon(
                                             imageVector = Icons.Default.Person,
                                             contentDescription = null,
-                                            tint = Grey,
+                                            tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.6f) else Grey,
                                             modifier = Modifier.size(60.dp)
                                         )
                                     }
@@ -361,17 +362,17 @@ fun EditProfileScreen() {
                 OutlinedTextField(
                     value = bio,
                     onValueChange = { bio = it },
-                    label = { Text("Bio", color = Grey, fontSize = 14.sp) },
+                    label = { Text("Bio", color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey, fontSize = 14.sp) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 120.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        focusedTextColor = Black,
-                        unfocusedTextColor = Black,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey.copy(alpha = 0.3f)
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f)
                     ),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = false,
@@ -399,6 +400,7 @@ fun EditProfileTopBar(
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
                 textAlign = TextAlign.Center,
+                color = if (ThemeManager.isDarkMode) White else Black,
                 modifier = Modifier.fillMaxWidth()
             )
         },
@@ -407,7 +409,7 @@ fun EditProfileTopBar(
                 Icon(
                     imageVector = Icons.Default.ArrowBackIos,
                     contentDescription = null,
-                    tint = Black
+                    tint = if (ThemeManager.isDarkMode) White else Black
                 )
             }
         },
@@ -433,7 +435,7 @@ fun EditProfileTopBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = White
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
         )
     )
 }
@@ -448,14 +450,14 @@ fun ProfileSectionCard(
             text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = DarkGrey,
+            color = if (ThemeManager.isDarkMode) White else DarkGrey,
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White),
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White),
             elevation = CardDefaults.cardElevation(2.dp)
         ) {
             Column(
@@ -495,18 +497,18 @@ fun ProfileTextField(
             enabled = enabled,
             isError = isError,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = if (enabled) White else Light_grey1.copy(alpha = 0.3f),
-                unfocusedContainerColor = if (enabled) White else Light_grey1.copy(alpha = 0.3f),
-                disabledContainerColor = White,
-                focusedTextColor = Black,
-                unfocusedTextColor = Black,
-                disabledTextColor = Grey,
+                focusedContainerColor = if (enabled) (if (ThemeManager.isDarkMode) Background_Dark else White) else (if (ThemeManager.isDarkMode) Surface_Dark.copy(alpha = 0.3f) else Light_grey1.copy(alpha = 0.3f)),
+                unfocusedContainerColor = if (enabled) (if (ThemeManager.isDarkMode) Background_Dark else White) else (if (ThemeManager.isDarkMode) Surface_Dark.copy(alpha = 0.3f) else Light_grey1.copy(alpha = 0.3f)),
+                disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                disabledTextColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.5f) else Grey,
                 focusedBorderColor = Brown,
-                unfocusedBorderColor = Grey.copy(alpha = 0.3f),
-                disabledBorderColor = Grey.copy(alpha = 0.2f),
+                unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f),
+                disabledBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.2f) else Grey.copy(alpha = 0.2f),
                 errorBorderColor = Red,
                 focusedLabelColor = Brown,
-                unfocusedLabelColor = Grey
+                unfocusedLabelColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
             ),
             shape = RoundedCornerShape(12.dp),
             singleLine = true
