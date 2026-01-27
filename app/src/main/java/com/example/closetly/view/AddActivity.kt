@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.closetly.R
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import kotlin.jvm.java
 
 object AddFlow {
@@ -116,19 +117,19 @@ fun AddBody(
                     ) {
                         Text(
                             "Next",
-                            color = if (selectedImageUri != null) Brown else Grey,
+                            color = if (selectedImageUri != null) Brown else (if (ThemeManager.isDarkMode) White.copy(alpha = 0.5f) else Grey),
                             fontWeight = FontWeight.SemiBold
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         Column(
             modifier = Modifier
@@ -139,7 +140,7 @@ fun AddBody(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(560.dp)
-                    .background(Light_grey),
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey),
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri != null) {
@@ -158,12 +159,12 @@ fun AddBody(
                             painter = painterResource(R.drawable.baseline_add_24),
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = Grey
+                            tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.6f) else Grey
                         )
                         Text(
                             "No image selected",
                             fontSize = 16.sp,
-                            color = Grey,
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -171,7 +172,7 @@ fun AddBody(
             }
 
             HorizontalDivider(
-                color = Grey.copy(alpha = 0.2f),
+                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.2f) else Grey.copy(alpha = 0.2f),
                 thickness = 1.dp
             )
 
@@ -210,7 +211,7 @@ fun ImageSourceOption(
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .background(Light_grey, RoundedCornerShape(12.dp))
+            .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey, RoundedCornerShape(12.dp))
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -221,7 +222,7 @@ fun ImageSourceOption(
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .background(White, CircleShape),
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -234,7 +235,7 @@ fun ImageSourceOption(
             Text(
                 label,
                 fontSize = 14.sp,
-                color = Grey,
+                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                 fontWeight = FontWeight.Medium
             )
         }
