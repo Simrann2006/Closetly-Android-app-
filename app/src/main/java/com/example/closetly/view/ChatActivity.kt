@@ -51,6 +51,7 @@ import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
 import com.example.closetly.utils.NotificationHelper
 import com.example.closetly.utils.getSeenStatus
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -224,7 +225,7 @@ fun ChatBody(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Light_grey),
+                                .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
                             contentAlignment = Alignment.Center
                         ) {
                             if (otherUserImage.isNotEmpty()) {
@@ -250,7 +251,7 @@ fun ChatBody(
                             text = otherUserName,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
@@ -261,16 +262,16 @@ fun ChatBody(
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         Column(
             modifier = Modifier
@@ -286,7 +287,7 @@ fun ChatBody(
                     Text(
                         text = "Start a conversation",
                         fontSize = 16.sp,
-                        color = Grey,
+                        color = if (ThemeManager.isDarkMode) Grey else DarkGrey,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
@@ -321,7 +322,7 @@ fun ChatBody(
             if (isUploading) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
             }
 
@@ -329,7 +330,7 @@ fun ChatBody(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else White)
             ) {
                 // Typing indicator
                 if (isOtherUserTyping) {
@@ -367,7 +368,7 @@ fun ChatBody(
                     Icon(
                         painter = painterResource(R.drawable.baseline_camera_alt_24),
                         contentDescription = null,
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
 
@@ -378,7 +379,7 @@ fun ChatBody(
                     Icon(
                         painter = painterResource(R.drawable.baseline_insert_photo_24),
                         contentDescription = null,
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
 
@@ -393,12 +394,12 @@ fun ChatBody(
                     placeholder = { Text("Message...", color = Grey) },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Light_grey,
-                        focusedBorderColor = Black,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White,
-                        unfocusedTextColor = Black,
-                        focusedTextColor = Black
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Light_grey,
+                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black
                     ),
                     maxLines = 4,
                     enabled = !isUploading
@@ -437,7 +438,7 @@ fun ChatBody(
                 ) {
                     Icon(painter = painterResource(R.drawable.baseline_send_24),
                         contentDescription = null,
-                        tint = if (messageText.isNotBlank()) Black else Grey
+                        tint = if (messageText.isNotBlank()) (if (ThemeManager.isDarkMode) White else Black) else Grey
                     )
                 }
             }
@@ -554,13 +555,13 @@ fun ImagePreviewDialog(
                         text = "Selected ${selectedImageList.size} photo${if (selectedImageList.size > 1) "s" else ""}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_close_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
@@ -906,12 +907,17 @@ fun MessageBubble(
                                 bottomEnd = if (isCurrentUser) 4.dp else 16.dp
                             )
                         )
-                        .background(if (isCurrentUser) Black else Light_grey)
+                        .background(
+                            if (isCurrentUser) 
+                                (if (ThemeManager.isDarkMode) Brown else Black)
+                            else 
+                                (if (ThemeManager.isDarkMode) DarkGrey else Light_grey)
+                        )
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = message.text,
-                        color = if (isCurrentUser) White else Black,
+                        color = if (isCurrentUser) White else (if (ThemeManager.isDarkMode) White else Black),
                         fontSize = 15.sp
                     )
                 }
