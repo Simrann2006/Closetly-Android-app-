@@ -67,7 +67,6 @@ import coil.compose.AsyncImage
 import com.example.closetly.R
 import com.example.closetly.model.SliderItemModel
 import com.example.closetly.ui.theme.Background_Dark
-import com.example.closetly.ui.theme.Background_Light
 import com.example.closetly.ui.theme.Black
 import com.example.closetly.ui.theme.Brown
 import com.example.closetly.ui.theme.DarkGrey
@@ -76,16 +75,14 @@ import com.example.closetly.ui.theme.Light_brown
 import com.example.closetly.ui.theme.Light_grey
 import com.example.closetly.ui.theme.Red
 import com.example.closetly.ui.theme.Surface_Dark
-import com.example.closetly.ui.theme.Surface_Light
 import com.example.closetly.ui.theme.White
 import com.example.closetly.utils.ThemeManager
 import com.example.closetly.utils.getTimeAgo
 import com.example.closetly.viewmodel.HomeViewModel
 import com.example.closetly.viewmodel.PostUI
 import com.example.closetly.viewmodel.SliderViewModel
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.HorizontalPagerIndicator
-import com.google.accompanist.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -94,7 +91,6 @@ import kotlinx.coroutines.flow.filter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
-    onPostClick: (String, String) -> Unit = { _, _ -> },
     sliderViewModel: SliderViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -109,7 +105,7 @@ fun HomeScreen(
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
 
     val sliderCount = if (sliderItems.isEmpty()) 0 else sliderItems.size
-    val pagerState = rememberPagerState()
+    val pagerState = rememberPagerState(pageCount = { sliderCount })
     
     // LazyColumn state for pagination
     val listState = rememberLazyListState()
@@ -117,7 +113,10 @@ fun HomeScreen(
     // Pull-to-refresh state
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
-        onRefresh = { viewModel.refreshPosts() }
+        onRefresh = { 
+            viewModel.refreshPosts()
+            sliderViewModel.refresh() // Also refresh slider
+        }
     )
     
     // Detect when user scrolls near bottom for pagination
@@ -133,7 +132,7 @@ fun HomeScreen(
     }
     
     // Trigger load more when scrolling near bottom
-    LaunchedEffect(shouldLoadMore) {
+    LaunchedEffect(Unit) {
         snapshotFlow { shouldLoadMore.value }
             .distinctUntilChanged()
             .filter { it }
@@ -196,8 +195,8 @@ fun HomeScreen(
                                 .height(400.dp)
                         ) {
                             HorizontalPager(
-                                count = sliderCount,
                                 state = pagerState,
+                                modifier = Modifier.fillMaxSize()
                             ) { pageIndex ->
                                 val sliderItem = sliderItems.getOrNull(pageIndex)
 
@@ -230,18 +229,25 @@ fun HomeScreen(
                                 }
                             }
 
-                            HorizontalPagerIndicator(
-                                pagerState = pagerState,
-                                pageCount = sliderCount,
-                                activeColor = White,
-                                inactiveColor = Grey.copy(alpha = 0.3f),
-                                indicatorWidth = 8.dp,
-                                indicatorHeight = 8.dp,
-                                spacing = 6.dp,
+                            // Custom pager indicator
+                            Row(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
-                                    .padding(bottom = 8.dp)
-                            )
+                                    .padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                repeat(sliderCount) { index ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (pagerState.currentPage == index) White
+                                                else Grey.copy(alpha = 0.3f)
+                                            )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -316,7 +322,7 @@ fun HomeScreen(
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter),
             backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-            contentColor = Brown
+            contentColor = Black
         )
     }
 }
