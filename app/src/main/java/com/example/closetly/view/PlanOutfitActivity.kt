@@ -49,6 +49,7 @@ import com.example.closetly.model.OutfitModel
 import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.repository.OutfitRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.viewmodel.OutfitViewModel
 import java.text.SimpleDateFormat
@@ -207,13 +208,13 @@ fun PlanOutfitScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
-        containerColor = Light_grey
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Light_grey
     ) { padding ->
         Column(
             modifier = Modifier
@@ -226,7 +227,7 @@ fun PlanOutfitScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = White),
+                    colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White),
                     elevation = CardDefaults.cardElevation(2.dp)
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -244,7 +245,7 @@ fun PlanOutfitScreen(
                             Text(
                                 text = occasion.ifEmpty { "Event" },
                                 fontSize = 12.sp,
-                                color = Grey
+                                color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -280,7 +281,7 @@ fun PlanOutfitScreen(
                                             Text(
                                                 text = "${dayOutfit.clothes.size} items",
                                                 fontSize = 9.sp,
-                                                color = if (isSelected) White else Grey
+                                                color = if (isSelected) White else (if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey)
                                             )
                                         }
                                     },
@@ -303,7 +304,7 @@ fun PlanOutfitScreen(
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                 ),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
@@ -322,12 +323,12 @@ fun PlanOutfitScreen(
                                 "Day ${selectedDayIndex + 1} Outfit" else "Your Outfit",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                         Text(
                             text = "${selectedClothes.size} items",
                             fontSize = 14.sp,
-                            color = Grey
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                         )
                     }
                     
@@ -339,11 +340,11 @@ fun PlanOutfitScreen(
                                 .fillMaxSize()
                                 .border(
                                     width = 2.dp,
-                                    color = Grey.copy(alpha = 0.2f),
+                                    color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.2f) else Grey.copy(alpha = 0.2f),
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .background(
-                                    color = White,
+                                    color = if (ThemeManager.isDarkMode) Background_Dark else White,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .clickable { selectedItemId = null },
@@ -356,13 +357,13 @@ fun PlanOutfitScreen(
                                     painter = painterResource(R.drawable.baseline_add_circle_outline_24),
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp),
-                                    tint = Grey
+                                    tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.6f) else Grey
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "Tap items below to add them here\nDrag to position your outfit",
                                     fontSize = 14.sp,
-                                    color = Grey,
+                                    color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -371,7 +372,7 @@ fun PlanOutfitScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.White, RoundedCornerShape(12.dp))
+                                .background(if (ThemeManager.isDarkMode) Background_Dark else Color.White, RoundedCornerShape(12.dp))
                                 .clip(RoundedCornerShape(12.dp))
                                 .onGloballyPositioned { coordinates ->
                                     canvasWidth = coordinates.size.width.toFloat()
@@ -621,7 +622,7 @@ fun PlanOutfitScreen(
         if (showBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showBottomSheet = false },
-                containerColor = White,
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
             ) {
                 Column(
@@ -638,7 +639,7 @@ fun PlanOutfitScreen(
                             text = "Your Closet",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                         
                         if (tempSelectedItems.isNotEmpty()) {
@@ -700,14 +701,16 @@ fun PlanOutfitScreen(
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("Search items...", fontSize = 14.sp) },
                             leadingIcon = {
-                                Icon(Icons.Default.Search, contentDescription = null, tint = Grey)
+                                Icon(Icons.Default.Search, contentDescription = null, tint = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey)
                             },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = White,
-                                unfocusedContainerColor = White,
+                                focusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                                unfocusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
                                 focusedBorderColor = Brown,
-                                unfocusedBorderColor = Grey.copy(alpha = 0.3f)
+                                unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f),
+                                focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                                unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -792,7 +795,7 @@ fun PlanOutfitScreen(
                                         Text(
                                             text = "No items found",
                                             fontSize = 14.sp,
-                                            color = Grey
+                                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                                         )
                                     }
                                 }
@@ -837,7 +840,7 @@ fun DraggableClothesItem(
                 )
             },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
@@ -865,13 +868,13 @@ fun DraggableClothesItem(
                     text = clothes.clothesName,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     maxLines = 1
                 )
                 Text(
                     text = clothes.categoryName,
                     fontSize = 10.sp,
-                    color = Grey,
+                    color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey,
                     maxLines = 1
                 )
             }
@@ -1036,7 +1039,7 @@ fun OutfitSaveDialog(
                 .fillMaxWidth()
                 .heightIn(max = 650.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White)
         ) {
             Column(
                 modifier = Modifier
@@ -1048,7 +1051,7 @@ fun OutfitSaveDialog(
                     text = if (isMultiDay) "Plan Multi-Day Event" else "Save Outfit",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
                 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -1074,11 +1077,11 @@ fun OutfitSaveDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("Multi-day event", fontSize = 14.sp, color = Black)
+                        Text("Multi-day event", fontSize = 14.sp, color = if (ThemeManager.isDarkMode) White else Black)
                         Text(
                             "Plan different outfits for each day",
                             fontSize = 11.sp,
-                            color = Grey
+                            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                         )
                     }
                     Switch(
@@ -1146,7 +1149,7 @@ fun OutfitSaveDialog(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = Brown.copy(alpha = 0.1f)
+                                containerColor = if (ThemeManager.isDarkMode) Brown.copy(alpha = 0.2f) else Brown.copy(alpha = 0.1f)
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -1157,7 +1160,7 @@ fun OutfitSaveDialog(
                                 Icon(
                                     Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = Brown,
+                                    tint = if (ThemeManager.isDarkMode) Light_brown else Brown,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -1166,12 +1169,12 @@ fun OutfitSaveDialog(
                                         "${multiDayOutfits.size} days to plan",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium,
-                                        color = Brown
+                                        color = if (ThemeManager.isDarkMode) Light_brown else Brown
                                     )
                                     Text(
                                         "Close this dialog to plan each day's outfit using the tabs above",
                                         fontSize = 11.sp,
-                                        color = Grey
+                                        color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
                                     )
                                 }
                             }
@@ -1322,7 +1325,7 @@ fun CategoryFilterDialog(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White)
         ) {
             Column(
                 modifier = Modifier
@@ -1333,7 +1336,7 @@ fun CategoryFilterDialog(
                     text = "Filter by Category",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1361,7 +1364,7 @@ fun CategoryFilterDialog(
                         Text(
                             text = category,
                             fontSize = 16.sp,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
