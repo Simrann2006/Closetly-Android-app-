@@ -92,6 +92,13 @@ android {
             excludes += "/META-INF/*.kotlin_module"
         }
     }
+    sourceSets {
+        getByName("main") {
+            assets {
+                srcDirs("src\\main\\assets", "src\\main\\assets")
+            }
+        }
+    }
 }
 
 dependencies {

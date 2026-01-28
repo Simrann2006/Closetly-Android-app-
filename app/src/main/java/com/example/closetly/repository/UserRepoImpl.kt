@@ -157,17 +157,51 @@ class UserRepoImpl(private val context: Context) : UserRepo{
     }
 
     override fun getAllUser(callback: (Boolean, String, List<UserModel>) -> Unit) {
+        val currentUserId = auth.currentUser?.uid
+        
         ref.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists()){
-                    var allUsers = mutableListOf<UserModel>()
-                    for(data in snapshot.children){
-                        var user = data.getValue(UserModel::class.java)
-                        if (user != null){
-                            allUsers.add(user)
+                    val allUsers = mutableListOf<UserModel>()
+                    
+                    if (currentUserId == null) {
+                        // If no current user, return all users
+                        for(data in snapshot.children){
+                            val user = data.getValue(UserModel::class.java)
+                            if (user != null){
+                                allUsers.add(user)
+                            }
                         }
+                        callback(true, "User fetched", allUsers)
+                        return
                     }
-                    callback(true, "User fetched", allUsers)
+                    
+                    // Get blocked users list for current user
+                    ref.child(currentUserId).child("blocked").get()
+                        .addOnSuccessListener { blockedSnapshot ->
+                            val blockedUserIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+                            
+                            // Filter out blocked users and current user
+                            for(data in snapshot.children){
+                                val user = data.getValue(UserModel::class.java)
+                                if (user != null && 
+                                    user.userId != currentUserId && 
+                                    !blockedUserIds.contains(user.userId)) {
+                                    allUsers.add(user)
+                                }
+                            }
+                            callback(true, "User fetched", allUsers)
+                        }
+                        .addOnFailureListener {
+                            // If failed to get blocked users, return all users except current
+                            for(data in snapshot.children){
+                                val user = data.getValue(UserModel::class.java)
+                                if (user != null && user.userId != currentUserId){
+                                    allUsers.add(user)
+                                }
+                            }
+                            callback(true, "User fetched", allUsers)
+                        }
                 }
             }
 
@@ -326,7 +360,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
                         return
                     }
                     
-                    // Get blocked users first
+                    // Get blocked users first (users that userId has blocked)
                     ref.child(userId).child("blocked").addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(blockedSnapshot: DataSnapshot) {
                             val blockedIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
@@ -334,25 +368,48 @@ class UserRepoImpl(private val context: Context) : UserRepo{
                             var processedCount = 0
                             
                             followerIds.forEach { followerId ->
+                                // Skip if userId has blocked followerId
                                 if (!blockedIds.contains(followerId)) {
-                                    ref.child(followerId).addListenerForSingleValueEvent(object : ValueEventListener {
-                                        override fun onDataChange(userSnapshot: DataSnapshot) {
-                                            userSnapshot.getValue(UserModel::class.java)?.let {
-                                                followersList.add(it)
-                                            }
-                                            processedCount++
-                                            if (processedCount == followerIds.size) {
-                                                callback(followersList)
-                                            }
-                                        }
+                                    // Also check if followerId has blocked userId (two-way check)
+                                    ref.child(followerId).child("blocked").child(userId)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(followerBlockSnapshot: DataSnapshot) {
+                                                if (!followerBlockSnapshot.exists()) {
+                                                    // Neither has blocked the other, add to list
+                                                    ref.child(followerId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                                        override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                            userSnapshot.getValue(UserModel::class.java)?.let {
+                                                                followersList.add(it)
+                                                            }
+                                                            processedCount++
+                                                            if (processedCount == followerIds.size) {
+                                                                callback(followersList)
+                                                            }
+                                                        }
 
-                                        override fun onCancelled(error: DatabaseError) {
-                                            processedCount++
-                                            if (processedCount == followerIds.size) {
-                                                callback(followersList)
+                                                        override fun onCancelled(error: DatabaseError) {
+                                                            processedCount++
+                                                            if (processedCount == followerIds.size) {
+                                                                callback(followersList)
+                                                            }
+                                                        }
+                                                    })
+                                                } else {
+                                                    // Follower has blocked userId, skip
+                                                    processedCount++
+                                                    if (processedCount == followerIds.size) {
+                                                        callback(followersList)
+                                                    }
+                                                }
                                             }
-                                        }
-                                    })
+
+                                            override fun onCancelled(error: DatabaseError) {
+                                                processedCount++
+                                                if (processedCount == followerIds.size) {
+                                                    callback(followersList)
+                                                }
+                                            }
+                                        })
                                 } else {
                                     processedCount++
                                     if (processedCount == followerIds.size) {
@@ -385,7 +442,7 @@ class UserRepoImpl(private val context: Context) : UserRepo{
                         return
                     }
                     
-                    // Get blocked users first
+                    // Get blocked users first (users that userId has blocked)
                     ref.child(userId).child("blocked").addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(blockedSnapshot: DataSnapshot) {
                             val blockedIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
@@ -393,25 +450,48 @@ class UserRepoImpl(private val context: Context) : UserRepo{
                             var processedCount = 0
                             
                             followingIds.forEach { followingId ->
+                                // Skip if userId has blocked followingId
                                 if (!blockedIds.contains(followingId)) {
-                                    ref.child(followingId).addListenerForSingleValueEvent(object : ValueEventListener {
-                                        override fun onDataChange(userSnapshot: DataSnapshot) {
-                                            userSnapshot.getValue(UserModel::class.java)?.let {
-                                                followingList.add(it)
-                                            }
-                                            processedCount++
-                                            if (processedCount == followingIds.size) {
-                                                callback(followingList)
-                                            }
-                                        }
+                                    // Also check if followingId has blocked userId (two-way check)
+                                    ref.child(followingId).child("blocked").child(userId)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(followingBlockSnapshot: DataSnapshot) {
+                                                if (!followingBlockSnapshot.exists()) {
+                                                    // Neither has blocked the other, add to list
+                                                    ref.child(followingId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                                        override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                            userSnapshot.getValue(UserModel::class.java)?.let {
+                                                                followingList.add(it)
+                                                            }
+                                                            processedCount++
+                                                            if (processedCount == followingIds.size) {
+                                                                callback(followingList)
+                                                            }
+                                                        }
 
-                                        override fun onCancelled(error: DatabaseError) {
-                                            processedCount++
-                                            if (processedCount == followingIds.size) {
-                                                callback(followingList)
+                                                        override fun onCancelled(error: DatabaseError) {
+                                                            processedCount++
+                                                            if (processedCount == followingIds.size) {
+                                                                callback(followingList)
+                                                            }
+                                                        }
+                                                    })
+                                                } else {
+                                                    // Following user has blocked userId, skip
+                                                    processedCount++
+                                                    if (processedCount == followingIds.size) {
+                                                        callback(followingList)
+                                                    }
+                                                }
                                             }
-                                        }
-                                    })
+
+                                            override fun onCancelled(error: DatabaseError) {
+                                                processedCount++
+                                                if (processedCount == followingIds.size) {
+                                                    callback(followingList)
+                                                }
+                                            }
+                                        })
                                 } else {
                                     processedCount++
                                     if (processedCount == followingIds.size) {
@@ -438,9 +518,11 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         targetUserId: String,
         callback: (Boolean, String) -> Unit
     ) {
+        // Two-way blocking: Both users block each other
         // Remove all follow relationships in both directions
         val updates = hashMapOf<String, Any?>(
             "$currentUserId/blocked/$targetUserId" to true,
+            "$targetUserId/blocked/$currentUserId" to true,  // Add reciprocal block
             "$currentUserId/following/$targetUserId" to null,
             "$targetUserId/followers/$currentUserId" to null,
             "$targetUserId/following/$currentUserId" to null,
@@ -461,7 +543,13 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         targetUserId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        ref.child(currentUserId).child("blocked").child(targetUserId).removeValue()
+        // Remove two-way block entries
+        val updates = hashMapOf<String, Any?>(
+            "$currentUserId/blocked/$targetUserId" to null,
+            "$targetUserId/blocked/$currentUserId" to null
+        )
+        
+        ref.updateChildren(updates)
             .addOnSuccessListener {
                 callback(true, "User unblocked successfully")
             }
@@ -475,10 +563,26 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         targetUserId: String,
         callback: (Boolean) -> Unit
     ) {
+        // Check if either user has blocked the other (two-way check)
         ref.child(currentUserId).child("blocked").child(targetUserId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    callback(snapshot.exists())
+                override fun onDataChange(snapshot1: DataSnapshot) {
+                    if (snapshot1.exists()) {
+                        callback(true)
+                        return
+                    }
+                    
+                    // Check if target user has blocked current user
+                    ref.child(targetUserId).child("blocked").child(currentUserId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot2: DataSnapshot) {
+                                callback(snapshot2.exists())
+                            }
+                            
+                            override fun onCancelled(error: DatabaseError) {
+                                callback(false)
+                            }
+                        })
                 }
                 
                 override fun onCancelled(error: DatabaseError) {

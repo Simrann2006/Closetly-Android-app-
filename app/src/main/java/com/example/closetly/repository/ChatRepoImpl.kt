@@ -116,77 +116,114 @@ class ChatRepoImpl : ChatRepo {
         userId: String,
         callback: (Boolean, String, List<Pair<ChatModel, UserModel>>) -> Unit
     ) {
-        chatsRef.orderByChild("lastMessageTime")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val chatList = mutableListOf<Pair<ChatModel, UserModel>>()
-                    var processedCount = 0
-                    val totalChats = snapshot.children.mapNotNull { chatSnapshot ->
-                        try {
-                            if (chatSnapshot.value !is Map<*, *>) {
-                                Log.w("ChatRepoImpl", "Skipping non-object entry at key '${chatSnapshot.key}'")
-                                return@mapNotNull null
+        // First, get blocked users list
+        usersRef.child(userId).child("blocked").get().addOnSuccessListener { blockedSnapshot ->
+            val blockedUserIds = blockedSnapshot.children.mapNotNull { it.key }.toSet()
+            
+            chatsRef.orderByChild("lastMessageTime")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val chatList = mutableListOf<Pair<ChatModel, UserModel>>()
+                        var processedCount = 0
+                        val allChats = snapshot.children.mapNotNull { chatSnapshot ->
+                            try {
+                                if (chatSnapshot.value !is Map<*, *>) {
+                                    Log.w("ChatRepoImpl", "Skipping non-object entry at key '${chatSnapshot.key}'")
+                                    return@mapNotNull null
+                                }
+                                
+                                val chat = chatSnapshot.getValue(ChatModel::class.java)
+                                if (chat?.participants?.contains(userId) == true) {
+                                    val otherUserId = chat.participants.firstOrNull { it != userId }
+                                    // Filter out chats with blocked users
+                                    if (otherUserId != null && !blockedUserIds.contains(otherUserId)) {
+                                        chat
+                                    } else {
+                                        null
+                                    }
+                                } else {
+                                    null
+                                }
+                            } catch (e: Exception) {
+                                null
                             }
-                            
-                            val chat = chatSnapshot.getValue(ChatModel::class.java)
-                            if (chat?.participants?.contains(userId) == true) chat else null
-                        } catch (e: Exception) {
-                            null
                         }
-                    }.count()
+                        
+                        val totalChats = allChats.count()
 
-                    if (totalChats == 0) {
-                        callback(true, "No chats", emptyList())
-                        return
+                        if (totalChats == 0) {
+                            callback(true, "No chats", emptyList())
+                            return
+                        }
+
+                        allChats.forEach { chat ->
+                            try {
+                                val otherUserId = chat.participants.firstOrNull { it != userId } ?: return@forEach
+                                
+                                // Double-check if other user has blocked current user (two-way check)
+                                usersRef.child(otherUserId).child("blocked").child(userId)
+                                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(otherBlockedSnapshot: DataSnapshot) {
+                                            if (!otherBlockedSnapshot.exists()) {
+                                                // Other user hasn't blocked current user, get user data
+                                                usersRef.child(otherUserId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                                    override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                        val user = userSnapshot.getValue(UserModel::class.java)
+                                                        if (user != null) {
+                                                            chatList.add(Pair(chat, user))
+                                                        }
+                                                        processedCount++
+                                                        if (processedCount == totalChats) {
+                                                            val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                                            callback(true, "Chats retrieved", sortedList)
+                                                        }
+                                                    }
+
+                                                    override fun onCancelled(error: DatabaseError) {
+                                                        processedCount++
+                                                        if (processedCount == totalChats) {
+                                                            val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                                            callback(true, "Chats retrieved", sortedList)
+                                                        }
+                                                    }
+                                                })
+                                            } else {
+                                                // Other user has blocked current user, skip this chat
+                                                processedCount++
+                                                if (processedCount == totalChats) {
+                                                    val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                                    callback(true, "Chats retrieved", sortedList)
+                                                }
+                                            }
+                                        }
+
+                                        override fun onCancelled(error: DatabaseError) {
+                                            processedCount++
+                                            if (processedCount == totalChats) {
+                                                val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                                callback(true, "Chats retrieved", sortedList)
+                                            }
+                                        }
+                                    })
+                            } catch (e: Exception) {
+                                Log.e("ChatRepoImpl", "Error processing chat: ${e.message}")
+                                processedCount++
+                                if (processedCount == totalChats) {
+                                    val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
+                                    callback(true, "Chats retrieved", sortedList)
+                                }
+                            }
+                        }
                     }
 
-                    snapshot.children.forEach { chatSnapshot ->
-                        try {
-                            if (chatSnapshot.value !is Map<*, *>) {
-                                return@forEach
-                            }
-                            
-                            val chat = chatSnapshot.getValue(ChatModel::class.java)
-                            if (chat != null && chat.participants.contains(userId)) {
-                            val otherUserId = chat.participants.firstOrNull { it != userId } ?: return@forEach
-                            
-                            usersRef.child(otherUserId).addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(userSnapshot: DataSnapshot) {
-                                    val user = userSnapshot.getValue(UserModel::class.java)
-                                    if (user != null) {
-                                        chatList.add(Pair(chat, user))
-                                    }
-                                    processedCount++
-                                    if (processedCount == totalChats) {
-                                        val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
-                                        callback(true, "Chats retrieved", sortedList)
-                                    }
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                    processedCount++
-                                    if (processedCount == totalChats) {
-                                        val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
-                                        callback(true, "Chats retrieved", sortedList)
-                                    }
-                                }
-                            })
-                        }
-                        } catch (e: Exception) {
-                            Log.e("ChatRepoImpl", "Error processing chat at key '${chatSnapshot.key}': ${e.message}")
-                            processedCount++
-                            if (processedCount == totalChats) {
-                                val sortedList = chatList.sortedByDescending { it.first.lastMessageTime }
-                                callback(true, "Chats retrieved", sortedList)
-                            }
-                        }
+                    override fun onCancelled(error: DatabaseError) {
+                        callback(false, error.message, emptyList())
                     }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    callback(false, error.message, emptyList())
-                }
-            })
+                })
+        }.addOnFailureListener { error ->
+            // If failed to get blocked users, return all chats
+            callback(false, error.message ?: "Failed to get blocked users", emptyList())
+        }
     }
 
     override fun markMessagesAsRead(

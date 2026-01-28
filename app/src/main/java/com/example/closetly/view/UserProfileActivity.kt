@@ -227,6 +227,43 @@ fun UserProfielBody(userId: String, initialUsername: String) {
             ) {
                 CircularProgressIndicator(color = Black)
             }
+        } else if (isBlocked) {
+            // Show "Account Not Available" screen for blocked users
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_person_24),
+                        contentDescription = null,
+                        tint = Grey,
+                        modifier = Modifier.size(80.dp)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "This account isn't available",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Black,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "The link you followed may be broken, or the account may have been removed.",
+                        fontSize = 14.sp,
+                        color = Grey,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
         } else {
             LazyColumn(
                 state = listState,
