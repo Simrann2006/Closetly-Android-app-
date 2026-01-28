@@ -153,4 +153,12 @@ class UserViewModel (val repo : UserRepo) : ViewModel(){
     ){
         repo.getBlockedUsersList(userId, callback)
     }
+    fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String,
+        callback: (Boolean, String) -> Unit
+    ){
+        repo.changePassword(currentPassword, newPassword, confirmPassword, callback)
+    }
 }

@@ -120,4 +120,11 @@ interface UserRepo {
     fun getBlockedUsersListFlow(
         userId: String
     ): Flow<List<UserModel>>
+
+    fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String,
+        callback: (Boolean, String) -> Unit
+    )
 }

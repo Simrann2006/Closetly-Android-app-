@@ -830,6 +830,64 @@ class UserRepoImpl(private val context: Context) : UserRepo{
 
         awaitClose {
             ref.child(userId).child("blocked").removeEventListener(listener)
+
+        }
+    }
+    override fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        // Validation
+        when {
+            currentPassword.isBlank() -> {
+                callback(false, "Please enter current password")
+                return
+            }
+            newPassword.isBlank() -> {
+                callback(false, "Please enter new password")
+                return
+            }
+            newPassword.length < 6 -> {
+                callback(false, "Password must be at least 6 characters")
+                return
+            }
+            confirmPassword.isBlank() -> {
+                callback(false, "Please confirm your password")
+                return
+            }
+            newPassword != confirmPassword -> {
+                callback(false, "Passwords do not match")
+                return
+            }
+            currentPassword == newPassword -> {
+                callback(false, "New password must be different")
+                return
+            }
+        }
+
+        val user = auth.currentUser
+        val email = user?.email
+
+        if (user != null && email != null) {
+            val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, currentPassword)
+
+            user.reauthenticate(credential)
+                .addOnSuccessListener {
+                    user.updatePassword(newPassword)
+                        .addOnSuccessListener {
+                            callback(true, "Password changed successfully!")
+                        }
+                        .addOnFailureListener { e ->
+                            callback(false, "Failed to update password: ${e.message}")
+                        }
+                }
+                .addOnFailureListener {
+                    callback(false, "Current password is incorrect")
+                }
+        } else {
+            callback(false, "User not found. Please login again.")
         }
     }
 }
