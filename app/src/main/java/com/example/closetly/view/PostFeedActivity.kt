@@ -31,6 +31,7 @@ import com.example.closetly.model.PostModel
 import com.example.closetly.repository.PostRepoImpl
 import com.example.closetly.repository.HomePostRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.PostViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
@@ -41,13 +42,16 @@ import java.util.*
 class PostFeedActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
 
         val userId = intent.getStringExtra("USER_ID") ?: ""
         val initialIndex = intent.getIntExtra("INITIAL_INDEX", 0)
 
         setContent {
-            PostFeedBody(userId = userId, initialIndex = initialIndex)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                PostFeedBody(userId = userId, initialIndex = initialIndex)
+            }
         }
     }
 }
@@ -94,17 +98,17 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
                         Icon(
                             painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         if (isLoading) {
             Box(
@@ -125,7 +129,7 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
                 Text(
                     "No posts yet",
                     fontSize = 16.sp,
-                    color = Grey
+                    color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
                 )
             }
         } else {
@@ -155,7 +159,7 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
                     )
                     HorizontalDivider(
                         modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-                        color = Grey.copy(alpha = 0.2f),
+                        color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey.copy(alpha = 0.2f),
                         thickness = 1.dp
                     )
                 }
@@ -207,7 +211,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
     ) {
         Row(
             modifier = Modifier
@@ -219,7 +223,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Light_grey)
+                    .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
             ) {
                 if (post.userProfilePic.isNotEmpty()) {
                     AsyncImage(
@@ -235,7 +239,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(8.dp),
-                        tint = Grey
+                        tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Grey
                     )
                 }
             }
@@ -246,7 +250,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 text = post.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -257,18 +261,18 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_more_vert_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
 
                     DropdownMenu(
                         modifier = Modifier
-                            .background(White),
+                            .background(if (ThemeManager.isDarkMode) Surface_Dark else White),
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit Post", color = Black) },
+                            text = { Text("Edit Post", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
                             onClick = {
                                 showMenu = false
                                 showEditDialog = true
@@ -277,16 +281,16 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                                 Icon(
                                     painter = painterResource(R.drawable.baseline_edit_24),
                                     contentDescription = null,
-                                    tint = Black
+                                    tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                                 )
                             },
                             colors = MenuDefaults.itemColors(
-                                textColor = Black,
-                                leadingIconColor = Black
+                                textColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
+                                leadingIconColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                             )
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete Post", color = Black) },
+                            text = { Text("Delete Post", color = if (ThemeManager.isDarkMode) Error_Dark else Error_Light) },
                             onClick = {
                                 showMenu = false
                                 showDeleteDialog = true
@@ -295,12 +299,12 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                                 Icon(
                                     painter = painterResource(R.drawable.baseline_delete_24),
                                     contentDescription = null,
-                                    tint = Black
+                                    tint = if (ThemeManager.isDarkMode) Error_Dark else Error_Light
                                 )
                             },
                             colors = MenuDefaults.itemColors(
-                                textColor = Black,
-                                leadingIconColor = Black
+                                textColor = if (ThemeManager.isDarkMode) Error_Dark else Error_Light,
+                                leadingIconColor = if (ThemeManager.isDarkMode) Error_Dark else Error_Light
                             )
                         )
                     }
@@ -340,7 +344,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         Icon(
                             painter = painterResource(if (isLiked) R.drawable.baseline_favorite_24 else R.drawable.baseline_favorite_border_24),
                             contentDescription = null,
-                            tint = if (isLiked) Color.Red else Black,
+                            tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) OnBackground_Dark else Brown),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -349,7 +353,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         "$likesCount",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                 }
 
@@ -368,14 +372,14 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         painterResource(R.drawable.comment),
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         "$commentsCount",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                 }
             }
@@ -391,7 +395,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 Icon(
                     painter = painterResource(if (isSaved) R.drawable.baseline_bookmark_24 else R.drawable.baseline_bookmark_border_24),
                     contentDescription = null,
-                    tint = Black,
+                    tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -407,13 +411,13 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                     text = post.username,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = currentCaption,
                     fontSize = 15.sp,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                 )
             }
         }
@@ -421,7 +425,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
         Text(
             text = getPostTimeAgo(post.timestamp),
             fontSize = 12.sp,
-            color = Grey,
+            color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.6f) else Grey,
             modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp)
         )
     }
@@ -440,8 +444,9 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Post") },
-            text = { Text("Are you sure you want to delete this post?") },
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+            title = { Text("Delete Post", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
+            text = { Text("Are you sure you want to delete this post?", color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -492,12 +497,12 @@ fun EditPostDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = White,
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         title = {
             Text(
                 text = "Edit Post",
                 fontWeight = FontWeight.Bold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
             )
         },
         text = {
@@ -508,23 +513,23 @@ fun EditPostDialog(
                     placeholder = {
                         Text(
                             "Add a caption...",
-                            color = Grey
+                            color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 100.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = White,
-                        unfocusedContainerColor = White,
-                        disabledContainerColor = White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedIndicatorColor = Grey.copy(alpha = 0.3f),
                         unfocusedIndicatorColor = Grey.copy(alpha = 0.3f),
-                        cursorColor = Black
+                        cursorColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                     ),
                     textStyle = LocalTextStyle.current.copy(
                         fontSize = 16.sp,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
             }
@@ -560,7 +565,7 @@ fun EditPostDialog(
                 onClick = onDismiss,
                 enabled = !isSaving
             ) {
-                Text("Cancel", color = Grey)
+                Text("Cancel", color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey)
             }
         }
     )

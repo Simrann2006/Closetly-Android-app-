@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.closetly.R
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
@@ -135,7 +136,7 @@ fun AnalysisScreen(
                 navigationIcon = {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
                         Icon(
-                            painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
+                            painter = painterResource( R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = "Back"
                         )
                     }
