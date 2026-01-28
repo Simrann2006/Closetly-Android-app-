@@ -197,6 +197,13 @@ fun SavedPostItem(post: PostModel) {
                     .size(40.dp)
                     .clip(CircleShape)
                     .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
+                    .clickable {
+                        val intent = Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", post.userId)
+                            putExtra("username", post.username)
+                        }
+                        context.startActivity(intent)
+                    }
             ) {
                 if (post.userProfilePic.isNotEmpty()) {
                     AsyncImage(
@@ -223,7 +230,14 @@ fun SavedPostItem(post: PostModel) {
                 text = post.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
+                modifier = Modifier.clickable {
+                    val intent = Intent(context, UserProfileActivity::class.java).apply {
+                        putExtra("userId", post.userId)
+                        putExtra("username", post.username)
+                    }
+                    context.startActivity(intent)
+                }
             )
         }
 
