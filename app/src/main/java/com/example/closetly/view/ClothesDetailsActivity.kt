@@ -37,6 +37,7 @@ import com.example.closetly.repository.CategoryRepoImpl
 import com.example.closetly.repository.ClothesRepoImpl
 import com.example.closetly.repository.CommonRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.CategoryViewModel
 import com.example.closetly.viewmodel.ClothesViewModel
 import com.example.closetly.viewmodel.CommonViewModel
@@ -44,12 +45,15 @@ import com.example.closetly.viewmodel.CommonViewModel
 class ClothesDetailsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
 
         val imageUriString = intent.getStringExtra("IMAGE_URI")
         val imageUri = imageUriString?.let { Uri.parse(it) }
 
         setContent {
-            ClothesDetailsBody(imageUri = imageUri)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                ClothesDetailsBody(imageUri = imageUri)
+            }
         }
     }
 }
@@ -204,13 +208,13 @@ fun ClothesDetailsBody(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         Column(
             modifier = Modifier
@@ -236,7 +240,7 @@ fun ClothesDetailsBody(
                 }
             }
 
-            Divider(color = Light_grey)
+            Divider(color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey)
 
             Column(
                 modifier = Modifier
@@ -253,8 +257,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -272,8 +279,8 @@ fun ClothesDetailsBody(
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = if (selectedCategoryName.isNotEmpty()) Brown else Grey.copy(alpha = 0.5f),
                             disabledLabelColor = if (selectedCategoryName.isNotEmpty()) Brown else Grey,
-                            disabledTextColor = Black,
-                            disabledContainerColor = White
+                            disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
+                            disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                         ),
                         trailingIcon = {
                             Icon(
@@ -289,20 +296,20 @@ fun ClothesDetailsBody(
                         onDismissRequest = { showCategoryDropdown = false },
                         modifier = Modifier
                             .fillMaxWidth(0.9f)
-                            .background(White)
+                            .background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                     ) {
                         categories.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category.categoryName, color = Black) },
+                                text = { Text(category.categoryName, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
                                 onClick = {
                                     selectedCategoryId = category.categoryId
                                     selectedCategoryName = category.categoryName
                                     showCategoryDropdown = false
                                 },
-                                modifier = Modifier.background(White)
+                                modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                             )
                         }
-                        Divider(color = Light_grey)
+                        Divider(color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey)
                         DropdownMenuItem(
                             text = {
                                 Row(
@@ -322,7 +329,7 @@ fun ClothesDetailsBody(
                                 showCategoryDropdown = false
                                 showAddCategoryDialog = true
                             },
-                            modifier = Modifier.background(White)
+                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                         )
                     }
                 }
@@ -336,8 +343,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -350,8 +360,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -364,8 +377,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -378,8 +394,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -392,8 +411,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -409,8 +431,11 @@ fun ClothesDetailsBody(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Brown,
                         focusedLabelColor = Brown,
-                        unfocusedContainerColor = White,
-                        focusedContainerColor = White
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
             }
@@ -435,7 +460,7 @@ fun ClothesDetailsBody(
                     Text(
                         text = "Enter category name:",
                         fontSize = 14.sp,
-                        color = Grey
+                        color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
                     )
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
@@ -446,8 +471,10 @@ fun ClothesDetailsBody(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Brown,
                             unfocusedBorderColor = Grey,
-                            unfocusedContainerColor = White,
-                            focusedContainerColor = White
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -497,7 +524,8 @@ fun ClothesDetailsBody(
                     Text("Cancel", color = Grey)
                 }
             },
-            containerColor = White,
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+            titleContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
             shape = RoundedCornerShape(16.dp)
         )
     }
