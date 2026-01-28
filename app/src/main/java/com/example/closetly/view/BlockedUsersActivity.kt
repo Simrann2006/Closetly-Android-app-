@@ -97,17 +97,8 @@ fun BlockedUsersBody() {
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { /* Add functionality if needed */ }) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_add_24),
-                            contentDescription = null,
-                            tint = if (ThemeManager.isDarkMode) Color.White else Color.Black
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
                     titleContentColor = if (ThemeManager.isDarkMode) Color.White else Color.Black
                 )
             )
