@@ -5,7 +5,10 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="LoginActivity">
+      <SelectionState runConfigName="test_forgotPassword_success_navigates_to_login()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="test_forgotPassword_failure_email_not_found()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

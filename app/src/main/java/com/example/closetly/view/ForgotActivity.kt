@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -195,7 +196,9 @@ fun ForgotBody(){
                         )
                     },
                     isError = isError,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("forgot_email_input"),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = if (ThemeManager.isDarkMode)
@@ -276,7 +279,8 @@ fun ForgotBody(){
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp)
-                        .shadow(8.dp, RoundedCornerShape(14.dp)),
+                        .shadow(8.dp, RoundedCornerShape(14.dp))
+                        .testTag("forgot_submit_button"),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(0.dp)
