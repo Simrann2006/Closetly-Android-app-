@@ -87,9 +87,9 @@ import com.google.firebase.auth.FirebaseAuth
 fun ClosetScreen() {
 
     val context = LocalContext.current
-    
+
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    
+
     val categoryRepo = remember(currentUserId) { CategoryRepoImpl() }
     val categoryViewModel = remember(currentUserId) { CategoryViewModel(categoryRepo) }
     val clothesRepo = remember(currentUserId) { ClothesRepoImpl() }
@@ -99,27 +99,29 @@ fun ClosetScreen() {
     var searchText by remember { mutableStateOf("") }
 
     var categories by remember(currentUserId) { mutableStateOf(listOf("All")) }
+    var allCategoriesData by remember(currentUserId) { mutableStateOf<List<CategoryModel>>(emptyList()) }
     var allClothes by remember(currentUserId) { mutableStateOf<List<ClothesModel>>(emptyList()) }
     var isLoading by remember(currentUserId) { mutableStateOf(true) }
     var categoriesLoaded by remember(currentUserId) { mutableStateOf(false) }
     var clothesLoaded by remember(currentUserId) { mutableStateOf(false) }
-    
+
     var isRefreshing by remember { mutableStateOf(false) }
-    
+
     fun refreshData() {
         isRefreshing = true
         var categoriesDone = false
         var clothesDone = false
-        
+
         categoryViewModel.getAllCategories { success, _, data ->
             if (success && data != null) {
+                allCategoriesData = data
                 val categoryNames = listOf("All") + data.map { it.categoryName }
                 categories = categoryNames
             }
             categoriesDone = true
             if (categoriesDone && clothesDone) isRefreshing = false
         }
-        
+
         clothesViewModel.getAllClothes { success, _, data ->
             if (success && data != null) {
                 allClothes = data
@@ -146,6 +148,7 @@ fun ClosetScreen() {
                                 if (addedCount == defaultCategories.size) {
                                     categoryViewModel.getAllCategories { _, _, refreshedData ->
                                         if (refreshedData != null) {
+                                            allCategoriesData = refreshedData
                                             val categoryNames = listOf("All") + refreshedData.map { it.categoryName }
                                             categories = categoryNames
                                             categoriesLoaded = true
@@ -156,6 +159,7 @@ fun ClosetScreen() {
                         }
                     }
                 } else {
+                    allCategoriesData = data
                     val categoryNames = listOf("All") + data.map { it.categoryName }
                     categories = categoryNames
                     categoriesLoaded = true
@@ -198,7 +202,7 @@ fun ClosetScreen() {
 
         clothes
     }
-    
+
     val pullToRefreshState = rememberPullToRefreshState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -223,181 +227,181 @@ fun ClosetScreen() {
                     .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
                     .padding(16.dp)
             ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    placeholder = {
-                        Text(
-                            "Search your closet...",
-                            style = TextStyle(
-                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                                fontSize = 13.sp,
-                                color = Grey
-                            )
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_search_24),
-                            contentDescription = null,
-                            tint = Grey,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Color.Transparent,
-                        focusedBorderColor = Brown,
-                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
-                    ),
-                    textStyle = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 14.sp
-                    ),
-                    singleLine = true
-                )
-
-                FloatingActionButton(
-                    onClick = {
-                        val intent = Intent(context, AddActivity::class.java)
-                        intent.putExtra("FLOW_TYPE", AddFlow.CLOSET)
-                        context.startActivity(intent)
-                    },
-                    containerColor = Brown,
-                    contentColor = White,
-                    modifier = Modifier.size(46.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_add_24),
-                        contentDescription = null,
-                        tint = White
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    context.startActivity(Intent(context, PlanOutfitActivity::class.java))
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Brown
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_checkroom_24),
-                    contentDescription = null,
-                    tint = White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Plan Outfit",
-                    style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = White
-                    )
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedButton(
-                onClick = {
-                    context.startActivity(Intent(context, SavedOutfitsActivity::class.java))
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(45.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Brown
-                ),
-                border = BorderStroke(1.5.dp, Brown),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_folder_special_24),
-                    contentDescription = null,
-                    tint = Brown,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Saved Outfits",
-                    style = TextStyle(
-                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Brown
-                    )
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
-            ) {
-                val scrollState = rememberScrollState()
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(scrollState)
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    categories.forEach { category ->
-                        CategoryButton(
-                            text = category,
-                            isSelected = selectedCategory == category,
-                            onClick = { selectedCategory = category },
-                            onLongPress = {
-                                val defaultCategories = listOf("All", "Tops", "Bottoms", "Shoes")
-                                if (!defaultCategories.contains(category)) {
-                                    categoryToDelete = category
-                                    showDeleteDialog = true
-                                }
-                            }
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        placeholder = {
+                            Text(
+                                "Search your closet...",
+                                style = TextStyle(
+                                    fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                    fontSize = 13.sp,
+                                    color = Grey
+                                )
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_search_24),
+                                contentDescription = null,
+                                tint = Grey,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Color.Transparent,
+                            focusedBorderColor = Brown,
+                            focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
+                        ),
+                        singleLine = true
+                    )
+
+                    FloatingActionButton(
+                        onClick = {
+                            val intent = Intent(context, AddActivity::class.java)
+                            intent.putExtra("FLOW_TYPE", AddFlow.CLOSET)
+                            context.startActivity(intent)
+                        },
+                        containerColor = Brown,
+                        contentColor = White,
+                        modifier = Modifier.size(46.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_add_24),
+                            contentDescription = null,
+                            tint = White
                         )
                     }
                 }
-            }
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredClothes.size) { index ->
-                    val clothes = filteredClothes[index]
-                    ClothesItem(clothes = clothes)
+                Button(
+                    onClick = {
+                        context.startActivity(Intent(context, PlanOutfitActivity::class.java))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Brown
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_checkroom_24),
+                        contentDescription = null,
+                        tint = White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Plan Outfit",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = White
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        context.startActivity(Intent(context, SavedOutfitsActivity::class.java))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(45.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Brown
+                    ),
+                    border = BorderStroke(1.5.dp, Brown),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_folder_special_24),
+                        contentDescription = null,
+                        tint = Brown,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Saved Outfits",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Brown
+                        )
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
+                ) {
+                    val scrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(scrollState)
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        categories.forEach { category ->
+                            CategoryButton(
+                                text = category,
+                                isSelected = selectedCategory == category,
+                                onClick = { selectedCategory = category },
+                                onLongPress = {
+                                    val defaultCategories = listOf("All", "Tops", "Bottoms", "Shoes")
+                                    if (!defaultCategories.contains(category)) {
+                                        categoryToDelete = category
+                                        showDeleteDialog = true
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredClothes.size) { index ->
+                        val clothes = filteredClothes[index]
+                        ClothesItem(clothes = clothes)
+                    }
                 }
             }
-        }
         }
 
         if (showDeleteDialog && categoryToDelete != null) {
@@ -431,7 +435,7 @@ fun ClosetScreen() {
                     TextButton(
                         onClick = {
                             val categoryName = categoryToDelete
-                            val categoryData = allClothes.firstOrNull { it.categoryName == categoryName }
+                            val categoryData = allCategoriesData.firstOrNull { it.categoryName == categoryName }
                             val categoryId = categoryData?.categoryId ?: ""
 
                             if (categoryId.isNotEmpty()) {
@@ -442,7 +446,14 @@ fun ClosetScreen() {
                                         }
                                         categoryViewModel.getAllCategories { _, _, refreshedData ->
                                             if (refreshedData != null) {
+                                                allCategoriesData = refreshedData
                                                 categories = listOf("All") + refreshedData.map { it.categoryName }
+                                            }
+                                        }
+                                        // Also refresh clothes list since items in deleted category are removed
+                                        clothesViewModel.getAllClothes { success, _, data ->
+                                            if (success && data != null) {
+                                                allClothes = data
                                             }
                                         }
                                     }

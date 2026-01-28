@@ -155,6 +155,8 @@ dependencies {
     
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta5")
 
+    implementation("com.airbnb.android:lottie-compose:6.3.0")
+
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
