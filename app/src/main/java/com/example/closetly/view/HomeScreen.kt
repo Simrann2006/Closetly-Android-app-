@@ -105,7 +105,10 @@ fun HomeScreen(
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
 
     val sliderCount = if (sliderItems.isEmpty()) 0 else sliderItems.size
-    val pagerState = rememberPagerState(pageCount = { sliderCount })
+    val pagerState = rememberPagerState(
+        pageCount = { sliderCount },
+        initialPage = 0
+    )
     
     // LazyColumn state for pagination
     val listState = rememberLazyListState()
@@ -144,11 +147,17 @@ fun HomeScreen(
     }
 
     LaunchedEffect(pagerState, sliderCount) {
-        if (sliderCount > 0) {
+        if (sliderCount > 1) {
             while (true) {
-                delay(3500)
+                delay(4000) // Slightly longer delay for smoother experience
                 val nextPage = (pagerState.currentPage + 1) % sliderCount
-                pagerState.animateScrollToPage(nextPage)
+                pagerState.animateScrollToPage(
+                    page = nextPage,
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 600,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    )
+                )
             }
         }
     }
@@ -278,7 +287,8 @@ fun HomeScreen(
 
                 items(
                     items = postsUI,
-                    key = { it.post.postId }
+                    key = { it.post.postId },
+                    contentType = { "post" }
                 ) { postUI ->
                     PostCard(
                         postUI = postUI,
@@ -615,32 +625,36 @@ fun PostCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
-                Button(
-                    onClick = onFollowClick,
-                    modifier = Modifier.height(32.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (postUI.isFollowing) {
-                            if (ThemeManager.isDarkMode) DarkGrey else Light_grey
-                        } else {
-                            Brown
-                        }
-                    ),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp)
-                ) {
-                    Text(
-                        if (postUI.isFollowing) "Following" else "Follow",
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (postUI.isFollowing) {
-                                if (ThemeManager.isDarkMode) White else Black
+                // Only show Follow button if post is not from current user
+                val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                if (postUI.post.userId != currentUserId) {
+                    Button(
+                        onClick = onFollowClick,
+                        modifier = Modifier.height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (postUI.isFollowing) {
+                                if (ThemeManager.isDarkMode) DarkGrey else Light_grey
                             } else {
-                                White
+                                Brown
                             }
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            if (postUI.isFollowing) "Following" else "Follow",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (postUI.isFollowing) {
+                                    if (ThemeManager.isDarkMode) White else Black
+                                } else {
+                                    White
+                                }
+                            )
                         )
-                    )
+                    }
                 }
             }
 

@@ -348,7 +348,6 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
     ): Flow<List<PostModel>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid
         var blockedUserIds = setOf<String>()
-        var followedUserIds = setOf<String>()
         
         // Listen for blocked users changes
         val blockedListener = if (currentUserId != null) {
@@ -360,21 +359,12 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             }
         } else null
         
-        // Listen for following users changes
-        val followingListener = object : ValueEventListener {
-            override fun onDataChange(followingSnapshot: DataSnapshot) {
-                followedUserIds = followingSnapshot.children.mapNotNull { it.key }.toSet()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        
         // Attach listeners
         if (currentUserId != null && blockedListener != null) {
             usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
         }
-        usersRef.child(userId).child("following").addValueEventListener(followingListener)
         
-        // Create query for posts ordered by timestamp
+        // Create query for posts ordered by timestamp - FETCH ALL POSTS
         val query = if (afterTimestamp != null) {
             postsRef.orderByChild("timestamp")
                 .startAt(afterTimestamp.toDouble() + 1) // Exclusive of afterTimestamp
@@ -389,10 +379,8 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
                 val posts = mutableListOf<PostModel>()
                 snapshot.children.forEach { postSnapshot ->
                     postSnapshot.getValue(PostModel::class.java)?.let { post ->
-                        // Filter: only posts from followed users, not blocked, not self
-                        if (followedUserIds.contains(post.userId) &&
-                            !blockedUserIds.contains(post.userId) &&
-                            post.userId != currentUserId &&
+                        // Filter: only exclude blocked users - SHOW ALL OTHER POSTS
+                        if (!blockedUserIds.contains(post.userId) &&
                             post.imageUrl.isNotEmpty() &&
                             post.username.isNotEmpty()) {
                             posts.add(post)
@@ -415,7 +403,6 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             if (currentUserId != null && blockedListener != null) {
                 usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
             }
-            usersRef.child(userId).child("following").removeEventListener(followingListener)
         }
     }
     
@@ -429,7 +416,6 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
     ): Flow<List<PostModel>> = callbackFlow {
         val currentUserId = auth.currentUser?.uid
         var blockedUserIds = setOf<String>()
-        var followedUserIds = setOf<String>()
         
         // Listen for blocked users
         val blockedListener = if (currentUserId != null) {
@@ -441,21 +427,12 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             }
         } else null
         
-        // Listen for following users
-        val followingListener = object : ValueEventListener {
-            override fun onDataChange(followingSnapshot: DataSnapshot) {
-                followedUserIds = followingSnapshot.children.mapNotNull { it.key }.toSet()
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        
         // Attach listeners
         if (currentUserId != null && blockedListener != null) {
             usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
         }
-        usersRef.child(userId).child("following").addValueEventListener(followingListener)
         
-        // Query for posts created after lastSeenTimestamp
+        // Query for posts created after lastSeenTimestamp - FETCH ALL NEW POSTS
         val query = postsRef.orderByChild("timestamp")
             .startAt((lastSeenTimestamp + 1).toDouble()) // Exclusive of lastSeenTimestamp
         
@@ -464,10 +441,8 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
                 val newPosts = mutableListOf<PostModel>()
                 snapshot.children.forEach { postSnapshot ->
                     postSnapshot.getValue(PostModel::class.java)?.let { post ->
-                        // Only include posts from followed users, not blocked, newer than lastSeen
-                        if (followedUserIds.contains(post.userId) &&
-                            !blockedUserIds.contains(post.userId) &&
-                            post.userId != currentUserId &&
+                        // Only exclude blocked users - SHOW ALL OTHER NEW POSTS
+                        if (!blockedUserIds.contains(post.userId) &&
                             post.timestamp > lastSeenTimestamp &&
                             post.imageUrl.isNotEmpty() &&
                             post.username.isNotEmpty()) {
@@ -491,7 +466,6 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             if (currentUserId != null && blockedListener != null) {
                 usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
             }
-            usersRef.child(userId).child("following").removeEventListener(followingListener)
         }
     }
     

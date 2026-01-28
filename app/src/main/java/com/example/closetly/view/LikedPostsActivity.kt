@@ -25,6 +25,7 @@ import com.example.closetly.R
 import com.example.closetly.model.PostModel
 import com.example.closetly.repository.HomePostRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
 
@@ -32,8 +33,13 @@ class LikedPostsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        ThemeManager.initialize(this)
+        
         setContent {
-            LikedPostsBody()
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                LikedPostsBody()
+            }
         }
     }
 }
@@ -73,17 +79,17 @@ fun LikedPostsBody() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         if (isLoading) {
             Box(
@@ -108,7 +114,7 @@ fun LikedPostsBody() {
                     Icon(
                         painter = painterResource(R.drawable.baseline_favorite_border_24),
                         contentDescription = null,
-                        tint = Grey,
+                        tint = if (ThemeManager.isDarkMode) Grey else Grey,
                         modifier = Modifier.size(64.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -116,13 +122,13 @@ fun LikedPostsBody() {
                         "No liked posts yet",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Grey
+                        color = if (ThemeManager.isDarkMode) Grey else Grey
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         "Like posts to view them here",
                         fontSize = 14.sp,
-                        color = Grey.copy(alpha = 0.7f)
+                        color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.7f) else Grey.copy(alpha = 0.7f)
                     )
                 }
             }

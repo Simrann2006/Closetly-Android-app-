@@ -212,7 +212,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
                     titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
@@ -445,7 +445,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(if (ThemeManager.isDarkMode) Surface_Dark else White)
+                                .background(if (ThemeManager.isDarkMode) Background_Dark else White)
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
