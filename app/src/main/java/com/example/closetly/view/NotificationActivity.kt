@@ -45,6 +45,7 @@ import com.example.closetly.R
 import com.example.closetly.repository.PostRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.utils.getTimeAgoShort
 import com.example.closetly.viewmodel.PostViewModel
 import com.example.closetly.viewmodel.UserViewModel
@@ -54,9 +55,10 @@ import com.google.firebase.database.*
 class NotificationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
         setContent {
-            ClosetlyTheme {
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
                 NotificationScreen()
             }
         }
@@ -129,7 +131,7 @@ fun NotificationScreen() {
                         "Notifications",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                 },
                 navigationIcon = {
@@ -137,16 +139,16 @@ fun NotificationScreen() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = "Back",
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         Box(
             modifier = Modifier
@@ -190,17 +192,18 @@ fun NotificationScreen() {
     if (showDeleteDialog && notificationToDelete != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
             title = {
                 Text(
                     "Delete Notification",
                     fontWeight = FontWeight.Bold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                 )
             },
             text = {
                 Text(
                     "Are you sure you want to delete this notification?",
-                    color = Black.copy(alpha = 0.7f)
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else OnSurface_Light.copy(alpha = 0.7f)
                 )
             },
             confirmButton = {
@@ -213,7 +216,7 @@ fun NotificationScreen() {
                         notificationToDelete = null
                     }
                 ) {
-                    Text("Delete", color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = if (ThemeManager.isDarkMode) Error_Dark else Error_Light, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -223,10 +226,9 @@ fun NotificationScreen() {
                         notificationToDelete = null
                     }
                 ) {
-                    Text("Cancel", color = Grey)
+                    Text("Cancel", color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey)
                 }
             },
-            containerColor = White,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -257,7 +259,7 @@ fun NotificationEmptyState() {
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Grey,
+                    color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey,
                     textAlign = TextAlign.Center
                 )
             )
@@ -269,7 +271,7 @@ fun NotificationEmptyState() {
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    color = Grey,
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey,
                     textAlign = TextAlign.Center
                 )
             )
@@ -303,7 +305,7 @@ fun NotificationItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
                 .combinedClickable(
                     onClick = {
                         when (notification.type) {
@@ -346,7 +348,7 @@ fun NotificationItem(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(Light_grey)
+                    .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
             ) {
                 if (notification.userProfileImage.toString().isNotEmpty()) {
                     AsyncImage(
@@ -359,7 +361,7 @@ fun NotificationItem(
                     Icon(
                         painter = painterResource(R.drawable.baseline_person_24),
                         contentDescription = null,
-                        tint = Grey,
+                        tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Grey,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(8.dp)
@@ -372,10 +374,10 @@ fun NotificationItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Black)) {
+                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown)) {
                             append(notification.userName)
                         }
-                        withStyle(style = SpanStyle(color = Black)) {
+                        withStyle(style = SpanStyle(color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light)) {
                             append(" ")
                             append(notification.message)
                         }
@@ -391,7 +393,7 @@ fun NotificationItem(
                 Text(
                     text = notification.time,
                     fontSize = 12.sp,
-                    color = Grey
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                 )
             }
 
@@ -405,7 +407,10 @@ fun NotificationItem(
                                 userViewModel.toggleFollow(currentUserId, notification.senderId) { success, _ -> }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isFollowing) Light_grey else Brown
+                                containerColor = if (isFollowing) 
+                                    (if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1) 
+                                else 
+                                    Brown
                             ),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
@@ -415,7 +420,10 @@ fun NotificationItem(
                                 text = if (isFollowing) "Following" else "Follow",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isFollowing) Black else White
+                                color = if (isFollowing) 
+                                    (if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) 
+                                else 
+                                    White
                             )
                         }
                     }
@@ -441,7 +449,7 @@ fun NotificationItem(
         }
 
         Divider(
-            color = Light_grey.copy(alpha = 0.5f),
+            color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1.copy(alpha = 0.5f),
             thickness = 0.5.dp,
             modifier = Modifier.padding(start = 76.dp)
         )
@@ -477,7 +485,7 @@ fun SalePostNotificationCard(
             ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = White
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -489,7 +497,7 @@ fun SalePostNotificationCard(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Light_grey)
+                        .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
                 ) {
                     if (notification.userProfileImage.toString().isNotEmpty()) {
                         AsyncImage(
@@ -502,7 +510,7 @@ fun SalePostNotificationCard(
                         Icon(
                             painter = painterResource(R.drawable.baseline_person_24),
                             contentDescription = null,
-                            tint = Grey,
+                            tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Grey,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(8.dp)
@@ -532,10 +540,10 @@ fun SalePostNotificationCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = buildAnnotatedString {
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = Black)) {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown)) {
                                 append(notification.userName)
                             }
-                            withStyle(style = SpanStyle(color = Black.copy(alpha = 0.8f))) {
+                            withStyle(style = SpanStyle(color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.8f) else OnSurface_Light.copy(alpha = 0.8f))) {
                                 append(" posted a sale item")
                             }
                         },
@@ -555,7 +563,7 @@ fun SalePostNotificationCard(
                         .fillMaxWidth()
                         .height(180.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Light_grey)
+                        .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
                 ) {
                     AsyncImage(
                         model = notification.postImage,

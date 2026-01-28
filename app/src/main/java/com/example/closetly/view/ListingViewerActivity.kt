@@ -28,6 +28,7 @@ import com.example.closetly.model.ListingType
 import com.example.closetly.model.ProductModel
 import com.example.closetly.repository.ProductRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.utils.getTimeAgo
 import com.example.closetly.viewmodel.ProductViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -35,12 +36,15 @@ import com.google.firebase.auth.FirebaseAuth
 class ListingViewerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
 
         val productId = intent.getStringExtra("productId") ?: ""
 
         setContent {
-            ListingViewerBody(productId = productId)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                ListingViewerBody(productId = productId)
+            }
         }
     }
 }
@@ -87,7 +91,7 @@ fun ListingViewerBody(productId: String) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = "Back",
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 },
@@ -97,16 +101,16 @@ fun ListingViewerBody(productId: String) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_more_vert_24),
                                 contentDescription = "More options",
-                                tint = Black
+                                tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                             )
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(White)
+                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit", color = Black) },
+                                text = { Text("Edit", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
                                 onClick = {
                                     showMenu = false
                                     showEditDialog = true
@@ -115,12 +119,12 @@ fun ListingViewerBody(productId: String) {
                                     Icon(
                                         painter = painterResource(R.drawable.baseline_edit_24),
                                         contentDescription = null,
-                                        tint = Black
+                                        tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                                     )
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete", color = Black) },
+                                text = { Text("Delete", color = if (ThemeManager.isDarkMode) Error_Dark else Error_Light) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteDialog = true
@@ -129,7 +133,7 @@ fun ListingViewerBody(productId: String) {
                                     Icon(
                                         painter = painterResource(R.drawable.baseline_delete_24),
                                         contentDescription = null,
-                                        tint = Black
+                                        tint = if (ThemeManager.isDarkMode) Error_Dark else Error_Light
                                     )
                                 }
                             )
@@ -137,12 +141,12 @@ fun ListingViewerBody(productId: String) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         if (isLoading) {
             Box(
@@ -164,7 +168,7 @@ fun ListingViewerBody(productId: String) {
                     Text(
                         "Listing not found",
                         fontSize = 16.sp,
-                        color = Grey
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(onClick = { (context as? ComponentActivity)?.finish() }) {
@@ -228,7 +232,7 @@ fun ListingViewerBody(productId: String) {
                             text = product!!.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Black,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -250,7 +254,7 @@ fun ListingViewerBody(productId: String) {
                         text = product!!.listingType.name,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Grey
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -259,14 +263,14 @@ fun ListingViewerBody(productId: String) {
                         Text(
                             text = product!!.description,
                             fontSize = 14.sp,
-                            color = Black,
+                            color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
                             lineHeight = 20.sp
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    HorizontalDivider(color = Grey.copy(alpha = 0.3f))
+                    HorizontalDivider(color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f))
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -274,7 +278,7 @@ fun ListingViewerBody(productId: String) {
                         text = "Details",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -342,12 +346,12 @@ fun ListingDetailRowViewer(label: String, value: String) {
             text = "$label:",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Grey
+            color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
         )
         Text(
             text = value,
             fontSize = 14.sp,
-            color = Black,
+            color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
             fontWeight = FontWeight.Medium
         )
     }
@@ -388,7 +392,7 @@ fun EditListingDialogViewer(
                 .fillMaxHeight(0.9f)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = White)
+            colors = CardDefaults.cardColors(containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White)
         ) {
             Column(
                 modifier = Modifier
@@ -404,13 +408,13 @@ fun EditListingDialogViewer(
                         "Edit Listing",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_close_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
                         )
                     }
                 }
@@ -428,8 +432,14 @@ fun EditListingDialogViewer(
                         label = { Text("Title") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            focusedLabelColor = Brown
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                            unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     )
 
@@ -442,8 +452,14 @@ fun EditListingDialogViewer(
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            focusedLabelColor = Brown
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                            unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     )
 
@@ -455,8 +471,14 @@ fun EditListingDialogViewer(
                         label = { Text("Price") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            focusedLabelColor = Brown
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                            unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     )
 
@@ -468,8 +490,14 @@ fun EditListingDialogViewer(
                             label = { Text("Rent Price per Day") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                                unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                                 focusedBorderColor = Brown,
-                                focusedLabelColor = Brown
+                                unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                                unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                             )
                         )
                     }
@@ -482,8 +510,14 @@ fun EditListingDialogViewer(
                         label = { Text("Brand") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            focusedLabelColor = Brown
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                            unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     )
 
@@ -495,8 +529,14 @@ fun EditListingDialogViewer(
                         label = { Text("Size") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            focusedLabelColor = Brown
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                            unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                         )
                     )
 
@@ -516,18 +556,24 @@ fun EditListingDialogViewer(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                                unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                                 focusedBorderColor = Brown,
-                                focusedLabelColor = Brown
+                                unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                                unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                             )
                         )
                         ExposedDropdownMenu(
                             expanded = expandedCondition,
                             onDismissRequest = { expandedCondition = false },
-                            modifier = Modifier.background(White)
+                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                         ) {
                             conditions.forEach { item ->
                                 DropdownMenuItem(
-                                    text = { Text(item, color = Black) },
+                                    text = { Text(item, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
                                     onClick = {
                                         condition = item
                                         expandedCondition = false
@@ -553,18 +599,24 @@ fun EditListingDialogViewer(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                                unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                                 focusedBorderColor = Brown,
-                                focusedLabelColor = Brown
+                                unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                focusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Brown,
+                                unfocusedLabelColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey
                             )
                         )
                         ExposedDropdownMenu(
                             expanded = expandedStatus,
                             onDismissRequest = { expandedStatus = false },
-                            modifier = Modifier.background(White)
+                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                         ) {
                             statusOptions.forEach { item ->
                                 DropdownMenuItem(
-                                    text = { Text(item, color = Black) },
+                                    text = { Text(item, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
                                     onClick = {
                                         status = item
                                         expandedStatus = false
@@ -623,23 +675,24 @@ fun ListingDeleteConfirmationDialogViewer(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         title = {
             Text(
                 "Delete Listing",
                 fontWeight = FontWeight.Bold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
             )
         },
         text = {
             Text(
                 "Are you sure you want to delete \"$listingTitle\"? This action cannot be undone.",
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
             )
         },
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                colors = ButtonDefaults.textButtonColors(contentColor = if (ThemeManager.isDarkMode) Error_Dark else Error_Light)
             ) {
                 Text("Delete", fontWeight = FontWeight.Bold)
             }
@@ -647,12 +700,11 @@ fun ListingDeleteConfirmationDialogViewer(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = Grey)
+                colors = ButtonDefaults.textButtonColors(contentColor = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey)
             ) {
                 Text("Cancel")
             }
-        },
-        containerColor = White
+        }
     )
 }
 

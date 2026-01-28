@@ -29,12 +29,14 @@ import com.example.closetly.R
 import com.example.closetly.model.UserModel
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 class FollowersFollowingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
         
         val userId = intent.getStringExtra("userId") ?: ""
@@ -42,7 +44,9 @@ class FollowersFollowingActivity : ComponentActivity() {
         val initialTab = intent.getStringExtra("type") ?: "followers"
         
         setContent {
-            FollowersFollowingScreen(userId = userId, username = username, initialTab = initialTab)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                FollowersFollowingScreen(userId = userId, username = username, initialTab = initialTab)
+            }
         }
     }
 }
@@ -108,7 +112,7 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                         text = username,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                 },
                 navigationIcon = {
@@ -118,17 +122,17 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         Column(
             modifier = Modifier
@@ -138,7 +142,7 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(White)
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -156,7 +160,7 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                 )
             }
             
-            Divider(color = Light_grey, thickness = 1.dp)
+            Divider(color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1, thickness = 1.dp)
             
             if (isLoading) {
                 Box(
@@ -173,7 +177,7 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                     Text(
                         text = if (selectedTab == 0) "No followers yet" else "No following yet",
                         fontSize = 16.sp,
-                        color = Grey
+                        color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
                     )
                 }
             } else {
@@ -230,7 +234,7 @@ fun UserItem(
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
-                .background(Light_grey),
+                .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1),
             contentAlignment = Alignment.Center
         ) {
             if (user.profilePicture.isNotEmpty()) {
@@ -244,7 +248,7 @@ fun UserItem(
                 Icon(
                     painter = painterResource(R.drawable.baseline_person_24),
                     contentDescription = null,
-                    tint = Grey,
+                    tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Grey,
                     modifier = Modifier.size(25.dp)
                 )
             }
@@ -259,12 +263,12 @@ fun UserItem(
                 text = user.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
             )
             Text(
                 text = user.fullName,
                 fontSize = 13.sp,
-                color = Grey
+                color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
             )
         }
         
@@ -280,7 +284,10 @@ fun UserItem(
             Button(
                 onClick = onFollowClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFollowing) Light_grey else Brown
+                    containerColor = if (isFollowing) 
+                        (if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1) 
+                    else 
+                        Brown
                 ),
                 modifier = Modifier
                     .height(32.dp)
@@ -291,7 +298,10 @@ fun UserItem(
                     text = buttonText,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isFollowing) Black else White
+                    color = if (isFollowing) 
+                        (if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) 
+                    else 
+                        White
                 )
             }
         }
@@ -318,14 +328,17 @@ fun FollowTab(text: String, count: Int, selected: Boolean, onClick: () -> Unit) 
                 text = text,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 fontSize = 15.sp,
-                color = if (selected) Black else Grey
+                color = if (selected) 
+                    (if (ThemeManager.isDarkMode) OnBackground_Dark else Brown) 
+                else 
+                    (if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.6f) else Grey)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = count.toString(),
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 fontSize = 14.sp,
-                color = Grey
+                color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

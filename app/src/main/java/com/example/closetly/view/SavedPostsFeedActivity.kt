@@ -29,6 +29,7 @@ import com.example.closetly.R
 import com.example.closetly.model.PostModel
 import com.example.closetly.repository.HomePostRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -36,12 +37,15 @@ import kotlinx.coroutines.launch
 class SavedPostsFeedActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
 
         val initialIndex = intent.getIntExtra("INITIAL_INDEX", 0)
 
         setContent {
-            SavedPostsFeedBody(initialIndex = initialIndex)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                SavedPostsFeedBody(initialIndex = initialIndex)
+            }
         }
     }
 }
@@ -87,17 +91,17 @@ fun SavedPostsFeedBody(initialIndex: Int) {
                         Icon(
                             painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         if (isLoading) {
             Box(
@@ -118,7 +122,7 @@ fun SavedPostsFeedBody(initialIndex: Int) {
                 Text(
                     "No saved posts",
                     fontSize = 16.sp,
-                    color = Grey
+                    color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
                 )
             }
         } else {
@@ -132,7 +136,7 @@ fun SavedPostsFeedBody(initialIndex: Int) {
                     SavedPostItem(post = post)
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
-                        color = Grey.copy(alpha = 0.2f),
+                        color = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey.copy(alpha = 0.2f),
                         thickness = 1.dp
                     )
                 }
@@ -180,7 +184,7 @@ fun SavedPostItem(post: PostModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
     ) {
         Row(
             modifier = Modifier
@@ -192,7 +196,14 @@ fun SavedPostItem(post: PostModel) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Light_grey)
+                    .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey1)
+                    .clickable {
+                        val intent = Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", post.userId)
+                            putExtra("username", post.username)
+                        }
+                        context.startActivity(intent)
+                    }
             ) {
                 if (post.userProfilePic.isNotEmpty()) {
                     AsyncImage(
@@ -208,7 +219,7 @@ fun SavedPostItem(post: PostModel) {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(8.dp),
-                        tint = Grey
+                        tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Grey
                     )
                 }
             }
@@ -219,7 +230,14 @@ fun SavedPostItem(post: PostModel) {
                 text = post.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Black
+                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
+                modifier = Modifier.clickable {
+                    val intent = Intent(context, UserProfileActivity::class.java).apply {
+                        putExtra("userId", post.userId)
+                        putExtra("username", post.username)
+                    }
+                    context.startActivity(intent)
+                }
             )
         }
 
@@ -259,14 +277,14 @@ fun SavedPostItem(post: PostModel) {
                         ),
                         contentDescription = null,
                         modifier = Modifier.size(26.dp),
-                        tint = if (isLiked) Color.Red else Black
+                        tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) OnBackground_Dark else Brown)
                     )
                     if (likesCount > 0) {
                         Text(
                             "$likesCount",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 }
@@ -287,14 +305,14 @@ fun SavedPostItem(post: PostModel) {
                         painterResource(R.drawable.comment),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = Black
+                        tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                     )
                     if (commentsCount > 0) {
                         Text(
                             "$commentsCount",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Black
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                         )
                     }
                 }
@@ -315,7 +333,7 @@ fun SavedPostItem(post: PostModel) {
                     ),
                     contentDescription = null,
                     modifier = Modifier.size(26.dp),
-                    tint = Black
+                    tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
             }
         }
@@ -331,13 +349,13 @@ fun SavedPostItem(post: PostModel) {
                     text = post.username,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = caption,
                     fontSize = 15.sp,
-                    color = Black
+                    color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                 )
             }
         }
