@@ -31,18 +31,22 @@ import com.example.closetly.model.ProductModel
 import com.example.closetly.repository.CommonRepoImpl
 import com.example.closetly.repository.ProductRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.CommonViewModel
 import com.example.closetly.viewmodel.ProductViewModel
 
 class ListingDetailsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
 
         val imageUriString = intent.getStringExtra("IMAGE_URI")
         val imageUri = imageUriString?.let { Uri.parse(it) }
 
         setContent {
-            ListingDetailsBody(imageUri = imageUri)
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
+                ListingDetailsBody(imageUri = imageUri)
+            }
         }
     }
 }
@@ -139,13 +143,13 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black,
-                    navigationIconContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light
     ) { padding ->
         Column(
             modifier = Modifier
@@ -191,15 +195,15 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         enabled = false,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = Grey,
-                            disabledTextColor = Black,
-                            disabledContainerColor = White
+                            disabledBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                            disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
+                            disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                         ),
                         trailingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
                                 contentDescription = null,
-                                tint = Grey
+                                tint = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
                             )
                         }
                     )
@@ -207,17 +211,17 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     DropdownMenu(
                         expanded = showListingTypeDropdown,
                         onDismissRequest = { showListingTypeDropdown = false },
-                        modifier = Modifier.background(White)
+                        modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("THRIFT", color = Black) },
+                            text = { Text("THRIFT", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Black) },
                             onClick = {
                                 listingType = ListingType.THRIFT
                                 showListingTypeDropdown = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("RENT", color = Black) },
+                            text = { Text("RENT", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Black) },
                             onClick = {
                                 listingType = ListingType.RENT
                                 showListingTypeDropdown = false
@@ -239,8 +243,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -253,8 +261,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         .height(120.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     ),
                     maxLines = 5
                 )
@@ -266,8 +278,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -279,8 +295,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            unfocusedBorderColor = Grey
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                         )
                     )
                 }
@@ -298,15 +318,15 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         enabled = false,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = Grey,
-                            disabledTextColor = Black,
-                            disabledContainerColor = White
+                            disabledBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                            disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
+                            disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
                         ),
                         trailingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
                                 contentDescription = null,
-                                tint = Grey
+                                tint = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
                             )
                         }
                     )
@@ -314,11 +334,11 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     DropdownMenu(
                         expanded = showConditionDropdown,
                         onDismissRequest = { showConditionDropdown = false },
-                        modifier = Modifier.background(White)
+                        modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                     ) {
                         conditions.forEach { cond ->
                             DropdownMenuItem(
-                                text = { Text(cond, color = Black) },
+                                text = { Text(cond, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Black) },
                                 onClick = {
                                     condition = cond
                                     showConditionDropdown = false
@@ -341,8 +361,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
@@ -353,8 +377,12 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedBorderColor = Brown,
-                        unfocusedBorderColor = Grey
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                     )
                 )
 
