@@ -96,6 +96,11 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".view.BlockedUsersActivity"
+            android:exported="false"
+            android:label="BlockedUsersActivity"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".view.MessageActivity"
             android:exported="true"
             android:label="MessageActivity"

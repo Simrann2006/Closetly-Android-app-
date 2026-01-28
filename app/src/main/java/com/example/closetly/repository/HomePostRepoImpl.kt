@@ -119,6 +119,15 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
 
     override suspend fun toggleFollow(targetUserId: String, currentUserId: String): Result<Boolean> {
         return try {
+            // Check if either user has blocked the other
+            val currentUserBlockedSnapshot = usersRef.child(currentUserId).child("blocked").child(targetUserId).get().await()
+            val targetUserBlockedSnapshot = usersRef.child(targetUserId).child("blocked").child(currentUserId).get().await()
+            
+            if (currentUserBlockedSnapshot.exists() || targetUserBlockedSnapshot.exists()) {
+                // Either user has blocked the other - silently prevent follow action
+                return Result.failure(Exception("Cannot follow this user"))
+            }
+            
             val followingRef = usersRef.child(currentUserId).child("following").child(targetUserId)
             val followerRef = usersRef.child(targetUserId).child("followers").child(currentUserId)
             val snapshot = followingRef.get().await()

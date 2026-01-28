@@ -64,6 +64,7 @@ import com.example.closetly.repository.PostRepoImpl
 import com.example.closetly.repository.ProductRepoImpl
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
 import com.example.closetly.viewmodel.PostViewModel
 import com.example.closetly.viewmodel.ProductViewModel
@@ -187,7 +188,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         text = username,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Black
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 },
                 navigationIcon = {
@@ -197,7 +198,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
@@ -206,17 +207,17 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_more_vert_24),
                             contentDescription = null,
-                            tint = Black
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White,
-                    titleContentColor = Black
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
-        containerColor = White
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         if (isLoading) {
             Box(
@@ -225,44 +226,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Black)
-            }
-        } else if (isBlocked) {
-            // Show "Account Not Available" screen for blocked users
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(32.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_person_24),
-                        contentDescription = null,
-                        tint = Grey,
-                        modifier = Modifier.size(80.dp)
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "This account isn't available",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Black,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "The link you followed may be broken, or the account may have been removed.",
-                        fontSize = 14.sp,
-                        color = Grey,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
-                }
+                CircularProgressIndicator(color = if (ThemeManager.isDarkMode) White else Black)
             }
         } else {
             LazyColumn(
@@ -283,7 +247,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                             modifier = Modifier
                                 .size(90.dp)
                                 .clip(CircleShape)
-                                .background(Light_grey)
+                                .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
@@ -321,7 +285,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                             style = TextStyle(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Black
+                                color = if (ThemeManager.isDarkMode) White else Black
                             )
                         )
 
@@ -339,28 +303,28 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                 text = bio,
                                 style = TextStyle(
                                     fontSize = 14.sp,
-                                    color = Black
+                                    color = if (ThemeManager.isDarkMode) White else Black
                                 ),
                                 textAlign = TextAlign.Center
                             )
                         }
                         
-                        if (!isBlocked) {
-                            Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                UserProfileStat(
-                                    count = "${userPosts.size}",
-                                    label = "Posts",
-                                    onClick = {}
-                                )
-                                UserProfileStat(
-                                    count = "$followersCount",
-                                    label = "Followers",
-                                    onClick = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            UserProfileStat(
+                                count = if (isBlocked) "0" else "${userPosts.size}",
+                                label = "Posts",
+                                onClick = {}
+                            )
+                            UserProfileStat(
+                                count = if (isBlocked) "0" else "$followersCount",
+                                label = "Followers",
+                                onClick = {
+                                    if (!isBlocked) {
                                         val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
                                             putExtra("userId", userId)
                                             putExtra("username", username)
@@ -368,11 +332,13 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                         }
                                         context.startActivity(intent)
                                     }
-                                )
-                                UserProfileStat(
-                                    count = "$followingCount",
-                                    label = "Following",
-                                    onClick = {
+                                }
+                            )
+                            UserProfileStat(
+                                count = if (isBlocked) "0" else "$followingCount",
+                                label = "Following",
+                                onClick = {
+                                    if (!isBlocked) {
                                         val intent = Intent(context, FollowersFollowingActivity::class.java).apply {
                                             putExtra("userId", userId)
                                             putExtra("username", username)
@@ -380,8 +346,8 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                         }
                                         context.startActivity(intent)
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -396,6 +362,16 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                         showUnblockDialog = true
                                     } else if (currentUserId.isNotEmpty() && currentUserId != userId) {
                                         userViewModel.toggleFollow(currentUserId, userId) { success, message ->
+                                            if (success) {
+                                                // Toggle the follow state
+                                                isFollowing = !isFollowing
+                                                // Update counts
+                                                if (isFollowing) {
+                                                    followersCount++
+                                                } else {
+                                                    followersCount--
+                                                }
+                                            }
                                         }
                                     }
                                 },
@@ -403,7 +379,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                     .weight(1f)
                                     .height(40.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isBlocked) Brown else if (isFollowing) Light_grey else Brown
+                                    containerColor = if (isBlocked) Brown else if (isFollowing) (if (ThemeManager.isDarkMode) Surface_Dark else Light_grey) else Brown
                                 ),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
@@ -422,37 +398,39 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                     style = TextStyle(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isBlocked) White else if (isFollowing) Black else White
+                                        color = if (isBlocked) White else if (isFollowing) (if (ThemeManager.isDarkMode) White else Black) else White
                                     )
                                 )
                             }
 
-                            Button(
-                                onClick = {
-                                    val intent = Intent(context, ChatActivity::class.java).apply {
-                                        putExtra("chatId", existingChatId)
-                                        putExtra("otherUserId", userId)
-                                        putExtra("otherUserName", username)
-                                        putExtra("otherUserImage", profilePicture)
-                                    }
-                                    context.startActivity(intent)
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(40.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Light_grey
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    "Message",
-                                    style = TextStyle(
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Black
+                            if (!isBlocked) {
+                                Button(
+                                    onClick = {
+                                        val intent = Intent(context, ChatActivity::class.java).apply {
+                                            putExtra("chatId", existingChatId)
+                                            putExtra("otherUserId", userId)
+                                            putExtra("otherUserName", username)
+                                            putExtra("otherUserImage", profilePicture)
+                                        }
+                                        context.startActivity(intent)
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        "Message",
+                                        style = TextStyle(
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (ThemeManager.isDarkMode) White else Black
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                     }
@@ -467,7 +445,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(White)
+                                .background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
@@ -503,7 +481,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                         text = "No posts yet",
                                         style = TextStyle(
                                             fontSize = 16.sp,
-                                            color = Grey
+                                            color = if (ThemeManager.isDarkMode) Grey else Grey
                                         )
                                     )
                                 }
@@ -569,7 +547,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                         text = "No listings yet",
                                         style = TextStyle(
                                             fontSize = 16.sp,
-                                            color = Grey
+                                            color = if (ThemeManager.isDarkMode) Grey else Grey
                                         )
                                     )
                                 }
@@ -632,7 +610,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
         ModalBottomSheet(
             onDismissRequest = { showMenu = false },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = Color(0xFFD3D3D3)
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color(0xFFD3D3D3)
         ) {
             Column(
                 modifier = Modifier
@@ -642,7 +620,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Text(
                     text = "Block",
                     fontSize = 16.sp,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
@@ -654,7 +632,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Text(
                     text = "Share this profile",
                     fontSize = 16.sp,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
@@ -671,7 +649,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
         ModalBottomSheet(
             onDismissRequest = { showBlockDialog = false },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = Color(0xFFD3D3D3)
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color(0xFFD3D3D3)
         ) {
             Column(
                 modifier = Modifier
@@ -684,7 +662,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Light_grey),
+                        .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
                     contentAlignment = Alignment.Center
                 ) {
                     if (profilePicture.isNotEmpty()) {
@@ -711,7 +689,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Text(
                     text = "If you block this user, they won't be able to message you or see your profile or posts anymore.",
                     fontSize = 14.sp,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
                 )
@@ -721,7 +699,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Text(
                     text = "You can unblock them at anytime.",
                     fontSize = 14.sp,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     textAlign = TextAlign.Center
                 )
                 
@@ -760,7 +738,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
         ModalBottomSheet(
             onDismissRequest = { showUnblockDialog = false },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = Color(0xFFD3D3D3)
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color(0xFFD3D3D3)
         ) {
             Column(
                 modifier = Modifier
@@ -773,7 +751,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(Light_grey),
+                        .background(if (ThemeManager.isDarkMode) DarkGrey else Light_grey),
                     contentAlignment = Alignment.Center
                 ) {
                     if (profilePicture.isNotEmpty()) {
@@ -801,7 +779,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                     text = "Unblock this user?",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     textAlign = TextAlign.Center
                 )
                 
@@ -810,7 +788,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                 Text(
                     text = "They'll be able to contact you again.",
                     fontSize = 14.sp,
-                    color = Black,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     textAlign = TextAlign.Center
                 )
                 
@@ -859,7 +837,7 @@ fun UserProfileStat(count: String, label: String, onClick: () -> Unit = {}) {
             text = count,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
-            color = Black
+            color = if (ThemeManager.isDarkMode) White else Black
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -884,7 +862,7 @@ fun UserProfileTab(text: String, selected: Boolean, onClick: () -> Unit) {
             text = text,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             fontSize = 15.sp,
-            color = if (selected) Black else Grey
+            color = if (selected) (if (ThemeManager.isDarkMode) White else Black) else Grey
         )
         Spacer(modifier = Modifier.height(8.dp))
         Box(

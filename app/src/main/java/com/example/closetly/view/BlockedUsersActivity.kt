@@ -28,6 +28,7 @@ import com.example.closetly.R
 import com.example.closetly.model.UserModel
 import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.ui.theme.*
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
@@ -36,12 +37,10 @@ import kotlinx.coroutines.launch
 class BlockedUsersActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.initialize(this)
         enableEdgeToEdge()
         setContent {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = Color(0xFF121212)
-            ) {
+            ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
                 BlockedUsersBody()
             }
         }
@@ -86,7 +85,7 @@ fun BlockedUsersBody() {
                         "Blocked accounts",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                     )
                 },
                 navigationIcon = {
@@ -94,7 +93,7 @@ fun BlockedUsersBody() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = Color.White
+                            tint = if (ThemeManager.isDarkMode) Color.White else Color.Black
                         )
                     }
                 },
@@ -103,17 +102,17 @@ fun BlockedUsersBody() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_add_24),
                             contentDescription = null,
-                            tint = Color.White
+                            tint = if (ThemeManager.isDarkMode) Color.White else Color.Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF121212),
-                    titleContentColor = Color.White
+                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) Color.White else Color.Black
                 )
             )
         },
-        containerColor = Color(0xFF121212)
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) { padding ->
         if (isLoading) {
             Box(
@@ -122,7 +121,7 @@ fun BlockedUsersBody() {
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = Color.White)
+                CircularProgressIndicator(color = if (ThemeManager.isDarkMode) Color.White else Color.Black)
             }
         } else if (blockedUsers.isEmpty()) {
             Box(
@@ -146,7 +145,7 @@ fun BlockedUsersBody() {
                         "No blocked accounts",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White
+                        color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -160,7 +159,7 @@ fun BlockedUsersBody() {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF121212))
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Color.White)
                     .padding(padding),
                 userScrollEnabled = true
             ) {
@@ -176,7 +175,7 @@ fun BlockedUsersBody() {
                         }
                     )
                     HorizontalDivider(
-                        color = Color(0xFF2A2A2A),
+                        color = if (ThemeManager.isDarkMode) Color.White.copy(alpha = 0.1f) else Color(0xFFE0E0E0),
                         thickness = 0.5.dp,
                         modifier = Modifier.padding(start = 80.dp)
                     )
@@ -193,7 +192,7 @@ fun BlockedUsersBody() {
                             text = "You may want to block",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -214,11 +213,15 @@ fun BlockedUsersBody() {
             title = {
                 Text(
                     "Unblock ${selectedUser?.username}?",
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                 )
             },
             text = {
-                Text("They will be able to see your profile and posts again.")
+                Text(
+                    "They will be able to see your profile and posts again.",
+                    color = if (ThemeManager.isDarkMode) Color.White else Color.Black
+                )
             },
             confirmButton = {
                 TextButton(
@@ -244,9 +247,7 @@ fun BlockedUsersBody() {
                     Text("Cancel", color = Color.Gray)
                 }
             },
-            containerColor = Color(0xFF2A2A2A),
-            titleContentColor = Color.White,
-            textContentColor = Color.White
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White
         )
     }
 }
@@ -259,7 +260,7 @@ fun BlockedUserItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF121212))
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Color.White)
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .clickable(enabled = false) { /* Disable click */ },
         verticalAlignment = Alignment.CenterVertically
@@ -272,7 +273,7 @@ fun BlockedUserItem(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2A2A2A))
+                .background(if (ThemeManager.isDarkMode) Surface_Dark else Color(0xFFE0E0E0))
         )
         
         Spacer(modifier = Modifier.width(12.dp))
@@ -285,7 +286,7 @@ fun BlockedUserItem(
                 text = user.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White
+                color = if (ThemeManager.isDarkMode) Color.White else Color.Black
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -301,7 +302,7 @@ fun BlockedUserItem(
         Button(
             onClick = onUnblockClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3C3C3C)
+                containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color(0xFFE0E0E0)
             ),
             shape = RoundedCornerShape(6.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
@@ -311,7 +312,7 @@ fun BlockedUserItem(
                 text = "Unblock",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White
+                color = if (ThemeManager.isDarkMode) Color.White else Color.Black
             )
         }
     }

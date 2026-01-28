@@ -18,36 +18,69 @@ class ChatRepoImpl : ChatRepo {
         otherUserId: String,
         callback: (Boolean, String, String?) -> Unit
     ) {
-        val participants = listOf(currentUserId, otherUserId).sorted()
-        val chatId = participants.joinToString("_")
-
-        chatsRef.child(chatId).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    callback(true, "Chat exists", chatId)
-                } else {
-                    val chat = ChatModel(
-                        chatId = chatId,
-                        participants = participants,
-                        lastMessage = "",
-                        lastMessageTime = System.currentTimeMillis(),
-                        lastMessageSenderId = "",
-                        unreadCount = mapOf(currentUserId to 0, otherUserId to 0)
-                    )
-                    chatsRef.child(chatId).setValue(chat).addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            callback(true, "Chat created", chatId)
-                        } else {
-                            callback(false, "${it.exception?.message}", null)
-                        }
+        // First check if either user has blocked the other
+        usersRef.child(currentUserId).child("blocked").child(otherUserId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        // Current user has blocked other user
+                        callback(false, "Cannot create chat with this user", null)
+                        return
                     }
-                }
-            }
+                    
+                    // Check if other user has blocked current user
+                    usersRef.child(otherUserId).child("blocked").child(currentUserId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot2: DataSnapshot) {
+                                if (snapshot2.exists()) {
+                                    // Other user has blocked current user
+                                    callback(false, "Cannot create chat with this user", null)
+                                    return
+                                }
+                                
+                                // No blocking, proceed with chat creation
+                                val participants = listOf(currentUserId, otherUserId).sorted()
+                                val chatId = participants.joinToString("_")
 
-            override fun onCancelled(error: DatabaseError) {
-                callback(false, error.message, null)
-            }
-        })
+                                chatsRef.child(chatId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(chatSnapshot: DataSnapshot) {
+                                        if (chatSnapshot.exists()) {
+                                            callback(true, "Chat exists", chatId)
+                                        } else {
+                                            val chat = ChatModel(
+                                                chatId = chatId,
+                                                participants = participants,
+                                                lastMessage = "",
+                                                lastMessageTime = System.currentTimeMillis(),
+                                                lastMessageSenderId = "",
+                                                unreadCount = mapOf(currentUserId to 0, otherUserId to 0)
+                                            )
+                                            chatsRef.child(chatId).setValue(chat).addOnCompleteListener {
+                                                if (it.isSuccessful) {
+                                                    callback(true, "Chat created", chatId)
+                                                } else {
+                                                    callback(false, "${it.exception?.message}", null)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        callback(false, error.message, null)
+                                    }
+                                })
+                            }
+                            
+                            override fun onCancelled(error: DatabaseError) {
+                                callback(false, error.message, null)
+                            }
+                        })
+                }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false, error.message, null)
+                }
+            })
     }
 
     override fun sendMessage(
@@ -55,40 +88,89 @@ class ChatRepoImpl : ChatRepo {
         message: MessageModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val messageId = messagesRef.child(chatId).push().key ?: return
-        val messageWithId = message.copy(messageId = messageId)
-
-        messagesRef.child(chatId).child(messageId).setValue(messageWithId)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    chatsRef.child(chatId).child("lastMessage").setValue(message.text)
-                    chatsRef.child(chatId).child("lastMessageTime").setValue(message.timestamp)
-                    chatsRef.child(chatId).child("lastMessageSenderId").setValue(message.senderId)
+        // Get chat participants to check blocking
+        chatsRef.child(chatId).child("participants")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val participants = snapshot.children.mapNotNull { it.getValue(String::class.java) }
+                    if (participants.size != 2) {
+                        callback(false, "Invalid chat")
+                        return
+                    }
                     
-                    chatsRef.child(chatId).child("participants")
+                    val otherUserId = participants.firstOrNull { it != message.senderId } ?: ""
+                    
+                    // Check if either user has blocked the other
+                    usersRef.child(message.senderId).child("blocked").child(otherUserId)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                val participants = snapshot.children.mapNotNull { it.getValue(String::class.java) }
-                                participants.forEach { userId ->
-                                    if (userId != message.senderId) {
-                                        chatsRef.child(chatId).child("unreadCount").child(userId)
-                                            .get().addOnSuccessListener {
-                                                val count = it.getValue(Int::class.java) ?: 0
-                                                chatsRef.child(chatId).child("unreadCount")
-                                                    .child(userId).setValue(count + 1)
-                                            }
-                                    }
+                            override fun onDataChange(blockSnapshot: DataSnapshot) {
+                                if (blockSnapshot.exists()) {
+                                    callback(false, "Cannot send message to blocked user")
+                                    return
                                 }
-                            }
+                                
+                                // Check if other user has blocked sender
+                                usersRef.child(otherUserId).child("blocked").child(message.senderId)
+                                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(blockSnapshot2: DataSnapshot) {
+                                            if (blockSnapshot2.exists()) {
+                                                callback(false, "Cannot send message to this user")
+                                                return
+                                            }
+                                            
+                                            // No blocking, proceed with sending message
+                                            val messageId = messagesRef.child(chatId).push().key ?: return
+                                            val messageWithId = message.copy(messageId = messageId)
 
-                            override fun onCancelled(error: DatabaseError) {}
+                                            messagesRef.child(chatId).child(messageId).setValue(messageWithId)
+                                                .addOnCompleteListener { task ->
+                                                    if (task.isSuccessful) {
+                                                        chatsRef.child(chatId).child("lastMessage").setValue(message.text)
+                                                        chatsRef.child(chatId).child("lastMessageTime").setValue(message.timestamp)
+                                                        chatsRef.child(chatId).child("lastMessageSenderId").setValue(message.senderId)
+                                                        
+                                                        chatsRef.child(chatId).child("participants")
+                                                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                                override fun onDataChange(pSnapshot: DataSnapshot) {
+                                                                    val pParticipants = pSnapshot.children.mapNotNull { it.getValue(String::class.java) }
+                                                                    pParticipants.forEach { userId ->
+                                                                        if (userId != message.senderId) {
+                                                                            chatsRef.child(chatId).child("unreadCount").child(userId)
+                                                                                .get().addOnSuccessListener {
+                                                                                    val count = it.getValue(Int::class.java) ?: 0
+                                                                                    chatsRef.child(chatId).child("unreadCount")
+                                                                                        .child(userId).setValue(count + 1)
+                                                                                }
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                override fun onCancelled(error: DatabaseError) {}
+                                                            })
+                                                        
+                                                        callback(true, "Message sent")
+                                                    } else {
+                                                        callback(false, "${task.exception?.message}")
+                                                    }
+                                                }
+                                        }
+                                        
+                                        override fun onCancelled(error: DatabaseError) {
+                                            callback(false, error.message)
+                                        }
+                                    })
+                            }
+                            
+                            override fun onCancelled(error: DatabaseError) {
+                                callback(false, error.message)
+                            }
                         })
-                    
-                    callback(true, "Message sent")
-                } else {
-                    callback(false, "${task.exception?.message}")
                 }
-            }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false, error.message)
+                }
+            })
     }
 
     override fun getMessages(

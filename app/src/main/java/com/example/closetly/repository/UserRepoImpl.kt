@@ -244,51 +244,84 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         targetUserId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        val followingRef = ref.child(currentUserId).child("following").child(targetUserId)
-        val followerRef = ref.child(targetUserId).child("followers").child(currentUserId)
-        
-        followingRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    followingRef.removeValue()
-                    followerRef.removeValue().addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            callback(true, "Unfollowed successfully")
-                        } else {
-                            callback(false, it.exception?.message ?: "Failed to unfollow")
-                        }
+        // First check if either user has blocked the other
+        ref.child(currentUserId).child("blocked").child(targetUserId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(blockSnapshot1: DataSnapshot) {
+                    if (blockSnapshot1.exists()) {
+                        // Current user has blocked target user - silently prevent action
+                        callback(false, "Cannot follow this user")
+                        return
                     }
-                } else {
-                    followingRef.setValue(true)
-                    followerRef.setValue(true).addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            ref.child(currentUserId).addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(userSnapshot: DataSnapshot) {
-                                    val currentUser = userSnapshot.getValue(UserModel::class.java)
-                                    if (currentUser != null) {
-                                        notificationRepo.sendFollowNotification(
-                                            context = context,
-                                            senderId = currentUserId,
-                                            senderName = currentUser.username,
-                                            senderImage = currentUser.profilePicture,
-                                            receiverId = targetUserId
-                                        )
-                                    }
+                    
+                    // Check if target user has blocked current user
+                    ref.child(targetUserId).child("blocked").child(currentUserId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(blockSnapshot2: DataSnapshot) {
+                                if (blockSnapshot2.exists()) {
+                                    // Target user has blocked current user - silently prevent action
+                                    callback(false, "Cannot follow this user")
+                                    return
                                 }
-                                override fun onCancelled(error: DatabaseError) {}
-                            })
-                            callback(true, "Followed successfully")
-                        } else {
-                            callback(false, it.exception?.message ?: "Failed to follow")
-                        }
-                    }
-                }
-            }
+                                
+                                // Neither user has blocked the other, proceed with follow/unfollow
+                                val followingRef = ref.child(currentUserId).child("following").child(targetUserId)
+                                val followerRef = ref.child(targetUserId).child("followers").child(currentUserId)
+                                
+                                followingRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(snapshot: DataSnapshot) {
+                                        if (snapshot.exists()) {
+                                            followingRef.removeValue()
+                                            followerRef.removeValue().addOnCompleteListener {
+                                                if (it.isSuccessful) {
+                                                    callback(true, "Unfollowed successfully")
+                                                } else {
+                                                    callback(false, it.exception?.message ?: "Failed to unfollow")
+                                                }
+                                            }
+                                        } else {
+                                            followingRef.setValue(true)
+                                            followerRef.setValue(true).addOnCompleteListener {
+                                                if (it.isSuccessful) {
+                                                    ref.child(currentUserId).addListenerForSingleValueEvent(object : ValueEventListener {
+                                                        override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                            val currentUser = userSnapshot.getValue(UserModel::class.java)
+                                                            if (currentUser != null) {
+                                                                notificationRepo.sendFollowNotification(
+                                                                    context = context,
+                                                                    senderId = currentUserId,
+                                                                    senderName = currentUser.username,
+                                                                    senderImage = currentUser.profilePicture,
+                                                                    receiverId = targetUserId
+                                                                )
+                                                            }
+                                                        }
+                                                        override fun onCancelled(error: DatabaseError) {}
+                                                    })
+                                                    callback(true, "Followed successfully")
+                                                } else {
+                                                    callback(false, it.exception?.message ?: "Failed to follow")
+                                                }
+                                            }
+                                        }
+                                    }
 
-            override fun onCancelled(error: DatabaseError) {
-                callback(false, error.message)
-            }
-        })
+                                    override fun onCancelled(error: DatabaseError) {
+                                        callback(false, error.message)
+                                    }
+                                })
+                            }
+                            
+                            override fun onCancelled(error: DatabaseError) {
+                                callback(false, error.message)
+                            }
+                        })
+                }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    callback(false, error.message)
+                }
+            })
     }
     
     override fun isFollowing(
@@ -531,11 +564,127 @@ class UserRepoImpl(private val context: Context) : UserRepo{
         
         ref.updateChildren(updates)
             .addOnSuccessListener {
+                // Remove all interaction history between users
+                removeAllInteractions(currentUserId, targetUserId)
+                
+                // Delete existing chats between the two users
+                deleteChatsWithUser(currentUserId, targetUserId)
+                
                 callback(true, "User blocked successfully")
             }
             .addOnFailureListener { e ->
                 callback(false, e.message ?: "Failed to block user")
             }
+    }
+    
+    /**
+     * Remove all interaction history between two users:
+     * - Likes on each other's posts
+     * - Comments on each other's posts
+     * - Notifications from each other
+     */
+    private fun removeAllInteractions(userId1: String, userId2: String) {
+        val database = FirebaseDatabase.getInstance()
+        val postsRef = database.getReference("Posts")
+        val commentsRef = database.getReference("Comments")
+        val notificationsRef = database.getReference("Notifications")
+        
+        // Remove likes: userId1 likes on userId2's posts and vice versa
+        postsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach { postSnapshot ->
+                    val postOwnerId = postSnapshot.child("userId").getValue(String::class.java)
+                    val postId = postSnapshot.key
+                    
+                    if (postId != null) {
+                        // Remove userId1's like from userId2's posts
+                        if (postOwnerId == userId2) {
+                            postSnapshot.child("likes").child(userId1).ref.removeValue()
+                        }
+                        // Remove userId2's like from userId1's posts
+                        if (postOwnerId == userId1) {
+                            postSnapshot.child("likes").child(userId2).ref.removeValue()
+                        }
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        
+        // Remove all comments from userId1 on userId2's posts and vice versa
+        commentsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val commentsToDelete = mutableListOf<String>()
+                
+                snapshot.children.forEach { commentSnapshot ->
+                    val commentUserId = commentSnapshot.child("userId").getValue(String::class.java)
+                    val commentId = commentSnapshot.key
+                    
+                    // Get the post to check the post owner
+                    val postId = commentSnapshot.child("postId").getValue(String::class.java)
+                    
+                    if (commentId != null && postId != null) {
+                        // Check if this comment should be deleted
+                        postsRef.child(postId).child("userId").get().addOnSuccessListener { postOwnerSnapshot ->
+                            val postOwnerId = postOwnerSnapshot.getValue(String::class.java)
+                            
+                            // Delete if: userId1 commented on userId2's post OR userId2 commented on userId1's post
+                            if ((commentUserId == userId1 && postOwnerId == userId2) ||
+                                (commentUserId == userId2 && postOwnerId == userId1)) {
+                                commentsRef.child(commentId).removeValue()
+                            }
+                        }
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        
+        // Remove notifications from each other
+        // Remove notifications from userId2 to userId1
+        notificationsRef.child(userId1).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach { notificationSnapshot ->
+                    val senderId = notificationSnapshot.child("senderId").getValue(String::class.java)
+                    if (senderId == userId2) {
+                        notificationSnapshot.ref.removeValue()
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        
+        // Remove notifications from userId1 to userId2
+        notificationsRef.child(userId2).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach { notificationSnapshot ->
+                    val senderId = notificationSnapshot.child("senderId").getValue(String::class.java)
+                    if (senderId == userId1) {
+                        notificationSnapshot.ref.removeValue()
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+    
+    /**
+     * Delete all chats and messages between two users
+     */
+    private fun deleteChatsWithUser(userId1: String, userId2: String) {
+        val database = FirebaseDatabase.getInstance()
+        val chatsRef = database.getReference("Chats")
+        val messagesRef = database.getReference("Messages")
+        
+        // Create chatId from sorted participant IDs
+        val participants = listOf(userId1, userId2).sorted()
+        val chatId = participants.joinToString("_")
+        
+        // Delete messages first
+        messagesRef.child(chatId).removeValue().addOnSuccessListener {
+            // Then delete the chat
+            chatsRef.child(chatId).removeValue()
+        }
     }
     
     override fun unblockUser(
