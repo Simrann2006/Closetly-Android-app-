@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -183,30 +186,44 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box {
-                    OutlinedTextField(
-                        value = listingType.name,
-                        onValueChange = { },
-                        label = { Text("Listing Type") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showListingTypeDropdown = true },
-                        readOnly = true,
-                        enabled = false,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                            disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
-                            disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+                Column {
+                    Text(
+                        "Listing Type",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
                         ),
-                        trailingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
-                                contentDescription = null,
-                                tint = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
-                            )
-                        }
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
                     )
+
+                    Box {
+                        OutlinedTextField(
+                            value = listingType.name,
+                            onValueChange = { },
+                            placeholder = { Text("Select listing type", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = true,
+                            enabled = false,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledBorderColor = if (listingType.name.isNotEmpty()) Brown else if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
+                                disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+                            ),
+                            trailingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                    contentDescription = null,
+                                    tint = Grey
+                                )
+                            },
+                            textStyle = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 14.sp
+                            )
+                        )
 
                     DropdownMenu(
                         expanded = showListingTypeDropdown,
@@ -229,107 +246,189 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { showListingTypeDropdown = true }
-                    )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { showListingTypeDropdown = true }
+                        )
+                    }
                 }
 
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title*") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                Column {
+                    Text(
+                        "Title *",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
                     )
-                )
 
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
-                    ),
-                    maxLines = 5
-                )
-
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { price = it },
-                    label = { Text(if (listingType == ListingType.RENT) "Sale Price*" else "Price*") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
-                    )
-                )
-
-                if (listingType == ListingType.RENT) {
                     OutlinedTextField(
-                        value = rentPrice,
-                        onValueChange = { rentPrice = it },
-                        label = { Text("Rent Price per Day") },
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = { Text("Enter title", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                             focusedBorderColor = Brown,
-                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
                             focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
                             unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
                         )
                     )
                 }
 
-                Box {
+                Column {
+                    Text(
+                        "Description",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                    )
+
                     OutlinedTextField(
-                        value = condition,
-                        onValueChange = { },
-                        label = { Text("Condition*") },
-                        placeholder = { Text("Select condition") },
+                        value = description,
+                        onValueChange = { description = it },
+                        placeholder = { Text("Enter description", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showConditionDropdown = true },
-                        readOnly = true,
-                        enabled = false,
+                            .height(120.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        maxLines = 5,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Brown,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
+                        )
+                    )
+                }
+
+                Column {
+                    Text(
+                        if (listingType == ListingType.RENT) "Sale Price *" else "Price *",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = price,
+                        onValueChange = { price = it },
+                        placeholder = { Text("Enter price", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                            disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
-                            disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+                            focusedBorderColor = Brown,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
                         ),
-                        trailingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
-                                contentDescription = null,
-                                tint = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
-                            )
-                        }
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
+                        )
                     )
+                }
+
+                if (listingType == ListingType.RENT) {
+                    Column {
+                        Text(
+                            "Rent Price per Day",
+                            style = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                            ),
+                            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = rentPrice,
+                            onValueChange = { rentPrice = it },
+                            placeholder = { Text("Enter rent price", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Brown,
+                                unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                                focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                                unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                                unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                            ),
+                            textStyle = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 14.sp
+                            )
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        "Condition *",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                    )
+
+                    Box {
+                        OutlinedTextField(
+                            value = condition,
+                            onValueChange = { },
+                            placeholder = { Text("Select condition", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = true,
+                            enabled = false,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledBorderColor = if (condition.isNotEmpty()) Brown else if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                                disabledTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
+                                disabledContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+                            ),
+                            trailingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_drop_down_24),
+                                    contentDescription = null,
+                                    tint = Grey
+                                )
+                            },
+                            textStyle = TextStyle(
+                                fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                                fontSize = 14.sp
+                            )
+                        )
 
                     DropdownMenu(
                         expanded = showConditionDropdown,
@@ -347,46 +446,79 @@ fun ListingDetailsBody(imageUri: Uri?) {
                         }
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable { showConditionDropdown = true }
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { showConditionDropdown = true }
+                        )
+                    }
+                }
+
+                Column {
+                    Text(
+                        "Brand",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = brand,
+                        onValueChange = { brand = it },
+                        placeholder = { Text("Enter brand", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Brown,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
+                        )
                     )
                 }
 
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text("Brand") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                Column {
+                    Text(
+                        "Size",
+                        style = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
                     )
-                )
 
-                OutlinedTextField(
-                    value = size,
-                    onValueChange = { size = it },
-                    label = { Text("Size") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Grey,
-                        focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                    OutlinedTextField(
+                        value = size,
+                        onValueChange = { size = it },
+                        placeholder = { Text("Enter size", style = TextStyle(fontFamily = FontFamily(Font(R.font.poppins_regular)), fontSize = 14.sp)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Brown,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) Grey.copy(alpha = 0.3f) else Light_grey1,
+                            focusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light
+                        ),
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                            fontSize = 14.sp
+                        )
                     )
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
