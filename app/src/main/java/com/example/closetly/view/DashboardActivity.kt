@@ -260,33 +260,75 @@ fun DashboardBody(){
                                 }
                             }
                             1 -> {
-                                IconButton(onClick = {}) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.chat),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(22.dp),
-                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
-                                    )
+                                IconButton(onClick = {
+                                    val intent = Intent(context, MessageActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
+                                    Box {
+                                        Icon(
+                                            painter = painterResource(R.drawable.chat),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp),
+                                            tint = if (ThemeManager.isDarkMode) White else Color.Black
+                                        )
+                                        if (unreadMessages > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(Color.Red, shape = RoundedCornerShape(4.dp))
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 6.dp, y = (-2).dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             2 -> {
-                                IconButton(onClick = {}) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.chat),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(22.dp),
-                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
-                                    )
+                                IconButton(onClick = {
+                                    val intent = Intent(context, MessageActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
+                                    Box {
+                                        Icon(
+                                            painter = painterResource(R.drawable.chat),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp),
+                                            tint = if (ThemeManager.isDarkMode) White else Color.Black
+                                        )
+                                        if (unreadMessages > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(Color.Red, shape = RoundedCornerShape(4.dp))
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 6.dp, y = (-2).dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             3 -> {
-                                IconButton(onClick = {}) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.chat),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(22.dp),
-                                        tint = if (ThemeManager.isDarkMode) White else Color.Black
-                                    )
+                                IconButton(onClick = {
+                                    val intent = Intent(context, MessageActivity::class.java)
+                                    context.startActivity(intent)
+                                }) {
+                                    Box {
+                                        Icon(
+                                            painter = painterResource(R.drawable.chat),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp),
+                                            tint = if (ThemeManager.isDarkMode) White else Color.Black
+                                        )
+                                        if (unreadMessages > 0) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(Color.Red, shape = RoundedCornerShape(4.dp))
+                                                    .align(Alignment.TopEnd)
+                                                    .offset(x = 6.dp, y = (-2).dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
