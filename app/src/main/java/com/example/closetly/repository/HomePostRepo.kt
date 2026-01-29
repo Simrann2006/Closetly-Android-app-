@@ -18,6 +18,22 @@ interface HomePostRepo {
         lastSeenTimestamp: Long
     ): Flow<List<PostModel>>
     
+    /**
+     * Get all posts with priority sorting:
+     * - Posts from followed users first (newest to oldest)
+     * - Then posts from other users (newest to oldest)
+     * Excludes current user's posts and blocked users' posts
+     */
+    fun getPriorityFeedPosts(
+        userId: String,
+        limit: Int = 20
+    ): Flow<List<PostModel>>
+    
+    /**
+     * Get followed user IDs for a given user
+     */
+    fun getFollowedUserIds(userId: String): Flow<Set<String>>
+    
     suspend fun saveLastSeenTimestamp(userId: String, timestamp: Long)
     suspend fun getLastSeenTimestamp(userId: String): Long
     

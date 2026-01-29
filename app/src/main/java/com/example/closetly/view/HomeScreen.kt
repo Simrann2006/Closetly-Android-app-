@@ -101,10 +101,13 @@ fun HomeScreen(
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    // Slider items from followed users only (filtered in ViewModel)
     val sliderItems by sliderViewModel.sliderItems.collectAsState()
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
+    
+    // Slider count for pager
+    val sliderCount = sliderItems.size
 
-    val sliderCount = if (sliderItems.isEmpty()) 0 else sliderItems.size
     val pagerState = rememberPagerState(
         pageCount = { sliderCount },
         initialPage = 0
@@ -146,10 +149,11 @@ fun HomeScreen(
             }
     }
 
+    // Auto-scroll slider for followed users' posts
     LaunchedEffect(pagerState, sliderCount) {
         if (sliderCount > 1) {
             while (true) {
-                delay(4000) // Slightly longer delay for smoother experience
+                delay(4000) // 4 second delay between slides
                 val nextPage = (pagerState.currentPage + 1) % sliderCount
                 pagerState.animateScrollToPage(
                     page = nextPage,
@@ -175,6 +179,7 @@ fun HomeScreen(
                 .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Show loading when both slider and feed are loading
             if ((sliderLoading && sliderItems.isEmpty()) && (isLoading && postsUI.isEmpty())) {
                 item {
                     Box(
@@ -187,6 +192,7 @@ fun HomeScreen(
                     }
                 }
             } else {
+                // Slider section - shows posts from FOLLOWED USERS ONLY
                 item {
                     if (sliderLoading && sliderItems.isEmpty()) {
                         Box(
@@ -197,7 +203,8 @@ fun HomeScreen(
                         ) {
                             CircularProgressIndicator(color = Brown)
                         }
-                    } else {
+                    } else if (sliderItems.isNotEmpty()) {
+                        // Show slider only if there are items from followed users
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -259,8 +266,10 @@ fun HomeScreen(
                             }
                         }
                     }
+                    // If no followed users have posts, slider area is simply not shown
                 }
 
+                // Loading indicator for feed
                 if (isLoading && postsUI.isEmpty()) {
                     item {
                         Box(
@@ -285,6 +294,9 @@ fun HomeScreen(
                     }
                 }
 
+                // Feed section - posts from ALL users, priority sorted:
+                // 1. Posts from followed users (newest to oldest)
+                // 2. Posts from other users (newest to oldest)
                 items(
                     items = postsUI,
                     key = { it.post.postId },
@@ -496,17 +508,25 @@ fun ListingCard(imageUrl: String, itemName: String, price: String) {
                         maxLines = 1
                     )
                 }
-                if (price.isNotEmpty()) {
-                    Text(
-                        price,
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        )
-                    )
+                // Price display logic
+                val displayPrice = when {
+                    price.isBlank() || price == "Rs.0/day" || price == "Rs.0" -> "$100"
+                    price.matches(Regex("Rs\\.\\s*([0-9]+).*")) -> {
+                        val match = Regex("Rs\\.\\s*([0-9]+)").find(price)
+                        match?.groupValues?.getOrNull(1)?.let { "$${it}" } ?: price
+                    }
+                    price.matches(Regex("[0-9]+")) -> "$${price}"
+                    else -> price
                 }
+                Text(
+                    displayPrice,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = White
+                    )
+                )
             }
         }
     }

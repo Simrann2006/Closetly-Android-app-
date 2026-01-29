@@ -105,7 +105,7 @@ fun CommentScreen(
     val commentText by viewModel.commentText.collectAsState()
     val currentUserProfile by viewModel.currentUserProfile.collectAsState()
     val listState = rememberLazyListState()
-    
+
     var selectedCommentForDelete by remember { mutableStateOf<CommentModel?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -164,7 +164,7 @@ fun CommentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Comments",
@@ -275,9 +275,9 @@ fun CommentItem(
     onLikeClick: () -> Unit
 ) {
     val isLiked = comment.isLikedBy(currentUserId)
-    
+
     val context = LocalContext.current
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -388,7 +388,7 @@ fun CommentItem(
                     modifier = Modifier.size(18.dp)
                 )
             }
-            
+
             // Like count below like button
             if (comment.likesCount > 0) {
                 Text(
@@ -439,14 +439,14 @@ fun CommentInputSection(
                 value = commentText,
                 onValueChange = onCommentChange,
                 modifier = Modifier.weight(1f),
-                placeholder = { 
+                placeholder = {
                     Text(
                         "Add a comment...",
                         style = TextStyle(
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
-                    ) 
+                    )
                 },
                 textStyle = TextStyle(
                     fontSize = 14.sp,
@@ -475,9 +475,9 @@ fun CommentInputSection(
                 Icon(
                     Icons.Default.Send,
                     contentDescription = "Send",
-                    tint = if (commentText.isNotBlank()) 
+                    tint = if (commentText.isNotBlank())
                         Color(0xFF9C27B0)
-                    else 
+                    else
                         Color.Gray.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
                 )

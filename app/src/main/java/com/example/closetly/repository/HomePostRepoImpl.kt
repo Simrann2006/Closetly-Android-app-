@@ -495,4 +495,125 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             0L // Default to epoch start if error
         }
     }
+    
+    /**
+     * Get followed user IDs for a given user as a real-time Flow
+     */
+    override fun getFollowedUserIds(userId: String): Flow<Set<String>> = callbackFlow {
+        val followingRef = usersRef.child(userId).child("following")
+        
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val followedIds = snapshot.children.mapNotNull { it.key }.toSet()
+                trySend(followedIds)
+            }
+            
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+        
+        followingRef.addValueEventListener(listener)
+        
+        awaitClose {
+            followingRef.removeEventListener(listener)
+        }
+    }
+    
+    /**
+     * Get all posts with priority sorting:
+     * - Posts from followed users first (newest to oldest)
+     * - Then posts from other users (newest to oldest)
+     * - Excludes current user's posts and blocked users' posts
+     * - Real-time updates when new posts are added
+     */
+    override fun getPriorityFeedPosts(
+        userId: String,
+        limit: Int
+    ): Flow<List<PostModel>> = callbackFlow {
+        var followedUserIds = setOf<String>()
+        var blockedUserIds = setOf<String>()
+        var allPosts = listOf<PostModel>()
+        var followingLoaded = false
+        var blockedLoaded = false
+        var postsLoaded = false
+        
+        fun emitSortedPosts() {
+            if (!followingLoaded || !blockedLoaded || !postsLoaded) return
+            
+            // Filter posts: exclude current user and blocked users
+            val filteredPosts = allPosts.filter { post ->
+                post.userId != userId &&
+                !blockedUserIds.contains(post.userId) &&
+                post.imageUrl.isNotEmpty() &&
+                post.username.isNotEmpty()
+            }
+            
+            // Separate into followed and non-followed
+            val followedPosts = filteredPosts
+                .filter { followedUserIds.contains(it.userId) }
+                .sortedByDescending { it.timestamp }
+            
+            val otherPosts = filteredPosts
+                .filter { !followedUserIds.contains(it.userId) }
+                .sortedByDescending { it.timestamp }
+            
+            // Combine: followed first, then others
+            val prioritizedPosts = (followedPosts + otherPosts).take(limit)
+            
+            trySend(prioritizedPosts)
+        }
+        
+        // Listen for following changes
+        val followingListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                followedUserIds = snapshot.children.mapNotNull { it.key }.toSet()
+                followingLoaded = true
+                emitSortedPosts()
+            }
+            
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        
+        // Listen for blocked users changes
+        val blockedListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                blockedUserIds = snapshot.children.mapNotNull { it.key }.toSet()
+                blockedLoaded = true
+                emitSortedPosts()
+            }
+            
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        
+        // Listen for posts changes
+        val postsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val posts = mutableListOf<PostModel>()
+                snapshot.children.forEach { postSnapshot ->
+                    postSnapshot.getValue(PostModel::class.java)?.let { post ->
+                        posts.add(post)
+                    }
+                }
+                allPosts = posts.sortedByDescending { it.timestamp }
+                postsLoaded = true
+                emitSortedPosts()
+            }
+            
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+        
+        // Attach all listeners
+        usersRef.child(userId).child("following").addValueEventListener(followingListener)
+        usersRef.child(userId).child("blocked").addValueEventListener(blockedListener)
+        postsRef.addValueEventListener(postsListener)
+        
+        awaitClose {
+            usersRef.child(userId).child("following").removeEventListener(followingListener)
+            usersRef.child(userId).child("blocked").removeEventListener(blockedListener)
+            postsRef.removeEventListener(postsListener)
+        }
+    }
 }

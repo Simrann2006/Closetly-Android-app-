@@ -15,10 +15,9 @@ import kotlinx.coroutines.launch
  * Provides real-time data from Firebase using StateFlow.
  * 
  * This ViewModel:
- * - Observes Firebase data in real-time (latest 5 users only)
- * - Groups all posts (thrift + rent) by user in one slider
- * - Automatically updates UI when ANY user uploads a new post
- * - Shows newest users first based on their latest post
+ * - Shows ONLY posts from followed users (max 5 items)
+ * - Automatically updates UI when followed users upload new posts
+ * - Shows newest posts first based on timestamp
  * - Handles loading states
  * - Follows clean MVVM architecture
  */
@@ -28,6 +27,7 @@ class SliderViewModel(
     
     companion object {
         private const val TAG = "SliderViewModel"
+        private const val MAX_SLIDER_ITEMS = 5
     }
     
     private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
@@ -45,40 +45,49 @@ class SliderViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
     
     init {
-        Log.d(TAG, "SliderViewModel initialized - starting to load slider items")
-        loadSliderItems()
+        Log.d(TAG, "SliderViewModel initialized - loading followed users' posts")
+        loadFollowedUsersSlider()
     }
     
     /**
-     * Loads slider items from Firebase in real-time (LATEST 5 USERS ONLY).
-     * Uses Flow to automatically receive updates when data changes.
-     * Groups all user posts (thrift + rent) together in one slider per user.
-     * Shows up to 5 items per user. Newest users appear first.
+     * Loads slider items ONLY from followed users.
+     * Limited to 5 items, sorted by newest first.
+     * Real-time updates when followed users post new content.
      */
-    private fun loadSliderItems() {
+    private fun loadFollowedUsersSlider() {
+        if (currentUserId == null) {
+            Log.e(TAG, "No current user - cannot load followed users slider")
+            _sliderItems.value = emptyList()
+            return
+        }
+        
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             
-            repository.getSliderItems(excludeUserId = currentUserId)
+            repository.getFollowedUsersSliderItems(
+                currentUserId = currentUserId,
+                limit = MAX_SLIDER_ITEMS
+            )
                 .catch { e ->
-                    Log.e(TAG, "Error loading slider items: ${e.message}", e)
+                    Log.e(TAG, "Error loading followed users slider: ${e.message}", e)
                     _error.value = "Failed to load slider: ${e.message}"
                     _isLoading.value = false
                 }
                 .collectLatest { items ->
-                    Log.d(TAG, "Received ${items.size} slider items from repository")
-                    _sliderItems.value = items
+                    Log.d(TAG, "Received ${items.size} slider items from followed users")
+                    _sliderItems.value = items.take(MAX_SLIDER_ITEMS)
                     _isLoading.value = false
                 }
         }
     }
     
     /**
-     * Manually refresh slider items (optional - usually not needed due to real-time updates)
+     * Manually refresh slider items
+     * Reloads posts from followed users
      */
     fun refresh() {
-        Log.d(TAG, "Manual refresh requested")
-        loadSliderItems()
+        Log.d(TAG, "Manual refresh requested for followed users slider")
+        loadFollowedUsersSlider()
     }
 }

@@ -14,4 +14,16 @@ interface SliderRepo {
      * @return Flow emitting list of SliderItemModel whenever data changes in Firebase
      */
     fun getSliderItems(excludeUserId: String? = null): Flow<List<SliderItemModel>>
+    
+    /**
+     * Get slider items ONLY from followed users.
+     * Shows posts from users that the current user follows.
+     * @param currentUserId The current user's ID (to get their following list)
+     * @param limit Maximum number of slider items to return (default 5)
+     * @return Flow emitting list of SliderItemModel from followed users only
+     */
+    fun getFollowedUsersSliderItems(
+        currentUserId: String,
+        limit: Int = 5
+    ): Flow<List<SliderItemModel>>
 }
