@@ -172,7 +172,9 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
                 var count = 0
                 snapshot.children.forEach { commentSnapshot ->
                     val commentPostId = commentSnapshot.child("postId").getValue(String::class.java)
-                    if (commentPostId == postId) {
+                    val userName = commentSnapshot.child("userName").getValue(String::class.java) ?: ""
+                    val userId = commentSnapshot.child("userId").getValue(String::class.java) ?: ""
+                    if (commentPostId == postId && userName != "User" && userId.isNotEmpty()) {
                         count++
                     }
                 }

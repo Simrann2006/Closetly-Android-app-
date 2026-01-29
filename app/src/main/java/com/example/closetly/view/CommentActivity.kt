@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -98,6 +99,8 @@ fun CommentScreen(
     val context = LocalContext.current
     val viewModel = remember { CommentViewModel(context) }
     val comments by viewModel.comments.collectAsState()
+    val filteredComments = comments.filter { it.userName != "User" && it.userId.isNotEmpty() }
+    val commentCount = filteredComments.size
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()
     val currentUserProfile by viewModel.currentUserProfile.collectAsState()
@@ -162,10 +165,21 @@ fun CommentScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(
-                        "Comments",
-                        fontWeight = FontWeight.Bold
-                    ) 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Comments",
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        if (commentCount > 0) {
+                            Text(
+                                text = commentCount.toString(),
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.Gray,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -229,7 +243,7 @@ fun CommentScreen(
                     contentPadding = PaddingValues(bottom = 8.dp, top = 8.dp)
                 ) {
                     items(
-                        items = comments,
+                        items = filteredComments,
                         key = { it.id }
                     ) { comment ->
                         CommentItem(
@@ -293,12 +307,16 @@ fun CommentItem(
                 .size(36.dp)
                 .clip(CircleShape)
                 .border(1.dp, Color.LightGray, CircleShape)
-                .clickable {
-                    val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
-                        putExtra("userId", comment.userId)
-                        putExtra("username", comment.userName)
-                    }
-                    context.startActivity(intent)
+                .let { baseModifier ->
+                    if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                        baseModifier.clickable {
+                            val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                putExtra("userId", comment.userId)
+                                putExtra("username", comment.userName)
+                            }
+                            context.startActivity(intent)
+                        }
+                    } else baseModifier
                 }
         )
 
@@ -318,13 +336,13 @@ fun CommentItem(
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
                     ),
-                    modifier = Modifier.clickable {
+                    modifier = if (comment.userName != "User" && comment.userId.isNotEmpty()) Modifier.clickable {
                         val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
                             putExtra("userId", comment.userId)
                             putExtra("username", comment.userName)
                         }
                         context.startActivity(intent)
-                    }
+                    } else Modifier
                 )
                 Text(
                     "•",
