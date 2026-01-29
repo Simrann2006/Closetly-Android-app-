@@ -25,16 +25,17 @@ class CommentRepoImpl(private val context: Context) : CommentRepo {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val commentsList = mutableListOf<CommentModel>()
                 var processedCount = 0
-                val totalComments = snapshot.children.filter { 
+                val commentsForPost = snapshot.children.filter { 
                     it.child("postId").getValue(String::class.java) == postId 
-                }.count()
+                }.toList()
+                val totalComments = commentsForPost.count()
                 
                 if (totalComments == 0) {
                     trySend(emptyList())
                     return
                 }
                 
-                snapshot.children.forEach { commentSnapshot ->
+                commentsForPost.forEach { commentSnapshot ->
                     try {
                         val id = commentSnapshot.child("id").getValue(String::class.java) ?: ""
                         val commentPostId = commentSnapshot.child("postId").getValue(String::class.java) ?: ""
@@ -51,36 +52,56 @@ class CommentRepoImpl(private val context: Context) : CommentRepo {
                             }
                         }
                         
-                        if (commentPostId == postId) {
+                        if (commentPostId == postId && userId.isNotEmpty()) {
                             // Fetch current user data from Users table
                             usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
-                                val userName = userSnapshot.child("username").getValue(String::class.java) ?: "User"
-                                val userProfileImage = userSnapshot.child("profilePicture").getValue(String::class.java) ?: ""
-                                
-                                val comment = CommentModel(
-                                    id = id,
-                                    postId = commentPostId,
-                                    userId = userId,
-                                    userName = userName,
-                                    userProfileImage = userProfileImage,
-                                    commentText = commentText,
-                                    timestamp = timestamp,
-                                    likes = likes
-                                )
-                                commentsList.add(comment)
+                                if (userSnapshot.exists()) {
+                                    // User exists - add the comment with updated user info
+                                    val userName = userSnapshot.child("username").getValue(String::class.java) ?: "User"
+                                    val userProfileImage = userSnapshot.child("profilePicture").getValue(String::class.java) ?: ""
+                                    
+                                    val comment = CommentModel(
+                                        id = id,
+                                        postId = commentPostId,
+                                        userId = userId,
+                                        userName = userName,
+                                        userProfileImage = userProfileImage,
+                                        commentText = commentText,
+                                        timestamp = timestamp,
+                                        likes = likes
+                                    )
+                                    commentsList.add(comment)
+                                } else {
+                                    // User deleted - remove the comment from Firebase
+                                    commentsRef.child(id).removeValue()
+                                }
                                 processedCount++
                                 
                                 if (processedCount == totalComments) {
-                                    trySend(commentsList.sortedByDescending { it.timestamp })
+                                    // Remove duplicates by comment id
+                                    val uniqueComments = commentsList.distinctBy { it.id }
+                                    trySend(uniqueComments.sortedByDescending { it.timestamp })
                                 }
                             }.addOnFailureListener {
                                 processedCount++
                                 if (processedCount == totalComments) {
-                                    trySend(commentsList.sortedByDescending { it.timestamp })
+                                    val uniqueComments = commentsList.distinctBy { it.id }
+                                    trySend(uniqueComments.sortedByDescending { it.timestamp })
                                 }
+                            }
+                        } else {
+                            processedCount++
+                            if (processedCount == totalComments) {
+                                val uniqueComments = commentsList.distinctBy { it.id }
+                                trySend(uniqueComments.sortedByDescending { it.timestamp })
                             }
                         }
                     } catch (e: Exception) {
+                        processedCount++
+                        if (processedCount == totalComments) {
+                            val uniqueComments = commentsList.distinctBy { it.id }
+                            trySend(uniqueComments.sortedByDescending { it.timestamp })
+                        }
                     }
                 }
             }

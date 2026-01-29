@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -64,12 +65,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.R
 import com.example.closetly.model.CommentModel
+import com.example.closetly.ui.theme.Background_Dark
+import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.Surface_Dark
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.utils.getTimeAgoShort
 import com.example.closetly.viewmodel.CommentViewModel
 import kotlinx.coroutines.launch
@@ -118,7 +125,7 @@ fun CommentScreen(
         ModalBottomSheet(
             onDismissRequest = { selectedCommentForDelete = null },
             sheetState = sheetState,
-            containerColor = Color.White,
+            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White,
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
         ) {
             Column(
@@ -168,7 +175,8 @@ fun CommentScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Comments",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         if (commentCount > 0) {
@@ -183,11 +191,15 @@ fun CommentScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            "Back",
+                            tint = if (ThemeManager.isDarkMode) Color.White else Color.Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White
                 )
             )
         },
@@ -198,19 +210,22 @@ fun CommentScreen(
                 onCommentChange = { viewModel.updateCommentText(it) },
                 onSendClick = {
                     viewModel.postComment(postId = postId)
-                }
+                },
+                isDarkMode = ThemeManager.isDarkMode
             )
-        }
+        },
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Color.White)
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = if (ThemeManager.isDarkMode) Color.White else Brown
                 )
             } else if (comments.isEmpty()) {
                 Column(
@@ -257,7 +272,8 @@ fun CommentScreen(
                             },
                             onLikeClick = {
                                 viewModel.likeComment(comment.id, postId)
-                            }
+                            },
+                            isDarkMode = ThemeManager.isDarkMode
                         )
                     }
                 }
@@ -272,7 +288,8 @@ fun CommentItem(
     currentUserId: String,
     isCurrentUser: Boolean,
     onCommentLongPress: () -> Unit,
-    onLikeClick: () -> Unit
+    onLikeClick: () -> Unit,
+    isDarkMode: Boolean = false
 ) {
     val isLiked = comment.isLikedBy(currentUserId)
 
@@ -298,27 +315,57 @@ fun CommentItem(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Profile Picture
-        AsyncImage(
-            model = comment.userProfileImage,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .border(1.dp, Color.LightGray, CircleShape)
-                .let { baseModifier ->
-                    if (comment.userName != "User" && comment.userId.isNotEmpty()) {
-                        baseModifier.clickable {
-                            val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
-                                putExtra("userId", comment.userId)
-                                putExtra("username", comment.userName)
+        // Profile Picture with placeholder support
+        if (comment.userProfileImage.isNotEmpty()) {
+            AsyncImage(
+                model = comment.userProfileImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    .let { baseModifier ->
+                        if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                            baseModifier.clickable {
+                                val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", comment.userId)
+                                    putExtra("username", comment.userName)
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
-                        }
-                    } else baseModifier
-                }
-        )
+                        } else baseModifier
+                    }
+            )
+        } else {
+            // Default placeholder profile image
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
+                    .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    .let { baseModifier ->
+                        if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                            baseModifier.clickable {
+                                val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", comment.userId)
+                                    putExtra("username", comment.userName)
+                                }
+                                context.startActivity(intent)
+                            }
+                        } else baseModifier
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_person_24),
+                    contentDescription = "Default profile",
+                    tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
 
         // Comment Content
         Column(
@@ -334,7 +381,7 @@ fun CommentItem(
                     style = TextStyle(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
+                        color = if (isDarkMode) Color.White else Color.Black
                     ),
                     modifier = if (comment.userName != "User" && comment.userId.isNotEmpty()) Modifier.clickable {
                         val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
@@ -365,7 +412,7 @@ fun CommentItem(
                 comment.commentText,
                 style = TextStyle(
                     fontSize = 14.sp,
-                    color = Color.Black,
+                    color = if (isDarkMode) Color.White else Color.Black,
                     lineHeight = 20.sp
                 ),
                 modifier = Modifier.padding(top = 3.dp, bottom = 2.dp)
@@ -409,13 +456,15 @@ fun CommentInputSection(
     commentText: String,
     currentUserProfileImage: String,
     onCommentChange: (String) -> Unit,
-    onSendClick: () -> Unit
+    onSendClick: () -> Unit,
+    isDarkMode: Boolean = false
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .imePadding(),
-        color = Color.White,
+        color = if (isDarkMode) Surface_Dark else Color.White,
         shadowElevation = 4.dp
     ) {
         Row(
@@ -425,15 +474,35 @@ fun CommentInputSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            AsyncImage(
-                model = currentUserProfileImage,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, Color.LightGray, CircleShape)
-            )
+            // Profile image with placeholder support
+            if (currentUserProfileImage.isNotEmpty()) {
+                AsyncImage(
+                    model = currentUserProfileImage,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                )
+            } else {
+                // Default placeholder profile image
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
+                        .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_person_24),
+                        contentDescription = "Default profile",
+                        tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
             OutlinedTextField(
                 value = commentText,
@@ -450,14 +519,15 @@ fun CommentInputSection(
                 },
                 textStyle = TextStyle(
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = if (isDarkMode) Color.White else Color.Black
                 ),
                 shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f),
+                    focusedBorderColor = if (isDarkMode) Color.Gray else Color.LightGray,
+                    unfocusedBorderColor = if (isDarkMode) Color.Gray.copy(alpha = 0.6f) else Color.LightGray.copy(alpha = 0.6f),
                     focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    unfocusedContainerColor = Color.Transparent,
+                    cursorColor = if (isDarkMode) Color.White else Color.Black
                 ),
                 maxLines = 4,
                 singleLine = false
@@ -476,7 +546,7 @@ fun CommentInputSection(
                     Icons.Default.Send,
                     contentDescription = "Send",
                     tint = if (commentText.isNotBlank())
-                        Color(0xFF9C27B0)
+                        Brown
                     else
                         Color.Gray.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
@@ -489,7 +559,8 @@ fun CommentInputSection(
 @Composable
 fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isDarkMode: Boolean = false
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -498,14 +569,18 @@ fun DeleteConfirmationDialog(
                 "Delete Comment",
                 style = TextStyle(
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDarkMode) Color.White else Color.Black
                 )
             )
         },
         text = {
             Text(
                 "Are you sure you want to delete this comment? This action cannot be undone.",
-                style = TextStyle(fontSize = 14.sp)
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = if (isDarkMode) Color.White.copy(alpha = 0.8f) else Color.Black
+                )
             )
         },
         confirmButton = {
@@ -520,10 +595,13 @@ fun DeleteConfirmationDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(
+                    "Cancel",
+                    color = if (isDarkMode) Color.White else Color.Black
+                )
             }
         },
-        containerColor = Color.White,
+        containerColor = if (isDarkMode) Surface_Dark else Color.White,
         shape = RoundedCornerShape(16.dp)
     )
 }
