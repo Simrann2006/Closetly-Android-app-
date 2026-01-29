@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -98,6 +99,8 @@ fun CommentScreen(
     val context = LocalContext.current
     val viewModel = remember { CommentViewModel(context) }
     val comments by viewModel.comments.collectAsState()
+    val filteredComments = comments.filter { it.userName != "User" && it.userId.isNotEmpty() }
+    val commentCount = filteredComments.size
     val isLoading by viewModel.isLoading.collectAsState()
     val commentText by viewModel.commentText.collectAsState()
     val currentUserProfile by viewModel.currentUserProfile.collectAsState()
@@ -162,10 +165,21 @@ fun CommentScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(
-                        "Comments",
-                        fontWeight = FontWeight.Bold
-                    ) 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Comments",
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        if (commentCount > 0) {
+                            Text(
+                                text = commentCount.toString(),
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.Gray,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -229,7 +243,7 @@ fun CommentScreen(
                     contentPadding = PaddingValues(bottom = 8.dp, top = 8.dp)
                 ) {
                     items(
-                        items = comments,
+                        items = filteredComments,
                         key = { it.id }
                     ) { comment ->
                         CommentItem(
@@ -262,6 +276,8 @@ fun CommentItem(
 ) {
     val isLiked = comment.isLikedBy(currentUserId)
     
+    val context = LocalContext.current
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,13 +300,24 @@ fun CommentItem(
     ) {
         // Profile Picture
         AsyncImage(
-            model = comment.userProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
+            model = comment.userProfileImage,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
                 .border(1.dp, Color.LightGray, CircleShape)
+                .let { baseModifier ->
+                    if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                        baseModifier.clickable {
+                            val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                putExtra("userId", comment.userId)
+                                putExtra("username", comment.userName)
+                            }
+                            context.startActivity(intent)
+                        }
+                    } else baseModifier
+                }
         )
 
         // Comment Content
@@ -308,7 +335,14 @@ fun CommentItem(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
-                    )
+                    ),
+                    modifier = if (comment.userName != "User" && comment.userId.isNotEmpty()) Modifier.clickable {
+                        val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", comment.userId)
+                            putExtra("username", comment.userName)
+                        }
+                        context.startActivity(intent)
+                    } else Modifier
                 )
                 Text(
                     "•",
@@ -336,32 +370,36 @@ fun CommentItem(
                 ),
                 modifier = Modifier.padding(top = 3.dp, bottom = 2.dp)
             )
-            
-            // Like count below comment (Instagram style)
-            if (comment.likesCount > 0) {
-                Text(
-                    "${comment.likesCount} ${if (comment.likesCount == 1) "like" else "likes"}",
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Gray
-                    ),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
         }
 
-        // Like Button
-        IconButton(
-            onClick = onLikeClick,
-            modifier = Modifier.size(32.dp)
+        // Like Button with count
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = "Like",
-                tint = if (isLiked) Color.Red else Color.Gray,
-                modifier = Modifier.size(18.dp)
-            )
+            IconButton(
+                onClick = onLikeClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = if (isLiked) Color.Red else Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            
+            // Like count below like button
+            if (comment.likesCount > 0) {
+                Text(
+                    "${comment.likesCount}",
+                    style = TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Gray
+                    )
+                )
+            }
         }
     }
 }
@@ -388,7 +426,7 @@ fun CommentInputSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             AsyncImage(
-                model = currentUserProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
+                model = currentUserProfileImage,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

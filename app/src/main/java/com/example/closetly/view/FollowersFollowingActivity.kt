@@ -191,18 +191,27 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                             isFollowing = followingStates[user.userId] ?: false,
                             theyFollowUs = followerStates[user.userId] ?: false,
                             onUserClick = {
-                                if (user.userId == currentUserId) {
-                                } else {
-                                    val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                        putExtra("userId", user.userId)
-                                        putExtra("username", user.username)
-                                    }
-                                    context.startActivity(intent)
+                                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", user.userId)
+                                    putExtra("username", user.username)
                                 }
+                                context.startActivity(intent)
                             },
                             onFollowClick = {
                                 if (currentUserId.isNotEmpty() && user.userId != currentUserId) {
                                     userViewModel.toggleFollow(currentUserId, user.userId) { success, _ ->
+                                        if (success) {
+                                            // Update the local follow state immediately for UI responsiveness
+                                            val currentlyFollowing = followingStates[user.userId] ?: false
+                                            followingStates = followingStates + (user.userId to !currentlyFollowing)
+                                            
+                                            // If we just unfollowed someone from the following list, reload the list
+                                            if (selectedTab == 1 && currentlyFollowing) {
+                                                userViewModel.getFollowingList(userId) { list ->
+                                                    followingList = list
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
