@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -268,7 +269,9 @@ fun RegistrationBody() {
                                 )
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("fullname_input"),
                         shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
@@ -391,7 +394,9 @@ fun RegistrationBody() {
                                     )
                                 )
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("phone_input"),
                             shape = RoundedCornerShape(14.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
@@ -445,7 +450,9 @@ fun RegistrationBody() {
                                 )
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("email_input"),
                         shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
@@ -509,7 +516,9 @@ fun RegistrationBody() {
                                 )
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("password_input"),
                         shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
@@ -573,7 +582,9 @@ fun RegistrationBody() {
                                 )
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("confirm_password_input"),
                         shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
@@ -632,7 +643,8 @@ fun RegistrationBody() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp)
-                        .shadow(12.dp, RoundedCornerShape(14.dp)),
+                        .shadow(12.dp, RoundedCornerShape(14.dp))
+                        .testTag("register_button"),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(0.dp)
