@@ -101,11 +101,10 @@ fun HomeScreen(
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Slider items from followed users only (filtered in ViewModel)
+
     val sliderItems by sliderViewModel.sliderItems.collectAsState()
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
     
-    // Slider count for pager
     val sliderCount = sliderItems.size
 
     val pagerState = rememberPagerState(
@@ -113,31 +112,26 @@ fun HomeScreen(
         initialPage = 0
     )
     
-    // LazyColumn state for pagination
     val listState = rememberLazyListState()
     
-    // Pull-to-refresh state
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = { 
             viewModel.refreshPosts()
-            sliderViewModel.refresh() // Also refresh slider
+            sliderViewModel.refresh()
         }
     )
     
-    // Detect when user scrolls near bottom for pagination
     val shouldLoadMore = remember {
         derivedStateOf {
             val layoutInfo = listState.layoutInfo
             val totalItemsCount = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             
-            // Load more when user is 3 items away from the end
             lastVisibleItemIndex >= totalItemsCount - 3 && totalItemsCount > 0
         }
     }
     
-    // Trigger load more when scrolling near bottom
     LaunchedEffect(Unit) {
         snapshotFlow { shouldLoadMore.value }
             .distinctUntilChanged()
@@ -149,7 +143,6 @@ fun HomeScreen(
             }
     }
 
-    // Auto-scroll slider for followed users' posts
     LaunchedEffect(pagerState, sliderCount) {
         if (sliderCount > 1) {
             while (true) {
@@ -179,7 +172,6 @@ fun HomeScreen(
                 .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Show loading when both slider and feed are loading
             if ((sliderLoading && sliderItems.isEmpty()) && (isLoading && postsUI.isEmpty())) {
                 item {
                     Box(
@@ -192,7 +184,6 @@ fun HomeScreen(
                     }
                 }
             } else {
-                // Slider section - shows posts from FOLLOWED USERS ONLY
                 item {
                     if (sliderLoading && sliderItems.isEmpty()) {
                         Box(
@@ -204,7 +195,6 @@ fun HomeScreen(
                             CircularProgressIndicator(color = Brown)
                         }
                     } else if (sliderItems.isNotEmpty()) {
-                        // Show slider only if there are items from followed users
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -245,7 +235,6 @@ fun HomeScreen(
                                 }
                             }
 
-                            // Custom pager indicator
                             Row(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
@@ -266,10 +255,8 @@ fun HomeScreen(
                             }
                         }
                     }
-                    // If no followed users have posts, slider area is simply not shown
                 }
 
-                // Loading indicator for feed
                 if (isLoading && postsUI.isEmpty()) {
                     item {
                         Box(
@@ -294,9 +281,7 @@ fun HomeScreen(
                     }
                 }
 
-                // Feed section - posts from ALL users, priority sorted:
-                // 1. Posts from followed users (newest to oldest)
-                // 2. Posts from other users (newest to oldest)
+
                 items(
                     items = postsUI,
                     key = { it.post.postId },
@@ -319,7 +304,6 @@ fun HomeScreen(
                     Spacer(Modifier.height(2.dp))
                 }
                 
-                // Loading indicator for pagination
                 if (isLoadingMore) {
                     item {
                         Box(
@@ -338,7 +322,6 @@ fun HomeScreen(
             }
         }
         
-        // Pull-to-refresh indicator at top
         PullRefreshIndicator(
             refreshing = isRefreshing,
             state = pullRefreshState,
@@ -508,15 +491,18 @@ fun ListingCard(imageUrl: String, itemName: String, price: String) {
                         maxLines = 1
                     )
                 }
-                // Price display logic
+                val cleanPrice = price
+                    .replace("$", "")
+                    .replace("Rs. ", "Rs.")
+                    .replace("Rs.", "Rs.")
+                    .trim()
+                
                 val displayPrice = when {
-                    price.isBlank() || price == "Rs.0/day" || price == "Rs.0" -> "$100"
-                    price.matches(Regex("Rs\\.\\s*([0-9]+).*")) -> {
-                        val match = Regex("Rs\\.\\s*([0-9]+)").find(price)
-                        match?.groupValues?.getOrNull(1)?.let { "$${it}" } ?: price
-                    }
-                    price.matches(Regex("[0-9]+")) -> "$${price}"
-                    else -> price
+                    cleanPrice.isBlank() || cleanPrice == "0" || cleanPrice == "Rs.0" || cleanPrice == "Rs.0/day" -> "Rs.100/day"
+                    cleanPrice.startsWith("Rs.") -> cleanPrice
+                    cleanPrice.matches(Regex("[0-9]+\\.?[0-9]*/day")) -> "Rs.$cleanPrice"
+                    cleanPrice.matches(Regex("[0-9]+\\.?[0-9]*")) -> "Rs.$cleanPrice"
+                    else -> "Rs.$cleanPrice"
                 }
                 Text(
                     displayPrice,
@@ -645,7 +631,6 @@ fun PostCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Only show Follow button if post is not from current user
                 val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
                 if (postUI.post.userId != currentUserId) {
                     Button(

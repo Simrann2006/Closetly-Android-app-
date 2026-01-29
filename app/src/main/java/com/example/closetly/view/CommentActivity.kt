@@ -123,7 +123,7 @@ fun CommentScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     
-    // Keyboard handling with stable bottom padding
+
     val density = LocalDensity.current
     val navBarInsets = WindowInsets.navigationBars
     val navBarHeight = with(density) { navBarInsets.getBottom(density).toDp() }
@@ -333,7 +333,7 @@ fun CommentItem(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Profile Picture with placeholder support
+
         if (comment.userProfileImage.isNotEmpty()) {
             AsyncImage(
                 model = comment.userProfileImage,
@@ -356,7 +356,7 @@ fun CommentItem(
                     }
             )
         } else {
-            // Default placeholder profile image
+
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -385,7 +385,7 @@ fun CommentItem(
             }
         }
 
-        // Comment Content
+
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -425,7 +425,6 @@ fun CommentItem(
                 )
             }
 
-            // Comment Text
             Text(
                 comment.commentText,
                 style = TextStyle(
@@ -437,7 +436,6 @@ fun CommentItem(
             )
         }
 
-        // Like Button with count
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -454,7 +452,6 @@ fun CommentItem(
                 )
             }
 
-            // Like count below like button
             if (comment.likesCount > 0) {
                 Text(
                     "${comment.likesCount}",
@@ -493,7 +490,6 @@ fun CommentInputSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Profile image with placeholder support
                 if (currentUserProfileImage.isNotEmpty()) {
                     AsyncImage(
                         model = currentUserProfileImage,
@@ -505,7 +501,6 @@ fun CommentInputSection(
                             .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
                     )
                 } else {
-                    // Default placeholder profile image
                     Box(
                         modifier = Modifier
                             .size(32.dp)
@@ -572,7 +567,7 @@ fun CommentInputSection(
                     )
                 }
             }
-            // Bottom padding spacer for navigation bar
+
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()

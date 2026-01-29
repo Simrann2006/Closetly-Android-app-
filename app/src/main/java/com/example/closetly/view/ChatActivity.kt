@@ -326,7 +326,6 @@ fun ChatBody(
                 )
             }
 
-            // Message input area with typing indicator
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -945,7 +944,6 @@ fun MessageActionsDialog(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Copy option (if message has text)
                 if (message.text.isNotEmpty()) {
                     Row(
                         modifier = Modifier
@@ -974,8 +972,7 @@ fun MessageActionsDialog(
                         )
                     }
                 }
-                
-                // Show Unsend option only for current user's messages
+
                 if (isCurrentUser) {
                     if (message.text.isNotEmpty()) {
                         Divider(color = Grey.copy(alpha = 0.3f), thickness = 0.5.dp)
