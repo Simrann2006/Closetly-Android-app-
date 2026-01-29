@@ -169,7 +169,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey)
             .pullRefresh(pullRefreshState)
     ) {
         LazyColumn(
@@ -343,8 +343,8 @@ fun HomeScreen(
             refreshing = isRefreshing,
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter),
-            backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-            contentColor = Black
+            backgroundColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+            contentColor = if (ThemeManager.isDarkMode) White else Black
         )
     }
 }
@@ -472,7 +472,7 @@ fun ListingCard(imageUrl: String, itemName: String, price: String) {
             .height(145.dp),
         shape = RoundedCornerShape(14.dp),
         elevation = 6.dp,
-        backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+        backgroundColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) {
         Box {
             AsyncImage(

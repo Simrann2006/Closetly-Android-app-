@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,10 +16,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -116,6 +122,11 @@ fun CommentScreen(
     var selectedCommentForDelete by remember { mutableStateOf<CommentModel?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    
+    // Keyboard handling with stable bottom padding
+    val density = LocalDensity.current
+    val navBarInsets = WindowInsets.navigationBars
+    val navBarHeight = with(density) { navBarInsets.getBottom(density).toDp() }
 
     LaunchedEffect(postId) {
         viewModel.loadComments(postId)
@@ -125,7 +136,7 @@ fun CommentScreen(
         ModalBottomSheet(
             onDismissRequest = { selectedCommentForDelete = null },
             sheetState = sheetState,
-            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Color.White,
+            containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White,
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
         ) {
             Column(
@@ -210,8 +221,15 @@ fun CommentScreen(
                 onCommentChange = { viewModel.updateCommentText(it) },
                 onSendClick = {
                     viewModel.postComment(postId = postId)
+                    // Scroll to the newest comment after posting
+                    scope.launch {
+                        if (filteredComments.isNotEmpty()) {
+                            listState.animateScrollToItem(filteredComments.size)
+                        }
+                    }
                 },
-                isDarkMode = ThemeManager.isDarkMode
+                isDarkMode = ThemeManager.isDarkMode,
+                bottomPadding = navBarHeight
             )
         },
         containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White
@@ -457,101 +475,110 @@ fun CommentInputSection(
     currentUserProfileImage: String,
     onCommentChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    isDarkMode: Boolean = false
+    isDarkMode: Boolean = false,
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .imePadding(),
-        color = if (isDarkMode) Surface_Dark else Color.White,
+        color = if (isDarkMode) Background_Dark else Color.White,
         shadowElevation = 4.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Profile image with placeholder support
-            if (currentUserProfileImage.isNotEmpty()) {
-                AsyncImage(
-                    model = currentUserProfileImage,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Profile image with placeholder support
+                if (currentUserProfileImage.isNotEmpty()) {
+                    AsyncImage(
+                        model = currentUserProfileImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    )
+                } else {
+                    // Default placeholder profile image
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
+                            .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_person_24),
+                            contentDescription = "Default profile",
+                            tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = commentText,
+                    onValueChange = onCommentChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = {
+                        Text(
+                            "Add a comment...",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        )
+                    },
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = if (isDarkMode) Color.White else Color.Black
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = if (isDarkMode) Color.Gray else Color.LightGray,
+                        unfocusedBorderColor = if (isDarkMode) Color.Gray.copy(alpha = 0.6f) else Color.LightGray.copy(alpha = 0.6f),
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        cursorColor = if (isDarkMode) Color.White else Color.Black
+                    ),
+                    maxLines = 4,
+                    singleLine = false
                 )
-            } else {
-                // Default placeholder profile image
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
-                        .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape),
-                    contentAlignment = Alignment.Center
+
+                IconButton(
+                    onClick = {
+                        if (commentText.isNotBlank()) {
+                            onSendClick()
+                        }
+                    },
+                    enabled = commentText.isNotBlank(),
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.baseline_person_24),
-                        contentDescription = "Default profile",
-                        tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
-                        modifier = Modifier.size(20.dp)
+                        Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = if (commentText.isNotBlank())
+                            Brown
+                        else
+                            Color.Gray.copy(alpha = 0.5f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-
-            OutlinedTextField(
-                value = commentText,
-                onValueChange = onCommentChange,
-                modifier = Modifier.weight(1f),
-                placeholder = {
-                    Text(
-                        "Add a comment...",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    )
-                },
-                textStyle = TextStyle(
-                    fontSize = 14.sp,
-                    color = if (isDarkMode) Color.White else Color.Black
-                ),
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isDarkMode) Color.Gray else Color.LightGray,
-                    unfocusedBorderColor = if (isDarkMode) Color.Gray.copy(alpha = 0.6f) else Color.LightGray.copy(alpha = 0.6f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    cursorColor = if (isDarkMode) Color.White else Color.Black
-                ),
-                maxLines = 4,
-                singleLine = false
+            // Bottom padding spacer for navigation bar
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(bottomPadding)
+                    .background(if (isDarkMode) Background_Dark else Color.White)
             )
-
-            IconButton(
-                onClick = {
-                    if (commentText.isNotBlank()) {
-                        onSendClick()
-                    }
-                },
-                enabled = commentText.isNotBlank(),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.Send,
-                    contentDescription = "Send",
-                    tint = if (commentText.isNotBlank())
-                        Brown
-                    else
-                        Color.Gray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
         }
     }
 }
@@ -601,7 +628,7 @@ fun DeleteConfirmationDialog(
                 )
             }
         },
-        containerColor = if (isDarkMode) Surface_Dark else Color.White,
+        containerColor = if (isDarkMode) Background_Dark else Color.White,
         shape = RoundedCornerShape(16.dp)
     )
 }
