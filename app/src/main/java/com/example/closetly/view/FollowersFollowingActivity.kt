@@ -191,14 +191,11 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                             isFollowing = followingStates[user.userId] ?: false,
                             theyFollowUs = followerStates[user.userId] ?: false,
                             onUserClick = {
-                                if (user.userId == currentUserId) {
-                                } else {
-                                    val intent = Intent(context, UserProfileActivity::class.java).apply {
-                                        putExtra("userId", user.userId)
-                                        putExtra("username", user.username)
-                                    }
-                                    context.startActivity(intent)
+                                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", user.userId)
+                                    putExtra("username", user.username)
                                 }
+                                context.startActivity(intent)
                             },
                             onFollowClick = {
                                 if (currentUserId.isNotEmpty() && user.userId != currentUserId) {

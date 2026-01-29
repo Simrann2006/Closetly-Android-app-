@@ -24,13 +24,21 @@ class CommentRepoImpl(private val context: Context) : CommentRepo {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val commentsList = mutableListOf<CommentModel>()
+                var processedCount = 0
+                val totalComments = snapshot.children.filter { 
+                    it.child("postId").getValue(String::class.java) == postId 
+                }.count()
+                
+                if (totalComments == 0) {
+                    trySend(emptyList())
+                    return
+                }
+                
                 snapshot.children.forEach { commentSnapshot ->
                     try {
                         val id = commentSnapshot.child("id").getValue(String::class.java) ?: ""
                         val commentPostId = commentSnapshot.child("postId").getValue(String::class.java) ?: ""
                         val userId = commentSnapshot.child("userId").getValue(String::class.java) ?: ""
-                        val userName = commentSnapshot.child("userName").getValue(String::class.java) ?: ""
-                        val userProfileImage = commentSnapshot.child("userProfileImage").getValue(String::class.java) ?: ""
                         val commentText = commentSnapshot.child("commentText").getValue(String::class.java) ?: ""
                         val timestamp = commentSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
                         
@@ -44,22 +52,37 @@ class CommentRepoImpl(private val context: Context) : CommentRepo {
                         }
                         
                         if (commentPostId == postId) {
-                            val comment = CommentModel(
-                                id = id,
-                                postId = commentPostId,
-                                userId = userId,
-                                userName = userName,
-                                userProfileImage = userProfileImage,
-                                commentText = commentText,
-                                timestamp = timestamp,
-                                likes = likes
-                            )
-                            commentsList.add(comment)
+                            // Fetch current user data from Users table
+                            usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
+                                val userName = userSnapshot.child("username").getValue(String::class.java) ?: "User"
+                                val userProfileImage = userSnapshot.child("profilePicture").getValue(String::class.java) ?: ""
+                                
+                                val comment = CommentModel(
+                                    id = id,
+                                    postId = commentPostId,
+                                    userId = userId,
+                                    userName = userName,
+                                    userProfileImage = userProfileImage,
+                                    commentText = commentText,
+                                    timestamp = timestamp,
+                                    likes = likes
+                                )
+                                commentsList.add(comment)
+                                processedCount++
+                                
+                                if (processedCount == totalComments) {
+                                    trySend(commentsList.sortedByDescending { it.timestamp })
+                                }
+                            }.addOnFailureListener {
+                                processedCount++
+                                if (processedCount == totalComments) {
+                                    trySend(commentsList.sortedByDescending { it.timestamp })
+                                }
+                            }
                         }
                     } catch (e: Exception) {
                     }
                 }
-                trySend(commentsList.sortedByDescending { it.timestamp })
             }
 
             override fun onCancelled(error: DatabaseError) {

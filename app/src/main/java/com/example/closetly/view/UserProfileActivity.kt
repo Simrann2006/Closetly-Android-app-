@@ -628,18 +628,6 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         }
                         .padding(horizontal = 24.dp, vertical = 20.dp)
                 )
-                Text(
-                    text = "Share this profile",
-                    fontSize = 16.sp,
-                    color = if (ThemeManager.isDarkMode) White else Black,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            showMenu = false
-                            // TODO: Implement share functionality
-                        }
-                        .padding(horizontal = 24.dp, vertical = 20.dp)
-                )
             }
         }
     }

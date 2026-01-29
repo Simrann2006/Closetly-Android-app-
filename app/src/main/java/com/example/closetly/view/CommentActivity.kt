@@ -352,32 +352,36 @@ fun CommentItem(
                 ),
                 modifier = Modifier.padding(top = 3.dp, bottom = 2.dp)
             )
-            
-            // Like count below comment (Instagram style)
-            if (comment.likesCount > 0) {
-                Text(
-                    "${comment.likesCount} ${if (comment.likesCount == 1) "like" else "likes"}",
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Gray
-                    ),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
         }
 
-        // Like Button
-        IconButton(
-            onClick = onLikeClick,
-            modifier = Modifier.size(32.dp)
+        // Like Button with count
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                contentDescription = "Like",
-                tint = if (isLiked) Color.Red else Color.Gray,
-                modifier = Modifier.size(18.dp)
-            )
+            IconButton(
+                onClick = onLikeClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = if (isLiked) Color.Red else Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            
+            // Like count below like button
+            if (comment.likesCount > 0) {
+                Text(
+                    "${comment.likesCount}",
+                    style = TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Gray
+                    )
+                )
+            }
         }
     }
 }

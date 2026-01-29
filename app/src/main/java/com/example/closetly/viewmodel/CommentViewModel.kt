@@ -46,7 +46,7 @@ class CommentViewModel(
         viewModelScope.launch {
             try {
                 val userSnapshot = database.getReference("Users/$currentUserId").get().await()
-                val userName = userSnapshot.child("fullName").value?.toString() ?: "User"
+                val userName = userSnapshot.child("username").value?.toString() ?: "User"
                 val userProfileImage = userSnapshot.child("profilePicture").value?.toString() ?: ""
                 _currentUserProfile.value = userName to userProfileImage
             } catch (e: Exception) {
@@ -73,18 +73,16 @@ class CommentViewModel(
         if (_commentText.value.isBlank()) return
         
         viewModelScope.launch {
-            // Get current user data from Firebase
+            // Get current user data from Firebase (always fetch fresh data)
             var finalUserName = userName
             var finalUserProfileImage = userProfileImage
             
-            if (finalUserName.isEmpty()) {
-                try {
-                    val userSnapshot = database.getReference("Users/$currentUserId").get().await()
-                    finalUserName = userSnapshot.child("fullName").value?.toString() ?: "Anonymous"
-                    finalUserProfileImage = userSnapshot.child("profilePicture").value?.toString() ?: ""
-                } catch (e: Exception) {
-                    finalUserName = "Anonymous"
-                }
+            try {
+                val userSnapshot = database.getReference("Users/$currentUserId").get().await()
+                finalUserName = userSnapshot.child("username").value?.toString() ?: "Anonymous"
+                finalUserProfileImage = userSnapshot.child("profilePicture").value?.toString() ?: ""
+            } catch (e: Exception) {
+                finalUserName = "Anonymous"
             }
             
             val comment = CommentModel(
