@@ -113,8 +113,8 @@ fun UserProfielBody(userId: String, initialUsername: String) {
     val listState = rememberLazyListState()
 
     var isFollowing by remember { mutableStateOf(false) }
-    var followersCount by remember { mutableStateOf(0) }
-    var followingCount by remember { mutableStateOf(0) }
+    var followersCount by remember { mutableStateOf<Int?>(null) }
+    var followingCount by remember { mutableStateOf<Int?>(null) }
     var theyFollowUs by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showBlockDialog by remember { mutableStateOf(false) }
@@ -321,7 +321,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                 onClick = {}
                             )
                             UserProfileStat(
-                                count = if (isBlocked) "0" else "$followersCount",
+                                count = if (isBlocked) "0" else (followersCount?.toString() ?: "0"),
                                 label = "Followers",
                                 onClick = {
                                     if (!isBlocked) {
@@ -335,7 +335,7 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                 }
                             )
                             UserProfileStat(
-                                count = if (isBlocked) "0" else "$followingCount",
+                                count = if (isBlocked) "0" else (followingCount?.toString() ?: "0"),
                                 label = "Following",
                                 onClick = {
                                     if (!isBlocked) {

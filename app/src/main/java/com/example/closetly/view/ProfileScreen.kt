@@ -65,8 +65,8 @@ fun ProfileScreen() {
     var isLoading by remember { mutableStateOf(true) }
     var userListings by remember { mutableStateOf<List<ProductModel>>(emptyList()) }
     var userPosts by remember { mutableStateOf<List<PostModel>>(emptyList()) }
-    var followersCount by remember { mutableStateOf(0) }
-    var followingCount by remember { mutableStateOf(0) }
+    var followersCount by remember { mutableStateOf<Int?>(null) }
+    var followingCount by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.let { user ->
@@ -214,7 +214,7 @@ fun ProfileScreen() {
                         onClick = {}
                     )
                     ProfileStat(
-                        count = "$followersCount",
+                        count = followersCount?.toString() ?: "0",
                         label = "Followers",
                         onClick = {
                             currentUser?.let { user ->
@@ -228,7 +228,7 @@ fun ProfileScreen() {
                         }
                     )
                     ProfileStat(
-                        count = "$followingCount",
+                        count = followingCount?.toString() ?: "0",
                         label = "Following",
                         onClick = {
                             currentUser?.let { user ->
