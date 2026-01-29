@@ -262,6 +262,8 @@ fun CommentItem(
 ) {
     val isLiked = comment.isLikedBy(currentUserId)
     
+    val context = LocalContext.current
+    
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,13 +286,20 @@ fun CommentItem(
     ) {
         // Profile Picture
         AsyncImage(
-            model = comment.userProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
+            model = comment.userProfileImage,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
                 .border(1.dp, Color.LightGray, CircleShape)
+                .clickable {
+                    val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                        putExtra("userId", comment.userId)
+                        putExtra("username", comment.userName)
+                    }
+                    context.startActivity(intent)
+                }
         )
 
         // Comment Content
@@ -308,7 +317,14 @@ fun CommentItem(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
-                    )
+                    ),
+                    modifier = Modifier.clickable {
+                        val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", comment.userId)
+                            putExtra("username", comment.userName)
+                        }
+                        context.startActivity(intent)
+                    }
                 )
                 Text(
                     "•",
@@ -388,7 +404,7 @@ fun CommentInputSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             AsyncImage(
-                model = currentUserProfileImage.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200" },
+                model = currentUserProfileImage,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

@@ -203,6 +203,18 @@ fun FollowersFollowingScreen(userId: String, username: String, initialTab: Strin
                             onFollowClick = {
                                 if (currentUserId.isNotEmpty() && user.userId != currentUserId) {
                                     userViewModel.toggleFollow(currentUserId, user.userId) { success, _ ->
+                                        if (success) {
+                                            // Update the local follow state immediately for UI responsiveness
+                                            val currentlyFollowing = followingStates[user.userId] ?: false
+                                            followingStates = followingStates + (user.userId to !currentlyFollowing)
+                                            
+                                            // If we just unfollowed someone from the following list, reload the list
+                                            if (selectedTab == 1 && currentlyFollowing) {
+                                                userViewModel.getFollowingList(userId) { list ->
+                                                    followingList = list
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

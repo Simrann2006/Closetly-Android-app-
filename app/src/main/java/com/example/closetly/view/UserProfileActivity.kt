@@ -363,13 +363,12 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                                     } else if (currentUserId.isNotEmpty() && currentUserId != userId) {
                                         userViewModel.toggleFollow(currentUserId, userId) { success, message ->
                                             if (success) {
-                                                // Toggle the follow state
+                                                // Toggle the follow state immediately for UI responsiveness
                                                 isFollowing = !isFollowing
-                                                // Update counts
-                                                if (isFollowing) {
-                                                    followersCount++
-                                                } else {
-                                                    followersCount--
+                                                
+                                                // Refresh the actual count from Firebase to ensure accuracy
+                                                userViewModel.getFollowersCount(userId) { count ->
+                                                    followersCount = count
                                                 }
                                             }
                                         }
