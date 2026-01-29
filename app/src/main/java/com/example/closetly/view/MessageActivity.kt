@@ -156,8 +156,8 @@ fun MessageBody() {
                     },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Black,
-                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Grey.copy(alpha = 0.5f),
+                        focusedBorderColor = Brown,
                         unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
@@ -476,7 +476,7 @@ fun NewChatDialog(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Grey.copy(alpha = 0.5f),
-                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedBorderColor = Brown,
                         unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,

@@ -395,7 +395,7 @@ fun ChatBody(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Light_grey,
-                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedBorderColor = Brown,
                         unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
@@ -909,7 +909,7 @@ fun MessageBubble(
                         )
                         .background(
                             if (isCurrentUser) 
-                                (if (ThemeManager.isDarkMode) Brown else Black)
+                                (if (ThemeManager.isDarkMode) Brown else Brown)
                             else 
                                 (if (ThemeManager.isDarkMode) DarkGrey else Light_grey)
                         )
@@ -938,7 +938,7 @@ fun MessageActionsDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF2C2C2E),
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         shape = RoundedCornerShape(16.dp),
         title = null,
         text = {
@@ -962,13 +962,13 @@ fun MessageActionsDialog(
                         Icon(
                             imageVector = androidx.compose.material.icons.Icons.Default.ContentCopy,
                             contentDescription = "Copy",
-                            tint = White,
+                            tint = if (ThemeManager.isDarkMode) White else Black,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Copy",
-                            color = White,
+                            color = if (ThemeManager.isDarkMode) White else Black,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
