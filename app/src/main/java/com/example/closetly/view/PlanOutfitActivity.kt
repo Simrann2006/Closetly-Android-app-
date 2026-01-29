@@ -1059,8 +1059,11 @@ fun OutfitSaveDialog(
                 OutlinedTextField(
                     value = outfitName,
                     onValueChange = onOutfitNameChange,
-                    label = { Text(if (isMultiDay) "Event Name" else "Outfit Name") },
-                    placeholder = { Text(if (isMultiDay) "e.g., Beach Vacation" else "e.g., Casual Friday") },
+                    label = {
+                        Text(if (isMultiDay) "Event Name" else "Outfit Name",
+                            color = Grey
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -1211,7 +1214,7 @@ fun OutfitSaveDialog(
                         value = occasion,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Occasion") },
+                        label = { Text("Occasion", color = Grey) },
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = showOccasionMenu)
                         },
@@ -1226,11 +1229,12 @@ fun OutfitSaveDialog(
                     
                     ExposedDropdownMenu(
                         expanded = showOccasionMenu,
-                        onDismissRequest = { showOccasionMenu = false }
+                        onDismissRequest = { showOccasionMenu = false },
+                        modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
                     ) {
                         occasions.forEach { occ ->
                             DropdownMenuItem(
-                                text = { Text(occ) },
+                                text = { Text(occ, color = Grey) },
                                 onClick = {
                                     onOccasionSelect(occ)
                                     showOccasionMenu = false
@@ -1245,7 +1249,7 @@ fun OutfitSaveDialog(
                 OutlinedTextField(
                     value = occasionNotes,
                     onValueChange = onOccasionNotesChange,
-                    label = { Text("Notes") },
+                    label = { Text("Notes", color = Grey) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),

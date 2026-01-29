@@ -352,83 +352,111 @@ fun UserProfielBody(userId: String, initialUsername: String) {
                         
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
+                        // Show Edit Profile button if viewing own profile, otherwise show Follow and Message buttons
+                        if (currentUserId == userId) {
+                            // Own profile - show Edit Profile button
                             Button(
                                 onClick = {
-                                    if (isBlocked) {
-                                        showUnblockDialog = true
-                                    } else if (currentUserId.isNotEmpty() && currentUserId != userId) {
-                                        userViewModel.toggleFollow(currentUserId, userId) { success, message ->
-                                            if (success) {
-                                                // Toggle the follow state immediately for UI responsiveness
-                                                isFollowing = !isFollowing
-                                                
-                                                // Refresh the actual count from Firebase to ensure accuracy
-                                                userViewModel.getFollowersCount(userId) { count ->
-                                                    followersCount = count
-                                                }
-                                            }
-                                        }
-                                    }
+                                    val intent = Intent(context, EditProfileActivity::class.java)
+                                    context.startActivity(intent)
                                 },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .height(40.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isBlocked) Brown else if (isFollowing) (if (ThemeManager.isDarkMode) Surface_Dark else Light_grey) else Brown
+                                    containerColor = Brown
                                 ),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
-                                val buttonText = if (isBlocked) {
-                                    "Unblock"
-                                } else if (isFollowing) {
-                                    "Following"
-                                } else if (theyFollowUs) {
-                                    "Follow Back"
-                                } else {
-                                    "Follow"
-                                }
-
                                 Text(
-                                    buttonText,
+                                    "Edit Profile",
                                     style = TextStyle(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isBlocked) White else if (isFollowing) (if (ThemeManager.isDarkMode) White else Black) else White
+                                        color = White
                                     )
                                 )
                             }
-
-                            if (!isBlocked) {
+                        } else {
+                            // Other user's profile - show Follow and Message buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 Button(
                                     onClick = {
-                                        val intent = Intent(context, ChatActivity::class.java).apply {
-                                            putExtra("chatId", existingChatId)
-                                            putExtra("otherUserId", userId)
-                                            putExtra("otherUserName", username)
-                                            putExtra("otherUserImage", profilePicture)
+                                        if (isBlocked) {
+                                            showUnblockDialog = true
+                                        } else if (currentUserId.isNotEmpty() && currentUserId != userId) {
+                                            userViewModel.toggleFollow(currentUserId, userId) { success, message ->
+                                                if (success) {
+                                                    // Toggle the follow state immediately for UI responsiveness
+                                                    isFollowing = !isFollowing
+                                                    
+                                                    // Refresh the actual count from Firebase to ensure accuracy
+                                                    userViewModel.getFollowersCount(userId) { count ->
+                                                        followersCount = count
+                                                    }
+                                                }
+                                            }
                                         }
-                                        context.startActivity(intent)
                                     },
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(40.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
+                                        containerColor = if (isBlocked) Brown else if (isFollowing) (if (ThemeManager.isDarkMode) Surface_Dark else Light_grey) else Brown
                                     ),
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
+                                    val buttonText = if (isBlocked) {
+                                        "Unblock"
+                                    } else if (isFollowing) {
+                                        "Following"
+                                    } else if (theyFollowUs) {
+                                        "Follow Back"
+                                    } else {
+                                        "Follow"
+                                    }
+
                                     Text(
-                                        "Message",
+                                        buttonText,
                                         style = TextStyle(
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (ThemeManager.isDarkMode) White else Black
+                                            color = if (isBlocked) White else if (isFollowing) (if (ThemeManager.isDarkMode) White else Black) else White
                                         )
                                     )
+                                }
+
+                                if (!isBlocked) {
+                                    Button(
+                                        onClick = {
+                                            val intent = Intent(context, ChatActivity::class.java).apply {
+                                                putExtra("chatId", existingChatId)
+                                                putExtra("otherUserId", userId)
+                                                putExtra("otherUserName", username)
+                                                putExtra("otherUserImage", profilePicture)
+                                            }
+                                            context.startActivity(intent)
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(40.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Light_grey
+                                        ),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            "Message",
+                                            style = TextStyle(
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (ThemeManager.isDarkMode) White else Black
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
