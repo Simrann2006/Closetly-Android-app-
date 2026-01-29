@@ -1,6 +1,7 @@
 package com.example.closetly.view
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -61,8 +62,22 @@ fun SettingsBody() {
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     var notificationsEnabled by remember { mutableStateOf(true) }
     var darkModeEnabled by remember { mutableStateOf(ThemeManager.isDarkMode) }
+    
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(currentUserId)
+                .child("notificationsEnabled")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    notificationsEnabled = snapshot.getValue(Boolean::class.java) ?: true
+                }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -183,7 +198,28 @@ fun SettingsBody() {
                 title = "Notifications",
                 subtitle = "Receive notifications",
                 checked = notificationsEnabled,
-                onCheckedChange = { notificationsEnabled = it }
+                onCheckedChange = { enabled ->
+                    notificationsEnabled = enabled
+                    
+                    // Save to Firebase Database so it can be checked from any device
+                    if (currentUserId != null) {
+                        FirebaseDatabase.getInstance()
+                            .getReference("Users")
+                            .child(currentUserId)
+                            .child("notificationsEnabled")
+                            .setValue(enabled)
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    context,
+                                    if (enabled) "Notifications enabled" else "Notifications disabled",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                }
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)

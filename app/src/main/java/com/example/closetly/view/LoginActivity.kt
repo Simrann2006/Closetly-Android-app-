@@ -93,50 +93,20 @@ import kotlinx.coroutines.launch
 
 class LoginActivity : ComponentActivity() {
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            NotificationHelper.createNotificationChannels(this)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.initialize(this)
         enableEdgeToEdge()
         setContent {
             ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
-                LoginBody(
-                    requestNotificationPermission = {
-                        requestNotificationPermission()
-                    }
-                )
+                LoginBody()
             }
-        }
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    NotificationHelper.createNotificationChannels(this)
-                }
-                else -> {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            }
-        } else {
-            NotificationHelper.createNotificationChannels(this)
         }
     }
 }
 
 @Composable
-fun LoginBody(requestNotificationPermission: () -> Unit = {}){
+fun LoginBody(){
 
     val context = LocalContext.current
     val userViewModel = remember { UserViewModel(UserRepoImpl(context)) }
@@ -521,8 +491,6 @@ fun LoginBody(requestNotificationPermission: () -> Unit = {}){
                                             sharedPreferences.edit().clear().apply()
                                         }
 
-                                        requestNotificationPermission()
-
                                         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                                             if (task.isSuccessful) {
                                                 val token = task.result
@@ -630,8 +598,6 @@ fun LoginBody(requestNotificationPermission: () -> Unit = {}){
 
                                     userViewModel.signInWithGoogle(idToken) { success, message ->
                                         if (success) {
-                                            requestNotificationPermission()
-
                                             FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                                                 if (task.isSuccessful) {
                                                     val token = task.result
