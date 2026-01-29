@@ -25,11 +25,15 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
+            android:name=".view.HelpCenterActivity"
+            android:exported="false"
+            android:label="@string/title_activity_help_center"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".view.PostFeedActivity"
             android:exported="false"
             android:label="@string/title_activity_post_feed"
             android:theme="@style/Theme.Closetly" />
-        
         <activity
             android:name=".view.ListingDetailsActivity"
             android:exported="false"
@@ -91,14 +95,12 @@
             android:name=".view.UserProfileActivity"
             android:exported="false"
             android:label="UserProfileActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
         <activity
             android:name=".view.FollowersFollowingActivity"
             android:exported="false"
             android:label="FollowersFollowingActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
         <activity
             android:name=".view.CommentActivity"
             android:exported="false"
@@ -185,14 +187,12 @@
             android:exported="true"
             android:label="PlanOutfitActivity"
             android:theme="@style/Theme.Closetly"
-            android:windowSoftInputMode="adjustResize">
-        </activity>
+            android:windowSoftInputMode="adjustResize"></activity>
         <activity
             android:name=".view.SavedOutfitsActivity"
             android:exported="true"
             android:label="SavedOutfitsActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
 
         <service
             android:name=".view.FirebaseMsgService"

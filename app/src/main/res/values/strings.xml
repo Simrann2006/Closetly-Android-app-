@@ -16,4 +16,5 @@
     <string name="title_activity_listing">ListingActivity</string>
     <string name="title_activity_post_feed">PostFeedActivity</string>
     <string name="title_activity_change_password_screen">ChangePasswordScreen</string>
+    <string name="title_activity_help_center">HelpCenterActivity</string>
 </resources>

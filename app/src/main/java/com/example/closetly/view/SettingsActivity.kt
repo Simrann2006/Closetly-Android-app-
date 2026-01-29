@@ -189,7 +189,7 @@ fun SettingsBody() {
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
 
             Text(
-                "ABOUT",style = TextStyle(
+                "HELP",style = TextStyle(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
@@ -199,8 +199,10 @@ fun SettingsBody() {
 
             SettingsItem(
                 icon = R.drawable.outline_info_24,
-                title = "About Us",
-                onClick = { }
+                title = "Help Center",
+                onClick = {
+                    context.startActivity(Intent(context, HelpCenterActivity::class.java))
+                }
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 8.dp)
