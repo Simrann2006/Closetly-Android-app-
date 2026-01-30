@@ -496,7 +496,7 @@ private fun CategorySpendingRow(
         }
         
         Text(
-            text = "$${String.format("%.0f", amount)}",
+            text = "Rs.${String.format("%.0f", amount)}",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = textColor

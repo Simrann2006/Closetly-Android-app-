@@ -238,9 +238,9 @@ fun ListingViewerBody(productId: String) {
 
                         Text(
                             text = if (product!!.listingType == ListingType.RENT && product!!.rentPricePerDay != null) {
-                                "$${product!!.rentPricePerDay}/day"
+                                "Rs.${product!!.rentPricePerDay}/day"
                             } else {
-                                "$${product!!.price}"
+                                "Rs.${product!!.price}"
                             },
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
