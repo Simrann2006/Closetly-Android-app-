@@ -60,7 +60,7 @@ class FirebaseMsgService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "New FCM token: $token")
+        Log.d(TAG, "New FCM token generated: $token")
         
         sendTokenToServer(token)
     }
@@ -72,11 +72,13 @@ class FirebaseMsgService : FirebaseMessagingService() {
                 .getReference("Users").child(userId)
             userRef.child("fcmToken").setValue(token)
                 .addOnSuccessListener {
-                    Log.d(TAG, "FCM token updated successfully")
+                    Log.d(TAG, "FCM token updated successfully in database")
                 }
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Failed to update FCM token: ${e.message}")
                 }
+        } else {
+            Log.w(TAG, "onNewToken called but user is not logged in. Token will be updated on next login.")
         }
     }
 }

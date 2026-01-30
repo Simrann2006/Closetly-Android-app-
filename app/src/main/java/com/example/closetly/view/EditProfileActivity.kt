@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -359,26 +360,49 @@ fun EditProfileScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             ProfileSectionCard(title = "About") {
-                OutlinedTextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text("Bio", color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey, fontSize = 14.sp) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 120.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
-                        unfocusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
-                        focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
-                        unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
-                        focusedBorderColor = Brown,
-                        unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = false,
-                    minLines = 4,
-                    maxLines = 8
-                )
+                Column {
+                    Text(
+                        "Bio",
+                        style = TextStyle(
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+                        ),
+                        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { bio = it },
+                        placeholder = { 
+                            Text(
+                                "Tell us about yourself",
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    color = Grey
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 120.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                            unfocusedContainerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                            focusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                            unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
+                            focusedBorderColor = Brown,
+                            unfocusedBorderColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.3f) else Grey.copy(alpha = 0.3f)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = false,
+                        minLines = 4,
+                        maxLines = 8,
+                        textStyle = TextStyle(
+                            fontSize = 14.sp
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -482,10 +506,28 @@ fun ProfileTextField(
     errorMessage: String = ""
 ) {
     Column {
+        Text(
+            label,
+            style = TextStyle(
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (ThemeManager.isDarkMode) OnBackground_Dark else DarkGrey
+            ),
+            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+        )
+        
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            label = { Text(label, fontSize = 14.sp) },
+            placeholder = { 
+                Text(
+                    "Enter $label",
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                        color = Grey
+                    )
+                )
+            },
             leadingIcon = {
                 Icon(
                     imageVector = icon,
@@ -511,7 +553,10 @@ fun ProfileTextField(
                 unfocusedLabelColor = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
             ),
             shape = RoundedCornerShape(12.dp),
-            singleLine = true
+            singleLine = true,
+            textStyle = TextStyle(
+                fontSize = 14.sp
+            )
         )
 
         if (isError && errorMessage.isNotEmpty()) {
@@ -519,7 +564,7 @@ fun ProfileTextField(
                 text = errorMessage,
                 color = Red,
                 fontSize = 12.sp,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
     }

@@ -40,6 +40,52 @@ object NotificationHelper {
     const val TYPE_GENERAL = "general"
 
     /**
+     * Create notification channels
+     * Must be called when app starts (in Application or MainActivity)
+     */
+    fun createNotificationChannels(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Chat Channel
+            val chatChannel = NotificationChannel(
+                CHANNEL_CHAT_ID,
+                "Chat Messages",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for chat messages"
+                enableVibration(true)
+                enableLights(true)
+            }
+            
+            // Post Channel
+            val postChannel = NotificationChannel(
+                CHANNEL_POST_ID,
+                "Post Notifications",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifications for post likes, comments, etc."
+                enableVibration(true)
+            }
+            
+            // General Channel
+            val generalChannel = NotificationChannel(
+                CHANNEL_GENERAL_ID,
+                "General Notifications",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "General app notifications"
+            }
+            
+            notificationManager.createNotificationChannel(chatChannel)
+            notificationManager.createNotificationChannel(postChannel)
+            notificationManager.createNotificationChannel(generalChannel)
+            
+            Log.d(TAG, "Notification channels created successfully")
+        }
+    }
+
+    /**
      * Check if RECEIVER has enabled push notifications in Firebase Database
      * This is checked from the receiver's stored preferences, not sender's device
      */
@@ -450,7 +496,20 @@ object NotificationHelper {
                 .get()
                 .await()
 
-            snapshot.getValue(String::class.java)
+            val token = snapshot.getValue(String::class.java)
+            
+            // Validate token is not empty and has proper format
+            if (token.isNullOrBlank()) {
+                Log.e(TAG, "FCM token is null or empty for user: $userId")
+                return null
+            }
+            
+            if (token.length < 20) {
+                Log.e(TAG, "FCM token seems invalid (too short) for user: $userId")
+                return null
+            }
+            
+            token
         } catch (e: Exception) {
             Log.e(TAG, "Error getting FCM token: ${e.message}")
             null
@@ -517,19 +576,22 @@ object NotificationHelper {
                 
                 // Check if token is unregistered/invalid
                 if (errorStream?.contains("UNREGISTERED") == true || responseCode == 404) {
-                    Log.e(TAG, "FCM token is INVALID/EXPIRED - User needs to logout and login again")
-                    Log.e(TAG, "The token stored in database is no longer valid")
+                    Log.e(TAG, "FCM token is INVALID/EXPIRED - Automatically cleaning up")
                     
-                    // Extract userId from payload to clean up invalid token
+                    // Extract and delete the invalid token from database
                     try {
                         val messageObj = payload.getJSONObject("message")
-                        val token = messageObj.getString("token")
-                        Log.w(TAG, "Invalid token: ${token.take(20)}...")
+                        val invalidToken = messageObj.getString("token")
+                        Log.w(TAG, "Invalid token detected: ${invalidToken.take(20)}...")
                         
-                        // Note: We can't easily get userId here, but logging helps debug
-                        Log.i(TAG, "Solution: User should logout/login or reinstall app to get new token")
+                        // Search and delete this invalid token from all users
+                        CoroutineScope(Dispatchers.IO).launch {
+                            cleanupInvalidToken(invalidToken)
+                        }
+                        
+                        Log.i(TAG, "Token cleanup initiated. User will get fresh token on next app open.")
                     } catch (e: Exception) {
-                        // Ignore if we can't parse
+                        Log.e(TAG, "Error during token cleanup: ${e.message}")
                     }
                 }
             }
@@ -564,6 +626,32 @@ object NotificationHelper {
                 Log.e(TAG, "Error generating OAuth token: ${e.message}", e)
                 throw e
             }
+        }
+    }
+
+    /**
+     * Cleanup invalid FCM token from database
+     * This is called when FCM returns 404/UNREGISTERED error
+     */
+    private suspend fun cleanupInvalidToken(invalidToken: String) {
+        try {
+            val usersRef = FirebaseDatabase.getInstance().getReference("Users")
+            val snapshot = usersRef.get().await()
+            
+            for (userSnapshot in snapshot.children) {
+                val userId = userSnapshot.key ?: continue
+                val storedToken = userSnapshot.child("fcmToken").getValue(String::class.java)
+                
+                if (storedToken == invalidToken) {
+                    // Delete the invalid token
+                    usersRef.child(userId).child("fcmToken").removeValue().await()
+                    Log.d(TAG, "Deleted invalid token for user: $userId")
+                    Log.i(TAG, "User $userId will get fresh token on next app open")
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cleaning up invalid token: ${e.message}")
         }
     }
 }

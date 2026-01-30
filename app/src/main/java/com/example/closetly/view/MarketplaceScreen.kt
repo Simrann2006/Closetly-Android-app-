@@ -27,6 +27,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import com.example.closetly.ui.theme.*
 import com.example.closetly.model.ProductModel
 import com.example.closetly.model.ListingType
@@ -45,6 +50,7 @@ import com.example.closetly.repository.UserRepoImpl
 import com.example.closetly.utils.ThemeManager
 import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketplaceScreen() {
     var searchText by remember { mutableStateOf("") }
@@ -58,13 +64,28 @@ fun MarketplaceScreen() {
         }
     })
     val products by productViewModel.products.collectAsState()
+    val isLoading by productViewModel.isLoading.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val pullToRefreshState = rememberPullToRefreshState()
+    val coroutineScope = rememberCoroutineScope()
+    var refreshTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         productViewModel.loadProducts()
     }
+    
+    fun refreshData() {
+        coroutineScope.launch {
+            isRefreshing = true
+            productViewModel.loadProducts()
+            delay(800) // Smooth animation delay
+            refreshTrigger++ // Trigger reshuffle
+            isRefreshing = false
+        }
+    }
 
-    val filteredProducts = remember(selectedMarket, searchText, products) {
-        products.filter { product ->
+    val filteredProducts = remember(selectedMarket, searchText, products, refreshTrigger) {
+        val filtered = products.filter { product ->
             val matchesMarket = when (selectedMarket) {
                 "All" -> true
                 "Rent" -> product.listingType == ListingType.RENT
@@ -76,15 +97,31 @@ fun MarketplaceScreen() {
                     product.sellerName.contains(searchText, ignoreCase = true)
             matchesMarket && matchesSearch
         }
+        filtered.shuffled()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
-                .padding(16.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { refreshData() },
+            modifier = Modifier.fillMaxSize(),
+            state = pullToRefreshState,
+            indicator = {
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = isRefreshing,
+                    state = pullToRefreshState,
+                    containerColor = if (ThemeManager.isDarkMode) Black else White,
+                    color = if (ThemeManager.isDarkMode) White else Black
+                )
+            }
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
+                    .padding(16.dp)
+            ) {
             OutlinedTextField(
                 value = searchText,
                 onValueChange = { searchText = it },
@@ -150,7 +187,17 @@ fun MarketplaceScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (filteredProducts.isEmpty()) {
+            if (isLoading && products.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Brown,
+                        strokeWidth = 3.dp
+                    )
+                }
+            } else if (filteredProducts.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -189,6 +236,7 @@ fun MarketplaceScreen() {
                     }
                 }
             }
+        }
         }
     }
 }

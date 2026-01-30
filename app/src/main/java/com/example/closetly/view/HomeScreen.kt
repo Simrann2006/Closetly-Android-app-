@@ -47,6 +47,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.CachePolicy
 import com.example.closetly.R
 import com.example.closetly.model.SliderItemModel
 import com.example.closetly.ui.theme.Background_Dark
@@ -100,7 +104,11 @@ fun HomeScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val error by viewModel.error.collectAsState()
+    var refreshTrigger by remember { mutableIntStateOf(0) }
 
+    val shuffledPosts = remember(postsUI, refreshTrigger) {
+        postsUI.shuffled()
+    }
 
     val sliderItems by sliderViewModel.sliderItems.collectAsState()
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
@@ -119,6 +127,7 @@ fun HomeScreen(
         onRefresh = { 
             viewModel.refreshPosts()
             sliderViewModel.refresh()
+            refreshTrigger++ // Trigger reshuffle
         }
     )
     
@@ -283,7 +292,7 @@ fun HomeScreen(
 
 
                 items(
-                    items = postsUI,
+                    items = shuffledPosts,
                     key = { it.post.postId },
                     contentType = { "post" }
                 ) { postUI ->
@@ -338,6 +347,8 @@ fun SliderItemCard(
     onItemClick: () -> Unit,
     onUsernameClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -346,7 +357,11 @@ fun SliderItemCard(
     ) {
         if (sliderItem.profilePictureUrl.isNotEmpty()) {
             AsyncImage(
-                model = sliderItem.profilePictureUrl,
+                model = ImageRequest.Builder(context)
+                    .data(sliderItem.profilePictureUrl)
+                    .memoryCachePolicy(CachePolicy.READ_ONLY)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "${sliderItem.username}'s profile",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -592,7 +607,11 @@ fun PostCard(
                 ) {
                     if (postUI.post.userProfilePic.isNotEmpty()) {
                         AsyncImage(
-                            model = postUI.post.userProfilePic,
+                            model = ImageRequest.Builder(context)
+                                .data(postUI.post.userProfilePic)
+                                .memoryCachePolicy(CachePolicy.READ_ONLY)
+                                .crossfade(true)
+                                .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

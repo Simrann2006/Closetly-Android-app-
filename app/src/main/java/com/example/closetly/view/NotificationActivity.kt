@@ -131,7 +131,7 @@ fun NotificationScreen() {
                         "Notifications",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 },
                 navigationIcon = {
@@ -139,7 +139,7 @@ fun NotificationScreen() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = "Back",
-                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
@@ -197,7 +197,7 @@ fun NotificationScreen() {
                 Text(
                     "Delete Notification",
                     fontWeight = FontWeight.Bold,
-                    color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
             },
             text = {
@@ -237,15 +237,10 @@ fun NotificationScreen() {
 @Composable
 fun NotificationEmptyState() {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Background_Light)
     ) {
-        Image(
-            painter = painterResource(R.drawable.nf),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -259,7 +254,7 @@ fun NotificationEmptyState() {
                     fontFamily = FontFamily(Font(R.font.poppins_regular)),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
-                    color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey,
+                    color = if (ThemeManager.isDarkMode) White else Black,
                     textAlign = TextAlign.Center
                 )
             )
@@ -374,7 +369,7 @@ fun NotificationItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown)) {
+                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) White else Black)) {
                             append(notification.userName)
                         }
                         withStyle(style = SpanStyle(color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light)) {
@@ -525,7 +520,7 @@ fun SalePostNotificationCard(
                         Icon(
                             painter = painterResource(R.drawable.baseline_local_offer_24),
                             contentDescription = null,
-                            tint = Brown,
+                            tint = if (ThemeManager.isDarkMode) White else Black,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -533,14 +528,14 @@ fun SalePostNotificationCard(
                             text = "SALE ALERT",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Brown,
+                            color = if (ThemeManager.isDarkMode) White else Black,
                             letterSpacing = 1.sp
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = buildAnnotatedString {
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown)) {
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, color = if (ThemeManager.isDarkMode) White else Black)) {
                                 append(notification.userName)
                             }
                             withStyle(style = SpanStyle(color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.8f) else OnSurface_Light.copy(alpha = 0.8f))) {
@@ -599,7 +594,7 @@ fun SalePostNotificationCard(
                     Icon(
                         painter = painterResource(R.drawable.baseline_shopping_bag_24),
                         contentDescription = null,
-                        tint = Brown,
+                        tint = if (ThemeManager.isDarkMode) White else Black,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -607,7 +602,7 @@ fun SalePostNotificationCard(
                         text = "Grab this opportunity • ${notification.time}",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
             }

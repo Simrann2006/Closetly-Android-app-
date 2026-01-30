@@ -9,12 +9,17 @@ import kotlinx.coroutines.flow.StateFlow
 class ProductViewModel(val repo: ProductRepo) : ViewModel() {
     val _products = MutableStateFlow<List<ProductModel>>(emptyList())
     val products: StateFlow<List<ProductModel>> = _products
+    
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     fun loadProducts() {
+        _isLoading.value = true
         repo.getAllProducts { success, _, data ->
             if (success && data != null) {
                 _products.value = data
             }
+            _isLoading.value = false
         }
     }
 

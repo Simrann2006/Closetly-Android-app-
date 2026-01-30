@@ -146,8 +146,8 @@ fun ListingDetailsBody(imageUri: Uri?) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                    titleContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black,
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
                     navigationIconContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black
                 )
             )

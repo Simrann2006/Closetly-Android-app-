@@ -89,26 +89,6 @@ fun ClothesDetailsBody(
     var isUploading by remember { mutableStateOf(false) }
     var showCategoryDropdown by remember { mutableStateOf(false) }
 
-    // Predefined options
-    val colorOptions = listOf(
-        "Red",
-        "Blue",
-        "Black",
-        "White",
-        "Green",
-        "Yellow",
-        "Pink",
-        "Brown",
-        "Gray",
-        "Beige",
-        "Navy"
-    )
-    val seasonOptions = listOf("Spring", "Summer", "Fall", "Winter", "All Season")
-    val occasionOptions = listOf("Casual", "Formal", "Party", "Work", "Sport", "Beach", "Date")
-
-    var selectedColors by remember { mutableStateOf(setOf<String>()) }
-    var selectedSeasons by remember { mutableStateOf(setOf<String>()) }
-    var selectedOccasions by remember { mutableStateOf(setOf<String>()) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
 
@@ -234,9 +214,9 @@ fun ClothesDetailsBody(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-                    titleContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
-                    navigationIconContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black,
+                    navigationIconContentColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Black
                 )
             )
         },

@@ -98,13 +98,13 @@ fun PostFeedBody(userId: String, initialIndex: Int) {
                         Icon(
                             painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
-                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
@@ -250,7 +250,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 text = post.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                color = if (ThemeManager.isDarkMode) White else Black
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -261,7 +261,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_more_vert_24),
                             contentDescription = null,
-                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
 
@@ -272,7 +272,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit Post", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
+                            text = { Text("Edit Post", color = if (ThemeManager.isDarkMode) White else Black) },
                             onClick = {
                                 showMenu = false
                                 showEditDialog = true
@@ -281,12 +281,12 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                                 Icon(
                                     painter = painterResource(R.drawable.baseline_edit_24),
                                     contentDescription = null,
-                                    tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                                    tint = if (ThemeManager.isDarkMode) White else Black
                                 )
                             },
                             colors = MenuDefaults.itemColors(
-                                textColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown,
-                                leadingIconColor = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                                textColor = if (ThemeManager.isDarkMode) White else Black,
+                                leadingIconColor = if (ThemeManager.isDarkMode) White else Black
                             )
                         )
                         DropdownMenuItem(
@@ -344,7 +344,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         Icon(
                             painter = painterResource(if (isLiked) R.drawable.baseline_favorite_24 else R.drawable.baseline_favorite_border_24),
                             contentDescription = null,
-                            tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) OnBackground_Dark else Brown),
+                            tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) White else Black),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -353,7 +353,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         "$likesCount",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
 
@@ -372,14 +372,14 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                         painterResource(R.drawable.comment),
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
-                        tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         "$commentsCount",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                 }
             }
@@ -395,7 +395,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                 Icon(
                     painter = painterResource(if (isSaved) R.drawable.baseline_bookmark_24 else R.drawable.baseline_bookmark_border_24),
                     contentDescription = null,
-                    tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
+                    tint = if (ThemeManager.isDarkMode) White else Black,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -411,7 +411,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
                     text = post.username,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -445,7 +445,7 @@ fun PostItem(post: PostModel, isOwner: Boolean, onDelete: () -> Unit) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-            title = { Text("Delete Post", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
+            title = { Text("Delete Post", color = if (ThemeManager.isDarkMode) White else Black) },
             text = { Text("Are you sure you want to delete this post?", color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light) },
             confirmButton = {
                 TextButton(
@@ -502,7 +502,7 @@ fun EditPostDialog(
             Text(
                 text = "Edit Post",
                 fontWeight = FontWeight.Bold,
-                color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                color = if (ThemeManager.isDarkMode) White else Black
             )
         },
         text = {

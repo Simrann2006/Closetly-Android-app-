@@ -91,13 +91,13 @@ fun LikedPostsFeedBody(initialIndex: Int) {
                         Icon(
                             painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = null,
-                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
-                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
@@ -230,7 +230,7 @@ fun LikedPostItem(post: PostModel) {
                 text = post.username,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
+                color = if (ThemeManager.isDarkMode) White else Black,
                 modifier = Modifier.clickable {
                     val intent = Intent(context, UserProfileActivity::class.java).apply {
                         putExtra("userId", post.userId)
@@ -277,14 +277,14 @@ fun LikedPostItem(post: PostModel) {
                         ),
                         contentDescription = null,
                         modifier = Modifier.size(26.dp),
-                        tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) OnBackground_Dark else Brown)
+                        tint = if (isLiked) Color.Red else (if (ThemeManager.isDarkMode) White else Black)
                     )
                     if (likesCount > 0) {
                         Text(
                             "$likesCount",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
@@ -305,14 +305,14 @@ fun LikedPostItem(post: PostModel) {
                         painterResource(R.drawable.comment),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        tint = if (ThemeManager.isDarkMode) White else Black
                     )
                     if (commentsCount > 0) {
                         Text(
                             "$commentsCount",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            color = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }
@@ -333,7 +333,7 @@ fun LikedPostItem(post: PostModel) {
                     ),
                     contentDescription = null,
                     modifier = Modifier.size(26.dp),
-                    tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    tint = if (ThemeManager.isDarkMode) White else Black
                 )
             }
         }
@@ -349,7 +349,7 @@ fun LikedPostItem(post: PostModel) {
                     text = post.username,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(

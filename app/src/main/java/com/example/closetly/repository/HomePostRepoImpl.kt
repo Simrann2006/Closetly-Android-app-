@@ -526,6 +526,7 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
      * - Then posts from other users (newest to oldest)
      * - Excludes current user's posts and blocked users' posts
      * - Real-time updates when new posts are added
+     * - Fetches fresh profile pictures from Users node (not stale data from posts)
      */
     override fun getPriorityFeedPosts(
         userId: String,
@@ -537,6 +538,9 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
         var followingLoaded = false
         var blockedLoaded = false
         var postsLoaded = false
+        
+        // Cache for fresh user profile pictures fetched from Users node
+        val userProfilePicCache = mutableMapOf<String, String>()
         
         fun emitSortedPosts() {
             if (!followingLoaded || !blockedLoaded || !postsLoaded) return
@@ -561,7 +565,49 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
             // Combine: followed first, then others
             val prioritizedPosts = (followedPosts + otherPosts).take(limit)
             
-            trySend(prioritizedPosts)
+            // Get unique user IDs that need fresh profile pictures
+            val uniqueUserIds = prioritizedPosts.map { it.userId }.distinct()
+            val userIdsToFetch = uniqueUserIds.filter { !userProfilePicCache.containsKey(it) }
+            
+            if (userIdsToFetch.isEmpty()) {
+                // All profile pics are cached, emit with fresh data
+                val postsWithFreshProfilePics = prioritizedPosts.map { post ->
+                    val freshProfilePic = userProfilePicCache[post.userId] ?: post.userProfilePic
+                    post.copy(userProfilePic = freshProfilePic)
+                }
+                trySend(postsWithFreshProfilePics)
+            } else {
+                // Fetch fresh profile pictures for users not in cache
+                var fetchedCount = 0
+                for (userIdToFetch in userIdsToFetch) {
+                    usersRef.child(userIdToFetch).child("profilePicture").get()
+                        .addOnSuccessListener { snapshot ->
+                            val freshProfilePic = snapshot.getValue(String::class.java) ?: ""
+                            userProfilePicCache[userIdToFetch] = freshProfilePic
+                            fetchedCount++
+                            
+                            if (fetchedCount == userIdsToFetch.size) {
+                                // All fetched, now emit posts with fresh profile pics
+                                val postsWithFreshProfilePics = prioritizedPosts.map { post ->
+                                    val profilePic = userProfilePicCache[post.userId] ?: post.userProfilePic
+                                    post.copy(userProfilePic = profilePic)
+                                }
+                                trySend(postsWithFreshProfilePics)
+                            }
+                        }
+                        .addOnFailureListener {
+                            // Use cached/original value on failure
+                            fetchedCount++
+                            if (fetchedCount == userIdsToFetch.size) {
+                                val postsWithFreshProfilePics = prioritizedPosts.map { post ->
+                                    val profilePic = userProfilePicCache[post.userId] ?: post.userProfilePic
+                                    post.copy(userProfilePic = profilePic)
+                                }
+                                trySend(postsWithFreshProfilePics)
+                            }
+                        }
+                }
+            }
         }
         
         // Listen for following changes
@@ -597,6 +643,8 @@ class HomePostRepoImpl(private val context: Context) : HomePostRepo {
                 }
                 allPosts = posts.sortedByDescending { it.timestamp }
                 postsLoaded = true
+                // Clear cache when posts change to ensure we fetch fresh profile pics
+                userProfilePicCache.clear()
                 emitSortedPosts()
             }
             

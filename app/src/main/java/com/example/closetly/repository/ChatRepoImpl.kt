@@ -125,7 +125,15 @@ class ChatRepoImpl : ChatRepo {
                                             messagesRef.child(chatId).child(messageId).setValue(messageWithId)
                                                 .addOnCompleteListener { task ->
                                                     if (task.isSuccessful) {
-                                                        chatsRef.child(chatId).child("lastMessage").setValue(message.text)
+                                                        // Set lastMessage based on message content
+                                                        val lastMessageText = when {
+                                                            message.text.isNotEmpty() -> message.text
+                                                            message.productTitle.isNotEmpty() -> "🛍️ ${message.productTitle}"
+                                                            message.imageUrls.isNotEmpty() -> "📷 Photo"
+                                                            message.imageUrl.isNotEmpty() -> "📷 Photo"
+                                                            else -> "Sent a message"
+                                                        }
+                                                        chatsRef.child(chatId).child("lastMessage").setValue(lastMessageText)
                                                         chatsRef.child(chatId).child("lastMessageTime").setValue(message.timestamp)
                                                         chatsRef.child(chatId).child("lastMessageSenderId").setValue(message.senderId)
                                                         

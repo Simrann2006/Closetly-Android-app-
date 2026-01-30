@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,11 +64,12 @@ fun SettingsBody() {
     var showDeleteDialog by remember { mutableStateOf(false) }
     
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-    var notificationsEnabled by remember { mutableStateOf(true) }
+    var notificationsEnabled by rememberSaveable { mutableStateOf(true) }
     var darkModeEnabled by remember { mutableStateOf(ThemeManager.isDarkMode) }
+    var isLoadingNotificationState by rememberSaveable { mutableStateOf(true) }
     
     LaunchedEffect(currentUserId) {
-        if (currentUserId != null) {
+        if (currentUserId != null && isLoadingNotificationState) {
             FirebaseDatabase.getInstance()
                 .getReference("Users")
                 .child(currentUserId)
@@ -75,6 +77,10 @@ fun SettingsBody() {
                 .get()
                 .addOnSuccessListener { snapshot ->
                     notificationsEnabled = snapshot.getValue(Boolean::class.java) ?: true
+                    isLoadingNotificationState = false
+                }
+                .addOnFailureListener {
+                    isLoadingNotificationState = false
                 }
         }
     }
@@ -186,10 +192,12 @@ fun SettingsBody() {
                 title = "Dark Mode",
                 subtitle = "Switch between light and dark theme",
                 checked = darkModeEnabled,
-                onCheckedChange = { 
-                    darkModeEnabled = it
-                    ThemeManager.setDarkMode(context, it)
-                    (context as Activity).recreate()
+                onCheckedChange = { isChecked ->
+                    if (darkModeEnabled != isChecked) {
+                        darkModeEnabled = isChecked
+                        ThemeManager.setDarkMode(context, isChecked)
+                        (context as Activity).recreate()
+                    }
                 }
             )
 
@@ -198,26 +206,28 @@ fun SettingsBody() {
                 title = "Notifications",
                 subtitle = "Receive notifications",
                 checked = notificationsEnabled,
-                onCheckedChange = { enabled ->
-                    notificationsEnabled = enabled
-                    
-                    // Save to Firebase Database so it can be checked from any device
-                    if (currentUserId != null) {
-                        FirebaseDatabase.getInstance()
-                            .getReference("Users")
-                            .child(currentUserId)
-                            .child("notificationsEnabled")
-                            .setValue(enabled)
-                            .addOnSuccessListener {
-                                Toast.makeText(
-                                    context,
-                                    if (enabled) "Notifications enabled" else "Notifications disabled",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(context, "Failed to update settings", Toast.LENGTH_SHORT).show()
-                            }
+                onCheckedChange = { isChecked ->
+                    if (notificationsEnabled != isChecked) {
+                        notificationsEnabled = isChecked
+                        
+                        // Save to Firebase Database so it can be checked from any device
+                        if (currentUserId != null) {
+                            FirebaseDatabase.getInstance()
+                                .getReference("Users")
+                                .child(currentUserId)
+                                .child("notificationsEnabled")
+                                .setValue(isChecked)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        context,
+                                        if (isChecked) "Notifications enabled" else "Notifications disabled",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Failed to update settings", Toast.LENGTH_SHORT).show()
+                                }
+                        }
                     }
                 }
             )
@@ -474,7 +484,6 @@ fun SettingsToggleItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

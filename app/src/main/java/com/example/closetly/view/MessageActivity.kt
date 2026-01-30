@@ -75,7 +75,7 @@ fun MessageBody() {
         chatViewModel.getUserChats(currentUserId) { success, _, chats ->
             isLoading = false
             if (success) {
-                chatList = chats.filter { it.first.lastMessage.isNotEmpty() }
+                chatList = chats
             }
         }
     }
@@ -264,20 +264,25 @@ fun MessageBody() {
         DeleteChatConfirmationDialog(
             userName = chatToDelete!!.second.username,
             onConfirm = {
-                chatViewModel.deleteChat(chatToDelete!!.first.chatId) { success, message ->
+                val chatIdToDelete = chatToDelete!!.first.chatId
+                chatViewModel.deleteChat(chatIdToDelete) { success, message ->
                     if (success) {
-                        chatList = chatList.filter { it.first.chatId != chatToDelete!!.first.chatId }
-                        Toast.makeText(
-                            context,
-                            "Chat deleted",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        chatList = chatList.filter { it.first.chatId != chatIdToDelete }
+                        (context as? android.content.Context)?.let { ctx ->
+                            Toast.makeText(
+                                ctx,
+                                "Chat deleted",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     } else {
-                        Toast.makeText(
-                            context,
-                            "Failed: $message",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        (context as? android.content.Context)?.let { ctx ->
+                            Toast.makeText(
+                                ctx,
+                                "Failed: $message",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
                 showDeleteConfirmation = false

@@ -91,7 +91,7 @@ fun ListingViewerBody(productId: String) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
                             contentDescription = "Back",
-                            tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 },
@@ -101,16 +101,16 @@ fun ListingViewerBody(productId: String) {
                             Icon(
                                 painter = painterResource(R.drawable.baseline_more_vert_24),
                                 contentDescription = "More options",
-                                tint = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                                tint = if (ThemeManager.isDarkMode) White else Black
                             )
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
-                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Surface_Dark else White)
+                            modifier = Modifier.background(if (ThemeManager.isDarkMode) Background_Dark else White)
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit", color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown) },
+                                text = { Text("Edit", color = if (ThemeManager.isDarkMode) White else Black) },
                                 onClick = {
                                     showMenu = false
                                     showEditDialog = true
@@ -119,7 +119,7 @@ fun ListingViewerBody(productId: String) {
                                     Icon(
                                         painter = painterResource(R.drawable.baseline_edit_24),
                                         contentDescription = null,
-                                        tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                                        tint = if (ThemeManager.isDarkMode) White else Black
                                     )
                                 }
                             )
@@ -142,7 +142,7 @@ fun ListingViewerBody(productId: String) {
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = if (ThemeManager.isDarkMode) Background_Dark else Background_Light,
-                    titleContentColor = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                    titleContentColor = if (ThemeManager.isDarkMode) White else Black
                 )
             )
         },
@@ -232,7 +232,7 @@ fun ListingViewerBody(productId: String) {
                             text = product!!.title,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown,
+                            color = if (ThemeManager.isDarkMode) White else Black,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -254,7 +254,7 @@ fun ListingViewerBody(productId: String) {
                         text = product!!.listingType.name,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (ThemeManager.isDarkMode) OnBackground_Dark.copy(alpha = 0.7f) else Grey
+                        color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Black.copy(alpha = 0.7f)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -263,7 +263,7 @@ fun ListingViewerBody(productId: String) {
                         Text(
                             text = product!!.description,
                             fontSize = 14.sp,
-                            color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+                            color = if (ThemeManager.isDarkMode) White else Black,
                             lineHeight = 20.sp
                         )
 
@@ -278,7 +278,7 @@ fun ListingViewerBody(productId: String) {
                         text = "Details",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (ThemeManager.isDarkMode) OnBackground_Dark else Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -346,12 +346,12 @@ fun ListingDetailRowViewer(label: String, value: String) {
             text = "$label:",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = if (ThemeManager.isDarkMode) OnSurface_Dark.copy(alpha = 0.7f) else Grey
+            color = if (ThemeManager.isDarkMode) White.copy(alpha = 0.7f) else Grey
         )
         Text(
             text = value,
             fontSize = 14.sp,
-            color = if (ThemeManager.isDarkMode) OnSurface_Dark else OnSurface_Light,
+            color = if (ThemeManager.isDarkMode) White else Black,
             fontWeight = FontWeight.Medium
         )
     }
@@ -408,13 +408,13 @@ fun EditListingDialogViewer(
                         "Edit Listing",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                        color = if (ThemeManager.isDarkMode) White else Black
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_close_24),
                             contentDescription = null,
-                            tint = if (ThemeManager.isDarkMode) OnSurface_Dark else Brown
+                            tint = if (ThemeManager.isDarkMode) White else Black
                         )
                     }
                 }

@@ -61,17 +61,34 @@ import com.example.closetly.ui.theme.Grey
 import com.example.closetly.ui.theme.White
 import com.example.closetly.utils.ThemeManager
 import com.example.closetly.viewmodel.ChatViewModel
+import com.example.closetly.utils.NotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import android.util.Log
 
 class DashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeManager.initialize(this)
         enableEdgeToEdge()
+        
+        // Create notification channels (required for Android O+)
+        NotificationHelper.createNotificationChannels(this)
+        
+        // Refresh FCM token every time app opens
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            NotificationHelper.refreshFcmToken(userId) { success ->
+                if (success) {
+                    Log.d("DashboardActivity", "FCM token refreshed successfully")
+                } else {
+                    Log.e("DashboardActivity", "Failed to refresh FCM token")
+                }
+            }
+        }
         
         setContent {
             ClosetlyTheme(darkTheme = ThemeManager.isDarkMode) {
