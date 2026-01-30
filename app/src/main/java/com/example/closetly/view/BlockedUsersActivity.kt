@@ -60,8 +60,7 @@ fun BlockedUsersBody() {
     var showUnblockDialog by remember { mutableStateOf(false) }
     var selectedUser by remember { mutableStateOf<UserModel?>(null) }
     val scope = rememberCoroutineScope()
-    
-    // Load blocked users in real-time
+
     LaunchedEffect(currentUserId) {
         if (currentUserId.isNotEmpty()) {
             try {
@@ -171,8 +170,7 @@ fun BlockedUsersBody() {
                         modifier = Modifier.padding(start = 80.dp)
                     )
                 }
-                
-                // Bottom section
+
                 item {
                     Column(
                         modifier = Modifier
@@ -196,8 +194,7 @@ fun BlockedUsersBody() {
             }
         }
     }
-    
-    // Unblock confirmation dialog
+
     if (showUnblockDialog && selectedUser != null) {
         AlertDialog(
             onDismissRequest = { showUnblockDialog = false },
@@ -256,7 +253,6 @@ fun BlockedUserItem(
             .clickable(enabled = false) { /* Disable click */ },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile picture
         AsyncImage(
             model = user.profilePicture.ifEmpty { R.drawable.baseline_person_24 },
             contentDescription = null,
@@ -268,8 +264,7 @@ fun BlockedUserItem(
         )
         
         Spacer(modifier = Modifier.width(12.dp))
-        
-        // User info
+
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -288,8 +283,7 @@ fun BlockedUserItem(
         }
         
         Spacer(modifier = Modifier.width(12.dp))
-        
-        // Unblock button
+
         Button(
             onClick = onUnblockClick,
             colors = ButtonDefaults.buttonColors(

@@ -287,4 +287,272 @@ class SliderRepoImpl : SliderRepo {
             rentRef.removeEventListener(rentListener)
         }
     }
+    
+    /**
+     * Get slider items ONLY from followed users.
+     * Shows posts from users that the current user follows.
+     * Limited to 5 items, sorted by newest first.
+     * Real-time updates when new content is added.
+     */
+    override fun getFollowedUsersSliderItems(
+        currentUserId: String,
+        limit: Int
+    ): Flow<List<SliderItemModel>> = callbackFlow {
+        val allPostsMap = mutableMapOf<String, Pair<String, ListingItem>>() // postId -> (userId, listing)
+        val userDataCache = mutableMapOf<String, Pair<String, String>>() // userId -> (username, profilePic)
+        var followedUserIds = setOf<String>()
+        var blockedUserIds = setOf<String>()
+        var productsLoaded = false
+        var rentLoaded = false
+        var followingLoaded = false
+        var blockedLoaded = false
+        
+        fun emitSliderItems(
+            userListingsMap: Map<String, List<ListingItem>>,
+            userData: Map<String, Pair<String, String>>
+        ) {
+            val sliderItems = userListingsMap.mapNotNull { (userId, listings) ->
+                val (username, profilePic) = userData[userId] ?: Pair("", "")
+                val lastUpdated = listings.maxOfOrNull { it.timestamp } ?: 0L
+                
+                // Only create slider if user has profile picture, username, and listings
+                if (profilePic.isNotEmpty() && username.isNotEmpty() && listings.isNotEmpty()) {
+                    SliderItemModel(
+                        userId = userId,
+                        username = username,
+                        profilePictureUrl = profilePic,
+                        listings = listings,
+                        totalListings = listings.size,
+                        lastUpdated = lastUpdated
+                    )
+                } else {
+                    null
+                }
+            }.sortedByDescending { it.lastUpdated }.take(limit)
+            
+            Log.d(TAG, "✅ Emitting ${sliderItems.size} followed-users slider items")
+            trySend(sliderItems)
+        }
+        
+        fun processAndEmitItems() {
+            if (!productsLoaded || !rentLoaded || !followingLoaded || !blockedLoaded) return
+            
+            Log.d(TAG, "Processing ${allPostsMap.size} posts for followed-users slider")
+            Log.d(TAG, "Following ${followedUserIds.size} users")
+            
+            // Filter posts: only from followed users, not blocked
+            val filteredPosts = allPostsMap.filterValues { (userId, _) ->
+                followedUserIds.contains(userId) && !blockedUserIds.contains(userId)
+            }
+            
+            if (filteredPosts.isEmpty()) {
+                Log.d(TAG, "No posts from followed users found")
+                trySend(emptyList())
+                return
+            }
+            
+            // Group all posts by userId
+            val postsByUser = filteredPosts.values.groupBy { it.first }
+            
+            Log.d(TAG, "Found posts from ${postsByUser.size} followed users")
+            
+            // For each user, get their listings sorted by timestamp (newest first)
+            val userListings = postsByUser.mapValues { (_, posts) ->
+                posts.map { it.second }
+                    .sortedByDescending { it.timestamp }
+                    .take(MAX_LISTINGS_PER_USER)
+            }
+            
+            // Sort users by their latest post timestamp and take top users
+            val topUsers = userListings.entries
+                .sortedByDescending { (_, listings) ->
+                    listings.maxOfOrNull { it.timestamp } ?: 0L
+                }
+                .take(limit)
+                .associate { it.key to it.value }
+            
+            // Fetch user data for top users
+            val pendingFetches = topUsers.keys
+            var fetchedCount = 0
+            
+            if (pendingFetches.isEmpty()) {
+                trySend(emptyList())
+                return
+            }
+            
+            for (userId in pendingFetches) {
+                if (userDataCache.containsKey(userId)) {
+                    fetchedCount++
+                    if (fetchedCount == pendingFetches.size) {
+                        emitSliderItems(topUsers, userDataCache)
+                    }
+                } else {
+                    usersRef.child(userId).get().addOnSuccessListener { userSnapshot ->
+                        if (userSnapshot.exists()) {
+                            val username = userSnapshot.child("fullName").getValue(String::class.java) 
+                                ?: userSnapshot.child("username").getValue(String::class.java) 
+                                ?: "User"
+                            val profilePictureUrl = userSnapshot.child("profilePicture").getValue(String::class.java) 
+                                ?: userSnapshot.child("profilePic").getValue(String::class.java)
+                                ?: ""
+                            
+                            userDataCache[userId] = Pair(username, profilePictureUrl)
+                        } else {
+                            userDataCache[userId] = Pair("User", "")
+                        }
+                        
+                        fetchedCount++
+                        if (fetchedCount == pendingFetches.size) {
+                            emitSliderItems(topUsers, userDataCache)
+                        }
+                    }.addOnFailureListener {
+                        userDataCache[userId] = Pair("User", "")
+                        fetchedCount++
+                        if (fetchedCount == pendingFetches.size) {
+                            emitSliderItems(topUsers, userDataCache)
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Listen for following changes
+        val followingListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                followedUserIds = snapshot.children.mapNotNull { it.key }.toSet()
+                Log.d(TAG, "Following list updated: ${followedUserIds.size} users")
+                followingLoaded = true
+                processAndEmitItems()
+            }
+            
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Following listener cancelled: ${error.message}")
+            }
+        }
+        
+        // Listen for blocked users
+        val blockedListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                blockedUserIds = snapshot.children.mapNotNull { it.key }.toSet()
+                blockedLoaded = true
+                processAndEmitItems()
+            }
+            
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Blocked listener cancelled: ${error.message}")
+            }
+        }
+        
+        // Listener for Products
+        val productsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d(TAG, "🔄 Products data changed for followed slider")
+                
+                allPostsMap.keys.filter { it.startsWith("product_") }.toList().forEach { allPostsMap.remove(it) }
+                
+                for (child in snapshot.children) {
+                    try {
+                        val listingId = child.key ?: ""
+                        val userId = child.child("sellerId").getValue(String::class.java) ?: ""
+                        val imageUrl = child.child("imageUrl").getValue(String::class.java) ?: ""
+                        val itemName = child.child("title").getValue(String::class.java) ?: ""
+                        val listingTypeStr = child.child("listingType").getValue(String::class.java) ?: "THRIFT"
+                        
+                        val price = if (listingTypeStr == "RENT") {
+                            val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) ?: 0.0
+                            "$${rentPriceDouble.toInt()}/day"
+                        } else {
+                            val priceDouble = child.child("price").getValue(Double::class.java) ?: 0.0
+                            "$${priceDouble.toInt()}"
+                        }
+                        
+                        val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
+                        val status = child.child("status").getValue(String::class.java) ?: "Available"
+                        
+                        if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
+                            val listing = ListingItem(
+                                listingId = "product_$listingId",
+                                imageUrl = imageUrl,
+                                itemName = itemName,
+                                price = price,
+                                timestamp = timestamp
+                            )
+                            allPostsMap["product_$listingId"] = Pair(userId, listing)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing product: ${e.message}")
+                    }
+                }
+                
+                productsLoaded = true
+                processAndEmitItems()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Products listener cancelled: ${error.message}")
+            }
+        }
+        
+        // Listener for Rent items
+        val rentListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d(TAG, "🔄 Rent data changed for followed slider")
+                
+                allPostsMap.keys.filter { it.startsWith("rent_") }.toList().forEach { allPostsMap.remove(it) }
+                
+                for (child in snapshot.children) {
+                    try {
+                        val listingId = child.key ?: ""
+                        val userId = child.child("sellerId").getValue(String::class.java) 
+                            ?: child.child("ownerId").getValue(String::class.java)
+                            ?: child.child("userId").getValue(String::class.java) ?: ""
+                        val imageUrl = child.child("imageUrl").getValue(String::class.java) ?: ""
+                        val itemName = child.child("title").getValue(String::class.java) ?: ""
+                        val rentPriceDouble = child.child("rentPricePerDay").getValue(Double::class.java) 
+                            ?: child.child("rentPrice").getValue(Double::class.java) 
+                            ?: child.child("price").getValue(Double::class.java) ?: 0.0
+                        val price = "$${rentPriceDouble.toInt()}/day"
+                        val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
+                        val status = child.child("status").getValue(String::class.java) ?: "Available"
+                        
+                        if (listingId.isNotEmpty() && userId.isNotEmpty() && imageUrl.isNotEmpty() && status == "Available") {
+                            val listing = ListingItem(
+                                listingId = "rent_$listingId",
+                                imageUrl = imageUrl,
+                                itemName = itemName,
+                                price = price,
+                                timestamp = timestamp
+                            )
+                            allPostsMap["rent_$listingId"] = Pair(userId, listing)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error parsing rent item: ${e.message}")
+                    }
+                }
+                
+                rentLoaded = true
+                processAndEmitItems()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Rent listener cancelled: ${error.message}")
+            }
+        }
+        
+        // Attach all listeners
+        usersRef.child(currentUserId).child("following").addValueEventListener(followingListener)
+        usersRef.child(currentUserId).child("blocked").addValueEventListener(blockedListener)
+        productsRef.addValueEventListener(productsListener)
+        rentRef.addValueEventListener(rentListener)
+        
+        Log.d(TAG, "Firebase listeners attached for followed-users slider")
+        
+        awaitClose {
+            Log.d(TAG, "Removing Firebase listeners for followed-users slider")
+            usersRef.child(currentUserId).child("following").removeEventListener(followingListener)
+            usersRef.child(currentUserId).child("blocked").removeEventListener(blockedListener)
+            productsRef.removeEventListener(productsListener)
+            rentRef.removeEventListener(rentListener)
+        }
+    }
 }

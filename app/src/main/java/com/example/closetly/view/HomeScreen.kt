@@ -101,40 +101,37 @@ fun HomeScreen(
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val error by viewModel.error.collectAsState()
 
+
     val sliderItems by sliderViewModel.sliderItems.collectAsState()
     val sliderLoading by sliderViewModel.isLoading.collectAsState()
+    
+    val sliderCount = sliderItems.size
 
-    val sliderCount = if (sliderItems.isEmpty()) 0 else sliderItems.size
     val pagerState = rememberPagerState(
         pageCount = { sliderCount },
         initialPage = 0
     )
     
-    // LazyColumn state for pagination
     val listState = rememberLazyListState()
     
-    // Pull-to-refresh state
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = { 
             viewModel.refreshPosts()
-            sliderViewModel.refresh() // Also refresh slider
+            sliderViewModel.refresh()
         }
     )
     
-    // Detect when user scrolls near bottom for pagination
     val shouldLoadMore = remember {
         derivedStateOf {
             val layoutInfo = listState.layoutInfo
             val totalItemsCount = layoutInfo.totalItemsCount
             val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             
-            // Load more when user is 3 items away from the end
             lastVisibleItemIndex >= totalItemsCount - 3 && totalItemsCount > 0
         }
     }
     
-    // Trigger load more when scrolling near bottom
     LaunchedEffect(Unit) {
         snapshotFlow { shouldLoadMore.value }
             .distinctUntilChanged()
@@ -149,7 +146,7 @@ fun HomeScreen(
     LaunchedEffect(pagerState, sliderCount) {
         if (sliderCount > 1) {
             while (true) {
-                delay(4000) // Slightly longer delay for smoother experience
+                delay(4000) // 4 second delay between slides
                 val nextPage = (pagerState.currentPage + 1) % sliderCount
                 pagerState.animateScrollToPage(
                     page = nextPage,
@@ -165,7 +162,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (ThemeManager.isDarkMode) Surface_Dark else Light_grey)
+            .background(if (ThemeManager.isDarkMode) Background_Dark else Light_grey)
             .pullRefresh(pullRefreshState)
     ) {
         LazyColumn(
@@ -197,7 +194,7 @@ fun HomeScreen(
                         ) {
                             CircularProgressIndicator(color = Brown)
                         }
-                    } else {
+                    } else if (sliderItems.isNotEmpty()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -238,7 +235,6 @@ fun HomeScreen(
                                 }
                             }
 
-                            // Custom pager indicator
                             Row(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
@@ -285,6 +281,7 @@ fun HomeScreen(
                     }
                 }
 
+
                 items(
                     items = postsUI,
                     key = { it.post.postId },
@@ -307,7 +304,6 @@ fun HomeScreen(
                     Spacer(Modifier.height(2.dp))
                 }
                 
-                // Loading indicator for pagination
                 if (isLoadingMore) {
                     item {
                         Box(
@@ -326,13 +322,12 @@ fun HomeScreen(
             }
         }
         
-        // Pull-to-refresh indicator at top
         PullRefreshIndicator(
             refreshing = isRefreshing,
             state = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter),
-            backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
-            contentColor = Black
+            backgroundColor = if (ThemeManager.isDarkMode) Background_Dark else White,
+            contentColor = if (ThemeManager.isDarkMode) White else Black
         )
     }
 }
@@ -460,7 +455,7 @@ fun ListingCard(imageUrl: String, itemName: String, price: String) {
             .height(145.dp),
         shape = RoundedCornerShape(14.dp),
         elevation = 6.dp,
-        backgroundColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+        backgroundColor = if (ThemeManager.isDarkMode) Background_Dark else White
     ) {
         Box {
             AsyncImage(
@@ -496,17 +491,28 @@ fun ListingCard(imageUrl: String, itemName: String, price: String) {
                         maxLines = 1
                     )
                 }
-                if (price.isNotEmpty()) {
-                    Text(
-                        price,
-                        style = TextStyle(
-                            fontFamily = FontFamily(Font(R.font.poppins_regular)),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        )
-                    )
+                val cleanPrice = price
+                    .replace("$", "")
+                    .replace("Rs. ", "Rs.")
+                    .replace("Rs.", "Rs.")
+                    .trim()
+                
+                val displayPrice = when {
+                    cleanPrice.isBlank() || cleanPrice == "0" || cleanPrice == "Rs.0" || cleanPrice == "Rs.0/day" -> "Rs.100/day"
+                    cleanPrice.startsWith("Rs.") -> cleanPrice
+                    cleanPrice.matches(Regex("[0-9]+\\.?[0-9]*/day")) -> "Rs.$cleanPrice"
+                    cleanPrice.matches(Regex("[0-9]+\\.?[0-9]*")) -> "Rs.$cleanPrice"
+                    else -> "Rs.$cleanPrice"
                 }
+                Text(
+                    displayPrice,
+                    style = TextStyle(
+                        fontFamily = FontFamily(Font(R.font.poppins_regular)),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = White
+                    )
+                )
             }
         }
     }
@@ -625,7 +631,6 @@ fun PostCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Only show Follow button if post is not from current user
                 val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
                 if (postUI.post.userId != currentUserId) {
                     Button(

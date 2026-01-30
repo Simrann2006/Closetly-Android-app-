@@ -20,7 +20,8 @@ data class PostUI(
     val isSaved: Boolean = false,
     val isFollowing: Boolean = false,
     val likesCount: Int = 0,
-    val commentsCount: Int = 0
+    val commentsCount: Int = 0,
+    val isFromFollowedUser: Boolean = false // Track if post is from followed user
 )
 
 class HomeViewModel(
@@ -34,6 +35,9 @@ class HomeViewModel(
     private val _postsUI = MutableStateFlow<List<PostUI>>(emptyList())
     val postsUI: StateFlow<List<PostUI>> = _postsUI.asStateFlow()
     
+    // Track followed user IDs for priority sorting
+    private val _followedUserIds = MutableStateFlow<Set<String>>(emptySet())
+    
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
@@ -46,32 +50,40 @@ class HomeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
-    private val _lastSeenTimestamp = MutableStateFlow(0L)
-    val lastSeenTimestamp: StateFlow<Long> = _lastSeenTimestamp.asStateFlow()
+    // Track loaded post IDs to avoid duplicates
+    private val loadedPostIds = mutableSetOf<String>()
     
-    // Track oldest post timestamp for pagination
-    private var oldestPostTimestamp: Long? = null
-    private val PAGE_SIZE = 10
+    private val PAGE_SIZE = 20
     
     init {
-        loadInitialPosts()
+        loadFollowedUsers()
+        loadPriorityFeed()
     }
     
     /**
-     * Load initial posts (from followed users + real-time updates)
-     * This is called on first load
+     * Load followed user IDs for priority sorting
      */
-    private fun loadInitialPosts() {
+    private fun loadFollowedUsers() {
+        viewModelScope.launch {
+            repository.getFollowedUserIds(currentUserId)
+                .catch { /* Silent fail */ }
+                .collect { followedIds ->
+                    _followedUserIds.value = followedIds
+                }
+        }
+    }
+    
+    /**
+     * Load posts with priority: followed users first, then others
+     * Both sorted by newest to oldest within their groups
+     */
+    private fun loadPriorityFeed() {
         viewModelScope.launch {
             _isLoading.value = true
+            loadedPostIds.clear()
             
-            // Get last seen timestamp
-            _lastSeenTimestamp.value = repository.getLastSeenTimestamp(currentUserId)
-            
-            // Load posts from followed users
-            repository.getPostsFromFollowedUsers(
+            repository.getPriorityFeedPosts(
                 userId = currentUserId,
-                afterTimestamp = null,
                 limit = PAGE_SIZE
             )
                 .catch { e ->
@@ -82,26 +94,34 @@ class HomeViewModel(
                     val filteredPosts = posts.filter { post ->
                         post.userId.isNotEmpty() &&
                         post.imageUrl.isNotEmpty() &&
-                        post.username.isNotEmpty()
+                        post.username.isNotEmpty() &&
+                        post.userId != currentUserId // Exclude own posts
                     }
+                    
                     _isLoading.value = false
                     
-                    // Track oldest post for pagination
-                    if (filteredPosts.isNotEmpty()) {
-                        oldestPostTimestamp = filteredPosts.minOfOrNull { it.timestamp }
-                    }
+                    // Track loaded post IDs
+                    loadedPostIds.clear()
+                    loadedPostIds.addAll(filteredPosts.map { it.postId })
                     
-                    // For each post, combine it with its real-time states
+                    // Create UI flows for each post
                     val postsWithStates = filteredPosts.map { post ->
                         createPostUIFlow(post)
                     }
                     
-                    // Combine all post flows into one
                     if (postsWithStates.isNotEmpty()) {
                         combine(postsWithStates) { postsArray ->
                             postsArray.toList()
                         }.collect { combinedPosts ->
-                            _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
+                            // Sort: followed users first (newest to oldest), then others (newest to oldest)
+                            val followedIds = _followedUserIds.value
+                            val sortedPosts = combinedPosts
+                                .map { it.copy(isFromFollowedUser = followedIds.contains(it.post.userId)) }
+                                .sortedWith(
+                                    compareByDescending<PostUI> { it.isFromFollowedUser }
+                                        .thenByDescending { it.post.timestamp }
+                                )
+                            _postsUI.value = sortedPosts
                         }
                     } else {
                         _postsUI.value = emptyList()
@@ -111,45 +131,55 @@ class HomeViewModel(
     }
     
     /**
-     * Pull-to-refresh: Load only NEW posts created after last seen timestamp
-     * This prevents old posts from reappearing
+     * Pull-to-refresh: Reload fresh data without duplicates
      */
     fun refreshPosts() {
         viewModelScope.launch {
             _isRefreshing.value = true
+            loadedPostIds.clear()
             
             try {
-                val lastSeen = _lastSeenTimestamp.value
-                val currentTime = System.currentTimeMillis()
-                
-                // Get only new posts
-                repository.getNewPostsOnly(currentUserId, lastSeen)
+                repository.getPriorityFeedPosts(
+                    userId = currentUserId,
+                    limit = PAGE_SIZE
+                )
                     .catch { e ->
                         _error.value = "Refresh failed: ${e.message}"
                         _isRefreshing.value = false
                     }
-                    .collect { newPosts ->
-                        if (newPosts.isNotEmpty()) {
-                            // Add new posts to existing list
-                            val currentPosts = _postsUI.value.map { it.post }
-                            val allPosts = (newPosts + currentPosts).distinctBy { it.postId }
-                            
-                            // Create UI flows for new posts
-                            val postsWithStates = allPosts.map { post ->
-                                createPostUIFlow(post)
+                    .take(1) // Take only one emission for refresh
+                    .collect { posts ->
+                        val filteredPosts = posts.filter { post ->
+                            post.userId.isNotEmpty() &&
+                            post.imageUrl.isNotEmpty() &&
+                            post.username.isNotEmpty() &&
+                            post.userId != currentUserId
+                        }
+                        
+                        // Track new post IDs
+                        loadedPostIds.clear()
+                        loadedPostIds.addAll(filteredPosts.map { it.postId })
+                        
+                        // Create UI flows for new posts
+                        val postsWithStates = filteredPosts.map { post ->
+                            createPostUIFlow(post)
+                        }
+                        
+                        if (postsWithStates.isNotEmpty()) {
+                            combine(postsWithStates) { postsArray ->
+                                postsArray.toList()
+                            }.take(1).collect { combinedPosts ->
+                                val followedIds = _followedUserIds.value
+                                val sortedPosts = combinedPosts
+                                    .map { it.copy(isFromFollowedUser = followedIds.contains(it.post.userId)) }
+                                    .sortedWith(
+                                        compareByDescending<PostUI> { it.isFromFollowedUser }
+                                            .thenByDescending { it.post.timestamp }
+                                    )
+                                _postsUI.value = sortedPosts
                             }
-                            
-                            if (postsWithStates.isNotEmpty()) {
-                                combine(postsWithStates) { postsArray ->
-                                    postsArray.toList()
-                                }.collect { combinedPosts ->
-                                    _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
-                                }
-                            }
-                            
-                            // Update last seen timestamp
-                            _lastSeenTimestamp.value = currentTime
-                            repository.saveLastSeenTimestamp(currentUserId, currentTime)
+                        } else {
+                            _postsUI.value = emptyList()
                         }
                         
                         _isRefreshing.value = false
@@ -166,40 +196,57 @@ class HomeViewModel(
      * Called when user scrolls to bottom
      */
     fun loadMorePosts() {
-        if (_isLoadingMore.value || oldestPostTimestamp == null) return
+        if (_isLoadingMore.value) return
         
         viewModelScope.launch {
             _isLoadingMore.value = true
             
             try {
-                repository.getPostsFromFollowedUsers(
+                // Get more posts
+                repository.getPriorityFeedPosts(
                     userId = currentUserId,
-                    afterTimestamp = oldestPostTimestamp,
-                    limit = PAGE_SIZE
+                    limit = PAGE_SIZE * 2 // Get more to filter out already loaded
                 )
                     .catch { e ->
                         _error.value = "Load more failed: ${e.message}"
                         _isLoadingMore.value = false
                     }
-                    .collect { morePosts ->
-                        if (morePosts.isNotEmpty()) {
-                            // Update oldest timestamp
-                            oldestPostTimestamp = morePosts.minOfOrNull { it.timestamp }
+                    .take(1)
+                    .collect { allPosts ->
+                        // Filter out already loaded posts
+                        val newPosts = allPosts.filter { post ->
+                            !loadedPostIds.contains(post.postId) &&
+                            post.userId.isNotEmpty() &&
+                            post.imageUrl.isNotEmpty() &&
+                            post.username.isNotEmpty() &&
+                            post.userId != currentUserId
+                        }.take(PAGE_SIZE)
+                        
+                        if (newPosts.isNotEmpty()) {
+                            // Add to loaded IDs
+                            loadedPostIds.addAll(newPosts.map { it.postId })
                             
-                            // Add to existing posts
+                            // Combine with existing posts
                             val currentPosts = _postsUI.value.map { it.post }
-                            val allPosts = (currentPosts + morePosts).distinctBy { it.postId }
+                            val allUniquePosts = (currentPosts + newPosts).distinctBy { it.postId }
                             
                             // Create UI flows
-                            val postsWithStates = allPosts.map { post ->
+                            val postsWithStates = allUniquePosts.map { post ->
                                 createPostUIFlow(post)
                             }
                             
                             if (postsWithStates.isNotEmpty()) {
                                 combine(postsWithStates) { postsArray ->
                                     postsArray.toList()
-                                }.collect { combinedPosts ->
-                                    _postsUI.value = combinedPosts.sortedByDescending { it.post.timestamp }
+                                }.take(1).collect { combinedPosts ->
+                                    val followedIds = _followedUserIds.value
+                                    val sortedPosts = combinedPosts
+                                        .map { it.copy(isFromFollowedUser = followedIds.contains(it.post.userId)) }
+                                        .sortedWith(
+                                            compareByDescending<PostUI> { it.isFromFollowedUser }
+                                                .thenByDescending { it.post.timestamp }
+                                        )
+                                    _postsUI.value = sortedPosts
                                 }
                             }
                         }

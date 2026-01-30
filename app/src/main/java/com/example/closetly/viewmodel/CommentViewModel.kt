@@ -35,6 +35,8 @@ class CommentViewModel(
     private val _showDeleteDialog = MutableStateFlow<String?>(null)
     val showDeleteDialog: StateFlow<String?> = _showDeleteDialog.asStateFlow()
     
+    private val _isPosting = MutableStateFlow(false)
+    
     private val database = FirebaseDatabase.getInstance()
     private val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: "guest_user"
     
@@ -72,6 +74,14 @@ class CommentViewModel(
     fun postComment(postId: String, userName: String = "", userProfileImage: String = "") {
         if (_commentText.value.isBlank()) return
         
+        // Prevent duplicate submissions
+        if (_isPosting.value) return
+        _isPosting.value = true
+        
+        val commentTextToPost = _commentText.value.trim()
+        // Clear the text immediately to provide feedback and prevent double-tap
+        _commentText.value = ""
+        
         viewModelScope.launch {
             // Get current user data from Firebase (always fetch fresh data)
             var finalUserName = userName
@@ -91,13 +101,18 @@ class CommentViewModel(
                 userId = currentUserId,
                 userName = finalUserName,
                 userProfileImage = finalUserProfileImage,
-                commentText = _commentText.value,
+                commentText = commentTextToPost,
                 timestamp = System.currentTimeMillis()
             )
             
             repository.addComment(comment).onSuccess {
-                _commentText.value = ""
+                // Comment added successfully
+            }.onFailure {
+                // Restore the comment text if posting failed
+                _commentText.value = commentTextToPost
             }
+            
+            _isPosting.value = false
         }
     }
     

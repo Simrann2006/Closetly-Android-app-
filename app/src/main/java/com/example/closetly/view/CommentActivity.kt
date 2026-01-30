@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,10 +16,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -64,12 +70,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.closetly.R
 import com.example.closetly.model.CommentModel
+import com.example.closetly.ui.theme.Background_Dark
+import com.example.closetly.ui.theme.Brown
+import com.example.closetly.ui.theme.Surface_Dark
+import com.example.closetly.utils.ThemeManager
 import com.example.closetly.utils.getTimeAgoShort
 import com.example.closetly.viewmodel.CommentViewModel
 import kotlinx.coroutines.launch
@@ -105,10 +118,15 @@ fun CommentScreen(
     val commentText by viewModel.commentText.collectAsState()
     val currentUserProfile by viewModel.currentUserProfile.collectAsState()
     val listState = rememberLazyListState()
-    
+
     var selectedCommentForDelete by remember { mutableStateOf<CommentModel?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    
+
+    val density = LocalDensity.current
+    val navBarInsets = WindowInsets.navigationBars
+    val navBarHeight = with(density) { navBarInsets.getBottom(density).toDp() }
 
     LaunchedEffect(postId) {
         viewModel.loadComments(postId)
@@ -118,7 +136,7 @@ fun CommentScreen(
         ModalBottomSheet(
             onDismissRequest = { selectedCommentForDelete = null },
             sheetState = sheetState,
-            containerColor = Color.White,
+            containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White,
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
         ) {
             Column(
@@ -164,11 +182,12 @@ fun CommentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Comments",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = if (ThemeManager.isDarkMode) Color.White else Color.Black
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         if (commentCount > 0) {
@@ -183,11 +202,15 @@ fun CommentScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            "Back",
+                            tint = if (ThemeManager.isDarkMode) Color.White else Color.Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White
+                    containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White
                 )
             )
         },
@@ -198,19 +221,29 @@ fun CommentScreen(
                 onCommentChange = { viewModel.updateCommentText(it) },
                 onSendClick = {
                     viewModel.postComment(postId = postId)
-                }
+                    // Scroll to the newest comment after posting
+                    scope.launch {
+                        if (filteredComments.isNotEmpty()) {
+                            listState.animateScrollToItem(filteredComments.size)
+                        }
+                    }
+                },
+                isDarkMode = ThemeManager.isDarkMode,
+                bottomPadding = navBarHeight
             )
-        }
+        },
+        containerColor = if (ThemeManager.isDarkMode) Background_Dark else Color.White
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(if (ThemeManager.isDarkMode) Background_Dark else Color.White)
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = if (ThemeManager.isDarkMode) Color.White else Brown
                 )
             } else if (comments.isEmpty()) {
                 Column(
@@ -257,7 +290,8 @@ fun CommentScreen(
                             },
                             onLikeClick = {
                                 viewModel.likeComment(comment.id, postId)
-                            }
+                            },
+                            isDarkMode = ThemeManager.isDarkMode
                         )
                     }
                 }
@@ -272,12 +306,13 @@ fun CommentItem(
     currentUserId: String,
     isCurrentUser: Boolean,
     onCommentLongPress: () -> Unit,
-    onLikeClick: () -> Unit
+    onLikeClick: () -> Unit,
+    isDarkMode: Boolean = false
 ) {
     val isLiked = comment.isLikedBy(currentUserId)
-    
+
     val context = LocalContext.current
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -298,29 +333,59 @@ fun CommentItem(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Profile Picture
-        AsyncImage(
-            model = comment.userProfileImage,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .border(1.dp, Color.LightGray, CircleShape)
-                .let { baseModifier ->
-                    if (comment.userName != "User" && comment.userId.isNotEmpty()) {
-                        baseModifier.clickable {
-                            val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
-                                putExtra("userId", comment.userId)
-                                putExtra("username", comment.userName)
-                            }
-                            context.startActivity(intent)
-                        }
-                    } else baseModifier
-                }
-        )
 
-        // Comment Content
+        if (comment.userProfileImage.isNotEmpty()) {
+            AsyncImage(
+                model = comment.userProfileImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    .let { baseModifier ->
+                        if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                            baseModifier.clickable {
+                                val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", comment.userId)
+                                    putExtra("username", comment.userName)
+                                }
+                                context.startActivity(intent)
+                            }
+                        } else baseModifier
+                    }
+            )
+        } else {
+
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
+                    .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    .let { baseModifier ->
+                        if (comment.userName != "User" && comment.userId.isNotEmpty()) {
+                            baseModifier.clickable {
+                                val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
+                                    putExtra("userId", comment.userId)
+                                    putExtra("username", comment.userName)
+                                }
+                                context.startActivity(intent)
+                            }
+                        } else baseModifier
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_person_24),
+                    contentDescription = "Default profile",
+                    tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -334,7 +399,7 @@ fun CommentItem(
                     style = TextStyle(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
+                        color = if (isDarkMode) Color.White else Color.Black
                     ),
                     modifier = if (comment.userName != "User" && comment.userId.isNotEmpty()) Modifier.clickable {
                         val intent = android.content.Intent(context, UserProfileActivity::class.java).apply {
@@ -360,19 +425,17 @@ fun CommentItem(
                 )
             }
 
-            // Comment Text
             Text(
                 comment.commentText,
                 style = TextStyle(
                     fontSize = 14.sp,
-                    color = Color.Black,
+                    color = if (isDarkMode) Color.White else Color.Black,
                     lineHeight = 20.sp
                 ),
                 modifier = Modifier.padding(top = 3.dp, bottom = 2.dp)
             )
         }
 
-        // Like Button with count
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -388,8 +451,7 @@ fun CommentItem(
                     modifier = Modifier.size(18.dp)
                 )
             }
-            
-            // Like count below like button
+
             if (comment.likesCount > 0) {
                 Text(
                     "${comment.likesCount}",
@@ -409,79 +471,109 @@ fun CommentInputSection(
     commentText: String,
     currentUserProfileImage: String,
     onCommentChange: (String) -> Unit,
-    onSendClick: () -> Unit
+    onSendClick: () -> Unit,
+    isDarkMode: Boolean = false,
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding(),
-        color = Color.White,
+        color = if (isDarkMode) Background_Dark else Color.White,
         shadowElevation = 4.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            AsyncImage(
-                model = currentUserProfileImage,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+        Column {
+            Row(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, Color.LightGray, CircleShape)
-            )
-
-            OutlinedTextField(
-                value = commentText,
-                onValueChange = onCommentChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { 
-                    Text(
-                        "Add a comment...",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    ) 
-                },
-                textStyle = TextStyle(
-                    fontSize = 14.sp,
-                    color = Color.Black
-                ),
-                shape = RoundedCornerShape(20.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.LightGray,
-                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.6f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
-                maxLines = 4,
-                singleLine = false
-            )
-
-            IconButton(
-                onClick = {
-                    if (commentText.isNotBlank()) {
-                        onSendClick()
-                    }
-                },
-                enabled = commentText.isNotBlank(),
-                modifier = Modifier.size(36.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    Icons.Default.Send,
-                    contentDescription = "Send",
-                    tint = if (commentText.isNotBlank()) 
-                        Color(0xFF9C27B0)
-                    else 
-                        Color.Gray.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
+                if (currentUserProfileImage.isNotEmpty()) {
+                    AsyncImage(
+                        model = currentUserProfileImage,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(if (isDarkMode) Color.DarkGray else Color.LightGray)
+                            .border(1.dp, if (isDarkMode) Color.Gray else Color.LightGray, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_person_24),
+                            contentDescription = "Default profile",
+                            tint = if (isDarkMode) Color.White.copy(alpha = 0.7f) else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = commentText,
+                    onValueChange = onCommentChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = {
+                        Text(
+                            "Add a comment...",
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        )
+                    },
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = if (isDarkMode) Color.White else Color.Black
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = if (isDarkMode) Color.Gray else Color.LightGray,
+                        unfocusedBorderColor = if (isDarkMode) Color.Gray.copy(alpha = 0.6f) else Color.LightGray.copy(alpha = 0.6f),
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        cursorColor = if (isDarkMode) Color.White else Color.Black
+                    ),
+                    maxLines = 4,
+                    singleLine = false
                 )
+
+                IconButton(
+                    onClick = {
+                        if (commentText.isNotBlank()) {
+                            onSendClick()
+                        }
+                    },
+                    enabled = commentText.isNotBlank(),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = if (commentText.isNotBlank())
+                            Brown
+                        else
+                            Color.Gray.copy(alpha = 0.5f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
+
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(bottomPadding)
+                    .background(if (isDarkMode) Background_Dark else Color.White)
+            )
         }
     }
 }
@@ -489,7 +581,8 @@ fun CommentInputSection(
 @Composable
 fun DeleteConfirmationDialog(
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isDarkMode: Boolean = false
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -498,14 +591,18 @@ fun DeleteConfirmationDialog(
                 "Delete Comment",
                 style = TextStyle(
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDarkMode) Color.White else Color.Black
                 )
             )
         },
         text = {
             Text(
                 "Are you sure you want to delete this comment? This action cannot be undone.",
-                style = TextStyle(fontSize = 14.sp)
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = if (isDarkMode) Color.White.copy(alpha = 0.8f) else Color.Black
+                )
             )
         },
         confirmButton = {
@@ -520,10 +617,13 @@ fun DeleteConfirmationDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(
+                    "Cancel",
+                    color = if (isDarkMode) Color.White else Color.Black
+                )
             }
         },
-        containerColor = Color.White,
+        containerColor = if (isDarkMode) Background_Dark else Color.White,
         shape = RoundedCornerShape(16.dp)
     )
 }
