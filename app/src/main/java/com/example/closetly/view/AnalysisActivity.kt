@@ -23,11 +23,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
@@ -375,7 +377,7 @@ private fun HeaderSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             StatCard(
-                icon = Icons.Default.Checkroom,
+                icon = R.drawable.baseline_checkroom_24,
                 count = totalItems,
                 label = "Items",
                 iconTint = accentColor,
@@ -385,19 +387,9 @@ private fun HeaderSection(
                 isDarkMode = isDarkMode
             )
             StatCard(
-                icon = Icons.Default.Favorite,
+                icon = R.drawable.outline_apparel_24,
                 count = totalOutfits,
                 label = "Outfits",
-                iconTint = accentColor,
-                cardColor = cardColor,
-                textColor = textColor,
-                modifier = Modifier.weight(1f),
-                isDarkMode = isDarkMode
-            )
-            StatCard(
-                icon = Icons.Default.Refresh,
-                count = activityStats.reuse,
-                label = "Reuses",
                 iconTint = accentColor,
                 cardColor = cardColor,
                 textColor = textColor,
@@ -410,7 +402,7 @@ private fun HeaderSection(
 
 @Composable
 private fun StatCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: Int,
     count: Int,
     label: String,
     iconTint: Color,
@@ -442,7 +434,7 @@ private fun StatCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon,
+                    painter = painterResource(id = icon),
                     contentDescription = label,
                     tint = iconTint,
                     modifier = Modifier.size(22.dp)
@@ -617,7 +609,7 @@ private fun ClosetBreakdownCard(
 
 @Composable
 private fun ChartTypeButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
     textColor: Color,
@@ -832,7 +824,7 @@ private fun VerticalBarChart(
                     ),
                     topLeft = Offset(x, size.height - barHeight),
                     size = Size(barWidth, barHeight),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+                    cornerRadius = CornerRadius(8f, 8f)
                 )
             }
         }
@@ -1234,7 +1226,7 @@ private fun EnhancedMostWornColorCard(
                                 .then(
                                     if (wornColor.color == Color.White || wornColor.name.lowercase() == "white") {
                                         Modifier.background(
-                                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                            Brush.linearGradient(
                                                 colors = listOf(
                                                     Color.LightGray.copy(alpha = 0.3f),
                                                     Color.White
@@ -1528,14 +1520,15 @@ private fun OutfitAnalysisCard(
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutfitStatBox(
                     value = totalOutfits.toString(),
                     label = "Total Outfits",
                     icon = Icons.Default.Collections,
                     textColor = textColor,
-                    isDarkMode = isDarkMode
+                    isDarkMode = isDarkMode,
+                    modifier = Modifier.weight(1f)
                 )
                 
                 OutfitStatBox(
@@ -1543,7 +1536,8 @@ private fun OutfitAnalysisCard(
                     label = "Worn",
                     icon = Icons.Default.CheckCircle,
                     textColor = textColor,
-                    isDarkMode = isDarkMode
+                    isDarkMode = isDarkMode,
+                    modifier = Modifier.weight(1f)
                 )
             }
             
@@ -1551,14 +1545,15 @@ private fun OutfitAnalysisCard(
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutfitStatBox(
                     value = String.format("%.1f", avgItemsPerOutfit),
                     label = "Avg Items",
                     icon = Icons.Default.Layers,
                     textColor = textColor,
-                    isDarkMode = isDarkMode
+                    isDarkMode = isDarkMode,
+                    modifier = Modifier.weight(1f)
                 )
                 
                 OutfitStatBox(
@@ -1566,7 +1561,8 @@ private fun OutfitAnalysisCard(
                     label = "Favorites",
                     icon = Icons.Default.Star,
                     textColor = textColor,
-                    isDarkMode = isDarkMode
+                    isDarkMode = isDarkMode,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -1577,12 +1573,13 @@ private fun OutfitAnalysisCard(
 private fun OutfitStatBox(
     value: String,
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     textColor: Color,
-    isDarkMode: Boolean
+    isDarkMode: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(if (isDarkMode) DarkGrey1.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.5f))
             .padding(16.dp),

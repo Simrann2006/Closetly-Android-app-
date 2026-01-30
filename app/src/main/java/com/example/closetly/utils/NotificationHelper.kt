@@ -39,41 +39,27 @@ object NotificationHelper {
     const val TYPE_POST = "post"
     const val TYPE_GENERAL = "general"
 
-    fun createNotificationChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-            val chatChannel = NotificationChannel(
-                CHANNEL_CHAT_ID,
-                "Chat Messages",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for new chat messages"
-                enableVibration(true)
-                enableLights(true)
+    /**
+     * Check if RECEIVER has enabled push notifications in Firebase Database
+     * This is checked from the receiver's stored preferences, not sender's device
+     */
+    private suspend fun areNotificationsEnabledForUser(userId: String): Boolean {
+        return try {
+            val snapshot = FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(userId)
+                .child("notificationsEnabled")
+                .get()
+                .await()
+            
+            val enabled = snapshot.getValue(Boolean::class.java) ?: true // Default to true
+            if (!enabled) {
+                Log.d(TAG, "Notifications disabled for user: $userId")
             }
-
-            val postChannel = NotificationChannel(
-                CHANNEL_POST_ID,
-                "Post Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifications for new posts and interactions"
-                enableVibration(true)
-            }
-
-            val generalChannel = NotificationChannel(
-                CHANNEL_GENERAL_ID,
-                "General Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "General app notifications"
-            }
-
-            notificationManager.createNotificationChannel(chatChannel)
-            notificationManager.createNotificationChannel(postChannel)
-            notificationManager.createNotificationChannel(generalChannel)
+            enabled
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking notification settings: ${e.message}")
+            true // Default to enabled if error
         }
     }
 
@@ -242,7 +228,17 @@ object NotificationHelper {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val token = getUserFcmToken(receiverUserId) ?: return@launch
+                // Check if RECEIVER has notifications enabled
+                if (!areNotificationsEnabledForUser(receiverUserId)) {
+                    Log.d(TAG, "Notifications disabled for receiver: $receiverUserId")
+                    return@launch
+                }
+                
+                val token = getUserFcmToken(receiverUserId)
+                if (token == null) {
+                    Log.e(TAG, "No FCM token found for user: $receiverUserId")
+                    return@launch
+                }
 
                 val payload = JSONObject().apply {
                     put("message", JSONObject().apply {
@@ -285,7 +281,16 @@ object NotificationHelper {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val token = getUserFcmToken(receiverUserId) ?: return@launch
+                if (!areNotificationsEnabledForUser(receiverUserId)) {
+                    Log.d(TAG, "Notifications disabled for receiver: $receiverUserId")
+                    return@launch
+                }
+                
+                val token = getUserFcmToken(receiverUserId)
+                if (token == null) {
+                    Log.e(TAG, "No FCM token found for user: $receiverUserId")
+                    return@launch
+                }
 
                 val title = when (notificationType) {
                     "like" -> "New Like ❤️"
@@ -342,7 +347,17 @@ object NotificationHelper {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val token = getUserFcmToken(receiverUserId) ?: return@launch
+                // Check if RECEIVER has notifications enabled
+                if (!areNotificationsEnabledForUser(receiverUserId)) {
+                    Log.d(TAG, "Notifications disabled for receiver: $receiverUserId")
+                    return@launch
+                }
+                
+                val token = getUserFcmToken(receiverUserId)
+                if (token == null) {
+                    Log.e(TAG, "No FCM token found for user: $receiverUserId")
+                    return@launch
+                }
 
                 val title = "New Follower 👤"
                 val body = "$followerName started following you"
@@ -388,7 +403,17 @@ object NotificationHelper {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val token = getUserFcmToken(receiverUserId) ?: return@launch
+                // Check if RECEIVER has notifications enabled
+                if (!areNotificationsEnabledForUser(receiverUserId)) {
+                    Log.d(TAG, "Notifications disabled for receiver: $receiverUserId")
+                    return@launch
+                }
+                
+                val token = getUserFcmToken(receiverUserId)
+                if (token == null) {
+                    Log.e(TAG, "No FCM token found for user: $receiverUserId")
+                    return@launch
+                }
 
                 val payload = JSONObject().apply {
                     put("message", JSONObject().apply {
@@ -432,6 +457,43 @@ object NotificationHelper {
         }
     }
 
+    /**
+     * Refresh FCM token for current user
+     * Call this when user logs in or when token is invalid
+     */
+    fun refreshFcmToken(userId: String, onComplete: (Boolean) -> Unit = {}) {
+        try {
+            val messaging = com.google.firebase.messaging.FirebaseMessaging.getInstance()
+            messaging.token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val newToken = task.result
+                    Log.d(TAG, "New FCM token generated: ${newToken?.take(20)}...")
+                    
+                    // Save to database
+                    FirebaseDatabase.getInstance()
+                        .getReference("Users")
+                        .child(userId)
+                        .child("fcmToken")
+                        .setValue(newToken)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "FCM token saved to database")
+                            onComplete(true)
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Failed to save FCM token: ${e.message}")
+                            onComplete(false)
+                        }
+                } else {
+                    Log.e(TAG, "Failed to get new FCM token: ${task.exception?.message}")
+                    onComplete(false)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error refreshing FCM token: ${e.message}")
+            onComplete(false)
+        }
+    }
+
     private suspend fun sendFcmV1Request(context: Context, payload: JSONObject) {
         try {
             val accessToken = getOAuth2AccessToken(context)
@@ -452,6 +514,24 @@ object NotificationHelper {
             } else {
                 val errorStream = connection.errorStream?.bufferedReader()?.readText()
                 Log.e(TAG, "FCM error: $responseCode - $errorStream")
+                
+                // Check if token is unregistered/invalid
+                if (errorStream?.contains("UNREGISTERED") == true || responseCode == 404) {
+                    Log.e(TAG, "FCM token is INVALID/EXPIRED - User needs to logout and login again")
+                    Log.e(TAG, "The token stored in database is no longer valid")
+                    
+                    // Extract userId from payload to clean up invalid token
+                    try {
+                        val messageObj = payload.getJSONObject("message")
+                        val token = messageObj.getString("token")
+                        Log.w(TAG, "Invalid token: ${token.take(20)}...")
+                        
+                        // Note: We can't easily get userId here, but logging helps debug
+                        Log.i(TAG, "Solution: User should logout/login or reinstall app to get new token")
+                    } catch (e: Exception) {
+                        // Ignore if we can't parse
+                    }
+                }
             }
 
         } catch (e: Exception) {
@@ -475,8 +555,13 @@ object NotificationHelper {
                 Log.d(TAG, "OAuth 2.0 access token generated successfully")
                 accessToken
 
+            } catch (e: java.io.FileNotFoundException) {
+                Log.e(TAG, "CRITICAL: service-account.json file NOT FOUND!")
+                Log.e(TAG, "Push notifications will NOT work!")
+                Log.e(TAG, "Please read FCM_SETUP_INSTRUCTIONS.md in project root")
+                throw Exception("service-account.json missing - notifications cannot be sent")
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating OAuth token: ${e.message}")
+                Log.e(TAG, "Error generating OAuth token: ${e.message}", e)
                 throw e
             }
         }

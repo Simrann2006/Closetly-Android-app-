@@ -216,8 +216,8 @@ fun ClosetScreen() {
                     modifier = Modifier.align(Alignment.TopCenter),
                     isRefreshing = isRefreshing,
                     state = pullToRefreshState,
-                    containerColor = if (ThemeManager.isDarkMode) Surface_Dark else Grey,
-                    color = White
+                    containerColor = if (ThemeManager.isDarkMode) Black else White,
+                    color = if (ThemeManager.isDarkMode) White else Black
                 )
             }
         ) {
@@ -450,7 +450,6 @@ fun ClosetScreen() {
                                                 categories = listOf("All") + refreshedData.map { it.categoryName }
                                             }
                                         }
-                                        // Also refresh clothes list since items in deleted category are removed
                                         clothesViewModel.getAllClothes { success, _, data ->
                                             if (success && data != null) {
                                                 allClothes = data

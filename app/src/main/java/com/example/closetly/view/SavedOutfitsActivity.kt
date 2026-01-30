@@ -17,6 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -68,6 +71,7 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
     var allOutfits by remember { mutableStateOf<List<OutfitModel>>(emptyList()) }
     var displayedOutfits by remember { mutableStateOf<List<OutfitModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedOutfit by remember { mutableStateOf<OutfitModel?>(null) }
@@ -78,6 +82,7 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
     var highlightedOutfitId by remember { mutableStateOf(scrollToOutfitId) }
     
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
 
     val tabs = listOf("All Outfits", "Scheduled", "Favorites")
 
@@ -256,12 +261,35 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                     }
                 }
             } else {
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = {
+                        isRefreshing = true
+                        outfitViewModel.getAllOutfits { success, _, outfits ->
+                            if (success && outfits != null) {
+                                allOutfits = outfits
+                            }
+                            isRefreshing = false
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    state = pullToRefreshState,
+                    indicator = {
+                        Indicator(
+                            modifier = Modifier.align(Alignment.TopCenter),
+                            isRefreshing = isRefreshing,
+                            state = pullToRefreshState,
+                            containerColor = if (ThemeManager.isDarkMode) Black else White,
+                            color = if (ThemeManager.isDarkMode) White else Black
+                        )
+                    }
                 ) {
+                    LazyColumn(
+                        state = listState,
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                     items(displayedOutfits) { outfit ->
                         ImprovedOutfitCard(
                             outfit = outfit,
@@ -291,6 +319,7 @@ fun SavedOutfitsScreen(scrollToOutfitId: String? = null) {
                         )
                     }
                 }
+            }
             }
         }
 
@@ -377,12 +406,16 @@ fun ImprovedOutfitCard(
     var showMenu by remember { mutableStateOf(false) }
     
     val borderColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isHighlighted) Brown else Color.Transparent,
+        targetValue = if (isHighlighted) Brown else {
+            if (ThemeManager.isDarkMode) Color.Gray.copy(alpha = 0.3f) else Color.Transparent
+        },
         animationSpec = androidx.compose.animation.core.tween(500),
         label = "border"
     )
     val borderWidth by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (isHighlighted) 3.dp else 0.dp,
+        targetValue = if (isHighlighted) 3.dp else {
+            if (ThemeManager.isDarkMode) 1.dp else 0.dp
+        },
         animationSpec = androidx.compose.animation.core.tween(500),
         label = "borderWidth"
     )

@@ -78,7 +78,7 @@ class AnalysisRepoImpl : AnalysisRepo {
     override fun findUnderusedItem(clothesList: List<ClothesModel>): UnderusedItem? {
         if (clothesList.isEmpty()) return null
         
-        // Find item with lowest wear count
+        // Find item with lowest wear count (underused items)
         val underusedClothes = clothesList.minByOrNull { it.wearCount }
         
         return underusedClothes?.let {

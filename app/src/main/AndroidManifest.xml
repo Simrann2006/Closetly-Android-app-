@@ -25,38 +25,25 @@
         android:theme="@style/Theme.Closetly"
         tools:replace="android:fullBackupContent">
         <activity
+            android:name=".view.HelpCenterActivity"
+            android:exported="false"
+            android:label="@string/title_activity_help_center"
+            android:theme="@style/Theme.Closetly" />
+        <activity
             android:name=".view.PostFeedActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_post_feed"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ListingDetailsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="ListingDetailsActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ChangePasswordActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="ChangePasswordScreen"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ListingViewerActivity"
             android:exported="false"
@@ -64,15 +51,9 @@
             android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.PostCreationActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="PostCreationActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -86,15 +67,9 @@
 
         <activity
             android:name=".view.SettingsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="SettingsActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.BlockedUsersActivity"
             android:exported="false"
@@ -102,15 +77,9 @@
             android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.MessageActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="MessageActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ChatActivity"
             android:exported="false"
@@ -119,27 +88,19 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".view.NotificationActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="NotificationActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.UserProfileActivity"
             android:exported="false"
             android:label="UserProfileActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
         <activity
             android:name=".view.FollowersFollowingActivity"
             android:exported="false"
             android:label="FollowersFollowingActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
         <activity
             android:name=".view.CommentActivity"
             android:exported="false"
@@ -172,63 +133,33 @@
             android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ClothesDetailsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_clothes_detail"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.AddActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="AddActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.RegistrationActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="RegistrationActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.DashboardActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_dashboard"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.ForgotActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="ForgotActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.SplashActivity"
             android:exported="true"
-            android:label="@string/title_activity_splash"
+            android:label="@string/app_name"
             android:theme="@style/Theme.Closetly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -238,50 +169,30 @@
         </activity>
         <activity
             android:name=".view.LoginActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/title_activity_login"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.EditProfileActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="EditProfileActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.AnalysisActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="AnalysisActivity"
-            android:theme="@style/Theme.Closetly">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Closetly" />
         <activity
             android:name=".view.PlanOutfitActivity"
             android:exported="true"
             android:label="PlanOutfitActivity"
             android:theme="@style/Theme.Closetly"
-            android:windowSoftInputMode="adjustResize">
-        </activity>
+            android:windowSoftInputMode="adjustResize"></activity>
         <activity
             android:name=".view.SavedOutfitsActivity"
             android:exported="true"
             android:label="SavedOutfitsActivity"
-            android:theme="@style/Theme.Closetly">
-        </activity>
+            android:theme="@style/Theme.Closetly"></activity>
 
         <service
             android:name=".view.FirebaseMsgService"

@@ -58,6 +58,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.text.style.TextOverflow
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -75,6 +76,12 @@ class ChatActivity : ComponentActivity() {
         val otherUserName = intent.getStringExtra("otherUserName") ?: ""
         val otherUserImage = intent.getStringExtra("otherUserImage") ?: ""
         
+        val productId = intent.getStringExtra("productId") ?: ""
+        val productTitle = intent.getStringExtra("productTitle") ?: ""
+        val productImageUrl = intent.getStringExtra("productImageUrl") ?: ""
+        val productPrice = intent.getDoubleExtra("productPrice", 0.0)
+        val productListingType = intent.getStringExtra("productListingType") ?: ""
+        
         imageUtils = ImageUtils(this, this)
         imageUtils.registerLaunchers { uri ->
             if (uri != null) {
@@ -89,6 +96,11 @@ class ChatActivity : ComponentActivity() {
                 otherUserId = otherUserId,
                 otherUserName = otherUserName,
                 otherUserImage = otherUserImage,
+                productId = productId,
+                productTitle = productTitle,
+                productImageUrl = productImageUrl,
+                productPrice = productPrice,
+                productListingType = productListingType,
                 selectedImages = selectedImages,
                 showImagePreview = showImagePreview,
                 onPickCamera = { imageUtils.launchCamera() },
@@ -112,6 +124,11 @@ fun ChatBody(
     otherUserId: String,
     otherUserName: String,
     otherUserImage: String,
+    productId: String = "",
+    productTitle: String = "",
+    productImageUrl: String = "",
+    productPrice: Double = 0.0,
+    productListingType: String = "",
     selectedImages: List<Uri>,
     showImagePreview: Boolean,
     onPickCamera: () -> Unit,
@@ -134,6 +151,7 @@ fun ChatBody(
     var selectedMessage by remember { mutableStateOf<MessageModel?>(null) }
     var showMessageActions by remember { mutableStateOf(false) }
     var isOtherUserTyping by remember { mutableStateOf(false) }
+    var hasInitialProductMessageSent by remember { mutableStateOf(false) }
     
     LaunchedEffect(currentUserId) {
         userViewModel.getUserById(currentUserId) { success, _, user ->
@@ -152,6 +170,39 @@ fun ChatBody(
             chatViewModel.getMessages(chatId) { success, _, messageList ->
                 if (success) {
                     messages = messageList
+                    
+                    if (productId.isNotEmpty() && !hasInitialProductMessageSent) {
+                        val hasProductMessage = messageList.any { it.productId == productId }
+                        
+                        if (!hasProductMessage) {
+                            hasInitialProductMessageSent = true
+                            val productMessage = MessageModel(
+                                chatId = chatId,
+                                senderId = currentUserId,
+                                text = "",
+                                timestamp = System.currentTimeMillis(),
+                                productId = productId,
+                                productTitle = productTitle,
+                                productImageUrl = productImageUrl,
+                                productPrice = productPrice,
+                                productListingType = productListingType
+                            )
+                            chatViewModel.sendMessage(chatId, productMessage) { sendSuccess, msg ->
+                                if (sendSuccess) {
+                                    NotificationHelper.sendChatNotification(
+                                        context = context,
+                                        receiverUserId = otherUserId,
+                                        senderName = currentUserName.ifEmpty { "Someone" },
+                                        messageText = "Sent an item: $productTitle",
+                                        chatId = chatId,
+                                        senderId = currentUserId
+                                    )
+                                } else {
+                                    Toast.makeText(context, "Failed to send product info: $msg", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
                 }
             }
             chatViewModel.markMessagesAsRead(chatId, currentUserId) { _, _ -> }
@@ -394,7 +445,7 @@ fun ChatBody(
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = if (ThemeManager.isDarkMode) DarkGrey else Light_grey,
-                        focusedBorderColor = if (ThemeManager.isDarkMode) White else Black,
+                        focusedBorderColor = Brown,
                         unfocusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         focusedContainerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
                         unfocusedTextColor = if (ThemeManager.isDarkMode) White else Black,
@@ -796,6 +847,101 @@ fun MessageBubble(
             horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start,
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
+            if (message.productId.isNotEmpty() || message.productTitle.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (message.productImageUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = message.productImageUrl,
+                                contentDescription = message.productTitle,
+                                modifier = Modifier
+                                    .size(70.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(70.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Grey.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_add_shopping_cart_24),
+                                    contentDescription = null,
+                                    tint = Grey,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+                        
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            if (message.productTitle.isNotEmpty()) {
+                                Text(
+                                    text = message.productTitle,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (ThemeManager.isDarkMode) White else Black,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (message.productPrice > 0) {
+                                    Text(
+                                        text = "Rs.${message.productPrice.toInt()}",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (ThemeManager.isDarkMode) Light_brown else Brown
+                                    )
+                                }
+                                
+                                if (message.productListingType.isNotEmpty()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = when (message.productListingType) {
+                                            "RENT" -> Light_brown
+                                            "THRIFT" -> Grey
+                                            else -> DarkGrey
+                                        }
+                                    ) {
+                                        Text(
+                                            text = message.productListingType,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
             val images = if (message.imageUrls.isNotEmpty()) message.imageUrls else if (message.imageUrl.isNotEmpty()) listOf(message.imageUrl) else emptyList()
             
             if (images.isNotEmpty()) {
@@ -908,7 +1054,7 @@ fun MessageBubble(
                         )
                         .background(
                             if (isCurrentUser) 
-                                (if (ThemeManager.isDarkMode) Brown else Black)
+                                (if (ThemeManager.isDarkMode) Brown else Brown)
                             else 
                                 (if (ThemeManager.isDarkMode) DarkGrey else Light_grey)
                         )
@@ -937,7 +1083,7 @@ fun MessageActionsDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF2C2C2E),
+        containerColor = if (ThemeManager.isDarkMode) Surface_Dark else White,
         shape = RoundedCornerShape(16.dp),
         title = null,
         text = {
@@ -960,13 +1106,13 @@ fun MessageActionsDialog(
                         Icon(
                             imageVector = androidx.compose.material.icons.Icons.Default.ContentCopy,
                             contentDescription = "Copy",
-                            tint = White,
+                            tint = if (ThemeManager.isDarkMode) White else Black,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Copy",
-                            color = White,
+                            color = if (ThemeManager.isDarkMode) White else Black,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )

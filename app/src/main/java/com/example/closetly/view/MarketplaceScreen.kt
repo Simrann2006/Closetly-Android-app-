@@ -630,6 +630,11 @@ fun ProductDetailsDialog(
                                         putExtra("otherUserId", product.sellerId)
                                         putExtra("otherUserName", sellerName)
                                         putExtra("otherUserImage", sellerProfilePic)
+                                        putExtra("productId", product.id)
+                                        putExtra("productTitle", product.title)
+                                        putExtra("productImageUrl", product.imageUrl)
+                                        putExtra("productPrice", product.price)
+                                        putExtra("productListingType", product.listingType.name)
                                     }
                                     context.startActivity(intent)
                                 } else {
